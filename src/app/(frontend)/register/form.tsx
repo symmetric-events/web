@@ -19,6 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { CountryDropdown } from "react-country-region-selector";
+import ReactSelect from "react-select";
+
+type ReactSelectOption = {
+  label: string;
+  value: string;
+};
 
 type DraftOrder = {
   id: string;
@@ -41,6 +48,7 @@ type FormErrors = Partial<
     | "phone"
     | "company"
     | "country"
+    | "region"
     | "address1"
     | "city"
     | "postcode",
@@ -57,6 +65,7 @@ export default function RegisterForm() {
     company: "",
     vatNumber: "",
     country: "",
+    region: "",
     address1: "",
     address2: "",
     city: "",
@@ -76,6 +85,141 @@ export default function RegisterForm() {
     { id: string; startDate: string; endDate: string }[]
   >([]);
   const [quantity, setQuantity] = useState<number>(1);
+  const [countryOption, setCountryOption] = useState<
+    ReactSelectOption | undefined
+  >();
+  const [regionOption, setRegionOption] = useState<
+    ReactSelectOption | undefined
+  >();
+
+  // Custom render function for React Select integration
+  const customRender = (props: any) => {
+    const {
+      options,
+      value,
+      disabled,
+      onChange,
+      onBlur,
+      customProps,
+      ...selectProps
+    } = props;
+
+    const hasError = customProps.hasError || false;
+
+    return (
+      <ReactSelect
+        {...selectProps}
+        options={options}
+        isDisabled={disabled}
+        isSearchable={true}
+        isClearable={true}
+        value={customProps.reactSelectValue}
+        onChange={customProps.onChange}
+        className="react-select-container"
+        classNamePrefix="react-select"
+        styles={{
+          control: (base, state) => ({
+            ...base,
+            minHeight: "36px",
+            height: "36px",
+            border: hasError
+              ? "1px solid #ef4444"
+              : state.isFocused
+                ? "1px solid lab(66.128 -0.0000298023 0.0000119209)"
+                : "1px solid lab(90.952 0 -0.0000119209)",
+            borderRadius: "6px",
+            backgroundColor: "transparent",
+            boxShadow: hasError
+              ? "0 0 0 3px rgba(239, 68, 68, 0.1)"
+              : state.isFocused
+                ? "0 0 0 3px rgba(251, 187, 0, 0.6)"
+                : "none",
+            "&:hover": {
+              // Keep border consistent on hover (no color change), including when focused
+              border: hasError
+                ? "1px solid #ef4444"
+                : state.isFocused
+                  ? "1px solid lab(66.128 -0.0000298023 0.0000119209)"
+                  : "1px solid lab(90.952 0 -0.0000119209)",
+            },
+          }),
+          valueContainer: (base) => ({
+            ...base,
+            padding: "0 12px",
+            fontSize: "14px",
+          }),
+          input: (base) => ({
+            ...base,
+            margin: "0",
+            padding: "0",
+            fontSize: "14px",
+          }),
+          placeholder: (base) => ({
+            ...base,
+            fontSize: "14px",
+            color: "#9ca3af",
+            margin: "0",
+          }),
+          singleValue: (base) => ({
+            ...base,
+            fontSize: "14px",
+            color: "#111827",
+            margin: "0",
+          }),
+          indicatorSeparator: () => ({
+            display: "none",
+          }),
+          dropdownIndicator: (base) => ({
+            ...base,
+            padding: "8px",
+            color: "#6b7280",
+            "&:hover": {
+              color: "#374151",
+            },
+          }),
+          clearIndicator: (base) => ({
+            ...base,
+            padding: "8px",
+            color: "#6b7280",
+            "&:hover": {
+              color: "#374151",
+            },
+          }),
+          menu: (base) => ({
+            ...base,
+            borderRadius: "6px",
+            border: "1px solid #e5e7eb",
+            boxShadow:
+              "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+            zIndex: 9999,
+          }),
+          menuList: (base) => ({
+            ...base,
+            padding: "4px",
+            borderRadius: "6px",
+          }),
+          option: (base, state) => ({
+            ...base,
+            fontSize: "14px",
+            padding: "8px 12px",
+            borderRadius: "4px",
+            backgroundColor: state.isSelected
+              ? "#FBBB00"
+              : state.isFocused
+                ? "rgba(251, 187, 0, 0.1)"
+                : "transparent",
+            color: state.isSelected ? "#111827" : "#374151",
+            cursor: "pointer",
+            "&:hover": {
+              backgroundColor: state.isSelected
+                ? "#FBBB00"
+                : "rgba(251, 187, 0, 0.1)",
+            },
+          }),
+        }}
+      />
+    );
+  };
 
   function formatDateRange(startDate: Date, endDate: Date) {
     const startMonth = startDate.toLocaleDateString("en-GB", { month: "long" });
@@ -151,36 +295,36 @@ export default function RegisterForm() {
 
   // Keep local quantity in sync with order when it changes
   useEffect(() => {
-    const q = orderQuery.data?.quantity
-    if (typeof q === 'number' && Number.isFinite(q) && q > 0) {
-      setQuantity(q)
+    const q = orderQuery.data?.quantity;
+    if (typeof q === "number" && Number.isFinite(q) && q > 0) {
+      setQuantity(q);
     }
-  }, [orderQuery.data?.quantity])
+  }, [orderQuery.data?.quantity]);
 
   // Fetch event date ranges for this draft order (if slug exists)
   useEffect(() => {
     const loadDates = async () => {
-      const order = orderQuery.data
-      if (!order?.eventSlug) return
+      const order = orderQuery.data;
+      if (!order?.eventSlug) return;
       try {
         const res = await fetch("/api/events/batch", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ slugs: [order.eventSlug] }),
-        })
-        if (!res.ok) return
-        const data = (await res.json()) as Record<string, any>
-        const event = data[order.eventSlug]
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as Record<string, any>;
+        const event = data[order.eventSlug];
         const ranges = (event?.eventDates || []).map((r: any, idx: number) => ({
           id: String(r.id ?? idx),
           startDate: r["Start Date"],
           endDate: r["End Date"],
-        }))
-        setAvailableDateRanges(ranges)
+        }));
+        setAvailableDateRanges(ranges);
       } catch {}
-    }
-    void loadDates()
-  }, [orderQuery.data?.eventSlug])
+    };
+    void loadDates();
+  }, [orderQuery.data?.eventSlug]);
 
   const saveDraft = useMutation({
     mutationKey: ["mutateOrder"],
@@ -247,16 +391,19 @@ export default function RegisterForm() {
   }
 
   function handleQuantityChange(nextQty: number) {
-    if (!sessionId) return
-    const safe = Math.max(1, Math.min(1000, Math.floor(nextQty || 1)))
-    setQuantity(safe) // optimistic local update for instant UI feedback
-    saveDraft.mutate({ sessionId, field: "quantity", value: safe })
+    if (!sessionId) return;
+    const safe = Math.max(1, Math.min(1000, Math.floor(nextQty || 1)));
+    setQuantity(safe); // optimistic local update for instant UI feedback
+    saveDraft.mutate({ sessionId, field: "quantity", value: safe });
   }
 
-  function handleSelectDateRange(range?: { startDate: string; endDate: string }) {
-    if (!sessionId || !range) return
-    saveDraft.mutate({ sessionId, field: "startDate", value: range.startDate })
-    saveDraft.mutate({ sessionId, field: "endDate", value: range.endDate })
+  function handleSelectDateRange(range?: {
+    startDate: string;
+    endDate: string;
+  }) {
+    if (!sessionId || !range) return;
+    saveDraft.mutate({ sessionId, field: "startDate", value: range.startDate });
+    saveDraft.mutate({ sessionId, field: "endDate", value: range.endDate });
   }
 
   const formattedTotal = useMemo(() => {
@@ -351,7 +498,7 @@ export default function RegisterForm() {
             <div className="space-y-2">
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-900"
               >
                 Email Address <span className="text-red-500">*</span>
               </label>
@@ -377,7 +524,7 @@ export default function RegisterForm() {
               <div className="space-y-2">
                 <label
                   htmlFor="firstName"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-900"
                 >
                   First Name <span className="text-red-500">*</span>
                 </label>
@@ -404,7 +551,7 @@ export default function RegisterForm() {
               <div className="space-y-2">
                 <label
                   htmlFor="lastName"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-900"
                 >
                   Last Name <span className="text-red-500">*</span>
                 </label>
@@ -429,7 +576,7 @@ export default function RegisterForm() {
             <div className="space-y-2">
               <label
                 htmlFor="phone"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-900"
               >
                 Phone <span className="text-red-500">*</span>
               </label>
@@ -460,7 +607,7 @@ export default function RegisterForm() {
             <div className="space-y-2">
               <label
                 htmlFor="company"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-900"
               >
                 Company Name <span className="text-red-500">*</span>
               </label>
@@ -485,7 +632,7 @@ export default function RegisterForm() {
             <div className="space-y-2">
               <label
                 htmlFor="vatNumber"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-900"
               >
                 VAT Number <span className="text-gray-500">(optional)</span>
               </label>
@@ -510,33 +657,79 @@ export default function RegisterForm() {
             </h3>
 
             <div className="space-y-2">
-              <label
-                htmlFor="country"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label className="block text-sm font-medium text-gray-900">
                 Country / Region <span className="text-red-500">*</span>
               </label>
-              <select
-                id="country"
-                value={formData.country}
-                onChange={(e) => handleInputChange("country", e.target.value)}
-                onBlur={() => handleInputBlur("country")}
-                className={`w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none ${errors.country ? "border-red-500" : ""}`}
-                autoComplete="country"
-              >
-                <option value="">Select a country / region…</option>
-                <option value="DE">Germany</option>
-                <option value="US">United States (US)</option>
-              </select>
-              {errors.country && (
-                <p className="text-sm text-red-600">{errors.country}</p>
-              )}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <CountryDropdown
+                    value={formData.country}
+                    onChange={(val) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        country: val,
+                        region: val ? prev.region : "",
+                      }));
+                      if (errors.country) {
+                        setErrors((prev) => ({ ...prev, country: undefined }));
+                      }
+                    }}
+                    onBlur={() => {
+                      handleInputBlur("country");
+                      return null;
+                    }}
+                    customRender={customRender}
+                    customProps={{
+                      reactSelectValue: countryOption,
+                      classNamePrefix: "country-",
+                      hasError: !!errors.country,
+                      onChange: (value: ReactSelectOption | null) => {
+                        const countryValue = value ? value.value : "";
+                        setCountryOption(value ? value : undefined);
+                        setRegionOption(undefined);
+                        setFormData((prev) => ({
+                          ...prev,
+                          country: countryValue,
+                          region: countryValue ? prev.region : "",
+                        }));
+                        // Persist change immediately so selection is saved without requiring blur
+                        if (sessionId) {
+                          saveDraft.mutate({
+                            sessionId,
+                            field: "country",
+                            value: countryValue,
+                          });
+                          if (!countryValue) {
+                            // If country cleared, also clear region on server
+                            saveDraft.mutate({
+                              sessionId,
+                              field: "region",
+                              value: "",
+                            });
+                          }
+                        }
+                        if (errors.country) {
+                          setErrors((prev) => ({
+                            ...prev,
+                            country: undefined,
+                          }));
+                        }
+                      },
+                    }}
+                  />
+                  {errors.country && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.country}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
               <label
                 htmlFor="address1"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-900"
               >
                 Street Address <span className="text-red-500">*</span>
               </label>
@@ -558,7 +751,7 @@ export default function RegisterForm() {
             <div className="space-y-2">
               <label
                 htmlFor="address2"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-900"
               >
                 Apartment, suite, unit, etc.{" "}
                 <span className="text-gray-500">(optional)</span>
@@ -578,7 +771,7 @@ export default function RegisterForm() {
               <div className="space-y-2">
                 <label
                   htmlFor="city"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-900"
                 >
                   Town / City <span className="text-red-500">*</span>
                 </label>
@@ -600,7 +793,7 @@ export default function RegisterForm() {
               <div className="space-y-2">
                 <label
                   htmlFor="postcode"
-                  className="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-900"
                 >
                   Postcode / ZIP <span className="text-red-500">*</span>
                 </label>
@@ -625,7 +818,7 @@ export default function RegisterForm() {
             <div className="space-y-2">
               <label
                 htmlFor="state"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-900"
               >
                 State / County <span className="text-gray-500">(optional)</span>
               </label>
@@ -649,7 +842,7 @@ export default function RegisterForm() {
             <div className="space-y-2">
               <label
                 htmlFor="notes"
-                className="block text-sm font-medium text-gray-700"
+                className="block text-sm font-medium text-gray-900"
               >
                 Notes <span className="text-gray-500">(optional)</span>
               </label>
@@ -692,16 +885,19 @@ export default function RegisterForm() {
 
           {availableDateRanges.length > 0 && (
             <div className="my-5">
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+              <label className="mb-2 block text-sm font-medium text-gray-900">
                 Select event date:
               </label>
               <div className="space-y-2">
                 {availableDateRanges.map((dateRange) => {
                   const selected =
                     orderQuery.data?.startDate === dateRange.startDate &&
-                    orderQuery.data?.endDate === dateRange.endDate
+                    orderQuery.data?.endDate === dateRange.endDate;
                   return (
-                    <label key={dateRange.id} className="flex cursor-pointer items-center space-x-2">
+                    <label
+                      key={dateRange.id}
+                      className="flex cursor-pointer items-center space-x-2"
+                    >
                       <input
                         type="radio"
                         name={`dateRange`}
@@ -710,11 +906,14 @@ export default function RegisterForm() {
                         onChange={() => handleSelectDateRange(dateRange)}
                         className="text-secondary focus:ring-secondary h-4 w-4"
                       />
-                      <span className="text-sm text-gray-700">
-                        {formatDateRange(new Date(dateRange.startDate), new Date(dateRange.endDate))}
+                      <span className="text-sm text-gray-900">
+                        {formatDateRange(
+                          new Date(dateRange.startDate),
+                          new Date(dateRange.endDate),
+                        )}
                       </span>
                     </label>
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -722,12 +921,18 @@ export default function RegisterForm() {
 
           {/* Seats Input */}
           <div className="mt-5">
-            <label className="text-sm font-medium text-gray-700">Number of seats:</label>
+            <label className="text-sm font-medium text-gray-900">
+              Number of seats:
+            </label>
             <div className="mt-2 flex items-center space-x-2">
               <button
                 type="button"
-                onClick={() => handleQuantityChange(Math.max(1, (orderQuery.data?.quantity ?? 1) - 1))}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 transition-all duration-300 ease-in-out hover:bg-gray-50"
+                onClick={() =>
+                  handleQuantityChange(
+                    Math.max(1, (orderQuery.data?.quantity ?? 1) - 1),
+                  )
+                }
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-gray-300 transition-all duration-300 ease-in-out hover:bg-gray-50"
               >
                 −
               </button>
@@ -736,13 +941,15 @@ export default function RegisterForm() {
                 min={1}
                 max={1000}
                 value={quantity}
-                onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+                onChange={(e) =>
+                  handleQuantityChange(parseInt(e.target.value) || 1)
+                }
                 className="w-16 [appearance:textfield] rounded border border-gray-300 px-2 py-1 text-center text-sm [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
               <button
                 type="button"
                 onClick={() => handleQuantityChange((quantity ?? 1) + 1)}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 hover:bg-gray-50"
+                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-gray-300 hover:bg-gray-50"
               >
                 +
               </button>
@@ -750,12 +957,12 @@ export default function RegisterForm() {
           </div>
 
           <div>
-            <div className="mb-4">
+            <div className="my-4">
               <h4 className="mb-2 text-sm font-medium text-gray-900">
                 Currency
               </h4>
               <div className="flex items-center gap-4">
-                <label className="inline-flex items-center gap-2 text-sm text-gray-800">
+                <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-gray-800">
                   <input
                     type="radio"
                     name="currency"
@@ -765,7 +972,7 @@ export default function RegisterForm() {
                   />
                   EUR
                 </label>
-                <label className="inline-flex items-center gap-2 text-sm text-gray-800">
+                <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-gray-800">
                   <input
                     type="radio"
                     name="currency"

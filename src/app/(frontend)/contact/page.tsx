@@ -39,7 +39,7 @@ export default function ContactPage() {
                 <div className="flex-shrink-0">
                   <div className="relative h-24 w-24 overflow-hidden rounded-full">
                     <Image
-                      src="https://www.symmetric.events/wp-content/uploads/2024/08/DSC_1335-15x20-1-300x300.jpg"
+                      src="https://www.symmetric.events/wp-content/uploads/2025/10/generated-image-300x300.jpg"
                       alt="Susan Sykora"
                       fill
                       className="object-cover"
@@ -52,8 +52,7 @@ export default function ContactPage() {
                     logistics.
                   </p>
                   <p className="mb-2 font-bold text-gray-800">Susan Sykora</p>
-                  <p className="mb-1 text-gray-600">US: +1 857 392 2714</p>
-                  <p className="mb-1 text-gray-600">Europe: +421 948 262 346</p>
+                  <p className="mb-1 text-gray-600">+421 948 262 346</p>
                   <a
                     href="mailto:operations@symmetric-courses.com"
                     className="hover:text-secondary underline"

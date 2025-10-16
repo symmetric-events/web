@@ -19,13 +19,6 @@ export default function AboutUsPage() {
       linkedinUrl: "https://www.linkedin.com/in/attila-molnar-193a4689/",
     },
     {
-      name: "Lydia Makori",
-      position: "Business Development Specialist",
-      imageUrl:
-        "https://www.symmetric.events/wp-content/uploads/2021/11/383.jpg",
-      linkedinUrl: "https://www.linkedin.com/in/lydia-makori-8b7ba459/",
-    },
-    {
       name: "Michal Laco",
       position: "Business Strategy, Operations",
       imageUrl:
@@ -50,7 +43,7 @@ export default function AboutUsPage() {
       name: "Susan Sykora",
       position: "Finance & Operations",
       imageUrl:
-        "https://www.symmetric.events/wp-content/uploads/2024/08/DSC_1335-15x20-1-1024x1020.jpg",
+        "https://www.symmetric.events/wp-content/uploads/2025/10/generated-image-300x300.jpg",
     },
   ];
 
@@ -423,7 +416,7 @@ export default function AboutUsPage() {
           <h2 className="mb-12 text-center text-4xl font-bold text-gray-800">
             Our Management Team
           </h2>
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 justify-items-center">
             {teamMembers.map((member, index) => (
               <TeamMemberCard
                 key={index}
