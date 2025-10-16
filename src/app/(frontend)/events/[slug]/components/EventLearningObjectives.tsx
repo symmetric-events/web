@@ -10,33 +10,8 @@ export function EventLearningObjectives({
   event,
 }: EventLearningObjectivesProps) {
   const learningObjectives = event["Learning Objectives"] || [];
-  const imgRefs = useRef<(HTMLImageElement | null)[]>([]);
-  // Store timeout IDs per item so we can clear/restart reliably
-  const revertTimeoutsRef = useRef<Record<number, number>>({})
 
   if (learningObjectives.length === 0) return null;
-
-  const handleMouseEnter = (index: number) => {
-    // Clear any pending revert for this index
-    const existing = revertTimeoutsRef.current[index]
-    if (existing) {
-      clearTimeout(existing)
-      delete revertTimeoutsRef.current[index]
-    }
-    // Force GIF to restart by changing src every time
-    const img = imgRefs.current[index];
-    if (img) {
-      img.src = "/img/arrow.gif?" + Date.now(); // Add timestamp to force reload
-    }
-  };
-
-  // Clean up all timeouts on unmount/navigation
-  useEffect(() => {
-    return () => {
-      Object.values(revertTimeoutsRef.current).forEach((id) => clearTimeout(id))
-      revertTimeoutsRef.current = {}
-    }
-  }, [])
 
   return (
     <section className="mt-8">
@@ -49,7 +24,6 @@ export function EventLearningObjectives({
           <div 
             key={index} 
             className="flex gap-4 group cursor-pointer"
-            onMouseEnter={() => handleMouseEnter(index)}
           >
             <div className="flex-shrink-0">
               <img
@@ -58,26 +32,6 @@ export function EventLearningObjectives({
                 width={50}
                 height={50}
                 className="transition-all duration-300 group-hover:scale-110"
-                onLoad={(e) => {
-                  const imgEl = e.currentTarget
-                  // Only schedule revert if the loaded src is the GIF
-                  const isGif = imgEl.src.includes('arrow.gif')
-                  if (!isGif) return
-                  // Clear any existing scheduled revert for this index
-                  const existing = revertTimeoutsRef.current[index]
-                  if (existing) {
-                    clearTimeout(existing)
-                    delete revertTimeoutsRef.current[index]
-                  }
-                  const timeoutId = window.setTimeout(() => {
-                    const img = imgRefs.current[index]
-                    if (img) {
-                      img.src = '/img/learning_objective.webp'
-                    }
-                    delete revertTimeoutsRef.current[index]
-                  }, 360) // Duration of GIF playback; adjust to exact length
-                  revertTimeoutsRef.current[index] = timeoutId
-                }}
               />
             </div>
             <div className="flex-1">
