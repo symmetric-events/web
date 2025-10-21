@@ -65,6 +65,10 @@ export default tseslint.config(
       "@next/next/no-duplicate-head": "off",
       "prefer-const": "off",
       "@typescript-eslint/consistent-type-imports": "off",
+      "@typescript-eslint/non-nullable-type-assertion-style": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
+      "@typescript-eslint/no-non-null-asserted-optional-chain": "off",
+      "@typescript-eslint/no-non-null-asserted-nullish-coalescing": "off",
       "drizzle/enforce-delete-with-where": [
         "error",
         { drizzleObjectName: ["db", "ctx.db"] },
