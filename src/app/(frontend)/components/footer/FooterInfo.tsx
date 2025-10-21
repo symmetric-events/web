@@ -38,7 +38,7 @@ export const FooterInfo: React.FC = () => {
                 <strong>Email:</strong>
                 <a
                   href="mailto:info@symmetric.events"
-                  className="text-blue-400 hover:text-blue-300"
+                  className="text-blue-400 hover:text-secondary"
                 >
                   {" "}
                   info@symmetric.events
@@ -64,17 +64,17 @@ export const FooterInfo: React.FC = () => {
             <div className="my-5 space-y-2">
               <Link
                 href="/terms-conditions"
-                className="block text-gray-300 hover:text-white"
+                className="block text-gray-300 hover:text-secondary"
               >
                 Terms & Conditions
               </Link>
               <Link
                 href="/privacy-policy"
-                className="block text-gray-300 hover:text-white"
+                className="block text-gray-300 hover:text-secondary"
               >
                 Privacy Policy
               </Link>
-              <span className="block cursor-pointer text-gray-300">
+              <span className="block cursor-pointer text-gray-300 hover:text-secondary">
                 Change Your Cookie Consent
               </span>
             </div>

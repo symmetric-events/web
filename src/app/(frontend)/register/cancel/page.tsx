@@ -52,7 +52,7 @@ export default function CheckoutCancelPage() {
 
           <div className="space-y-4">
             <Link
-              href="/events"
+              href="/register"
               className="inline-flex items-center justify-center w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
             >
               <ShoppingCart className="mr-2 h-4 w-4" />

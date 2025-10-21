@@ -42,12 +42,19 @@ export default async function EventPage({ params }: Props) {
         <div className="mx-auto max-w-6xl px-5 py-12">
           <EventHeader event={event} />
           <EventDetails event={event} />
+          <br />
           <EventWhyAttend event={event} />
+          <br />
           <EventTrainingExperience event={event} />
+          <br />
           <EventLearningObjectives event={event} />
+          <br />
           <EventWhoIsTrainingFor event={event} />
+          <br />
           <EventKeyTopics event={event} />
+          <br />
           <EventTrainers event={event} />
+          <br />
           <EventTestimonials event={event} />
         </div>
       </div>

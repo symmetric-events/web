@@ -51,7 +51,9 @@ type FormErrors = Partial<
     | "region"
     | "address1"
     | "city"
-    | "postcode",
+    | "postcode"
+    | "participants"
+    | "eventDate",
     string
   >
 >;
@@ -64,6 +66,7 @@ export default function RegisterForm() {
     phone: "",
     company: "",
     vatNumber: "",
+    poNumber: "",
     country: "",
     region: "",
     address1: "",
@@ -91,6 +94,9 @@ export default function RegisterForm() {
   const [regionOption, setRegionOption] = useState<
     ReactSelectOption | undefined
   >();
+  const [participants, setParticipants] = useState<
+    { name: string; email: string }[]
+  >([{ name: "", email: "" }]);
 
   // Custom render function for React Select integration
   const customRender = (props: any) => {
@@ -301,6 +307,22 @@ export default function RegisterForm() {
     }
   }, [orderQuery.data?.quantity]);
 
+  // Keep participants array length in sync with quantity
+  useEffect(() => {
+    const target = Math.max(1, quantity || 1);
+    setParticipants((prev) => {
+      if (prev.length === target) return prev;
+      if (prev.length < target) {
+        const toAdd = Array.from({ length: target - prev.length }, () => ({
+          name: "",
+          email: "",
+        }));
+        return [...prev, ...toAdd];
+      }
+      return prev.slice(0, target);
+    });
+  }, [quantity]);
+
   // Fetch event date ranges for this draft order (if slug exists)
   useEffect(() => {
     const loadDates = async () => {
@@ -319,6 +341,8 @@ export default function RegisterForm() {
           id: String(r.id ?? idx),
           startDate: r["Start Date"],
           endDate: r["End Date"],
+          startTime: r["Start Time"],
+          endTime: r["End Time"],
         }));
         setAvailableDateRanges(ranges);
       } catch {}
@@ -361,7 +385,13 @@ export default function RegisterForm() {
 
   function validate(): boolean {
     const next: FormErrors = {};
+    
+    // Basic required fields
     if (!formData.email) next.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      next.email = "Please enter a valid email address";
+    }
+    
     if (!formData.firstName) next.firstName = "First name is required";
     if (!formData.lastName) next.lastName = "Last name is required";
     if (!formData.phone) next.phone = "Phone is required";
@@ -370,6 +400,26 @@ export default function RegisterForm() {
     if (!formData.address1) next.address1 = "Address is required";
     if (!formData.city) next.city = "City is required";
     if (!formData.postcode) next.postcode = "Postcode is required";
+    
+    // Event date validation
+    if (!orderQuery.data?.startDate || !orderQuery.data?.endDate) {
+      next.eventDate = "Please select an event date";
+    }
+    
+    // Participant validation
+    const invalidParticipants = participants.some(p => !p.name.trim() || !p.email.trim());
+    if (invalidParticipants) {
+      next.participants = "All participants must have both name and email";
+    }
+    
+    // Validate participant emails
+    const invalidParticipantEmails = participants.some(p => 
+      p.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email.trim())
+    );
+    if (invalidParticipantEmails) {
+      next.participants = "Please enter valid email addresses for all participants";
+    }
+    
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -380,6 +430,7 @@ export default function RegisterForm() {
 
   function handleInputBlur(field: keyof typeof formData) {
     if (!sessionId) return;
+    if (formData[field] === "") return;
     saveDraft.mutate({ sessionId, field, value: formData[field] });
   }
 
@@ -397,6 +448,22 @@ export default function RegisterForm() {
     saveDraft.mutate({ sessionId, field: "quantity", value: safe });
   }
 
+  function handleParticipantChange(
+    index: number,
+    field: "name" | "email",
+    value: string,
+  ) {
+    setParticipants((prev) => {
+      const next = [...prev];
+      const current = next[index] ?? { name: "", email: "" };
+      next[index] = { ...current, [field]: value } as {
+        name: string;
+        email: string;
+      };
+      return next;
+    });
+  }
+
   function handleSelectDateRange(range?: {
     startDate: string;
     endDate: string;
@@ -404,6 +471,43 @@ export default function RegisterForm() {
     if (!sessionId || !range) return;
     saveDraft.mutate({ sessionId, field: "startDate", value: range.startDate });
     saveDraft.mutate({ sessionId, field: "endDate", value: range.endDate });
+  }
+
+  // Dev function to populate test data
+  function populateTestData() {
+    const testData = {
+      firstName: "John",
+      lastName: "Developer",
+      email: "dev@test.com",
+      phone: "+44 1234 567890",
+      company: "Test Company Ltd",
+      vatNumber: "IE1234567890",
+      poNumber: "PO-2025-0001",
+      country: "Ireland",
+      region: "Dublin",
+      address1: "123 Tech Street",
+      address2: "Suite 456",
+      city: "Dublin",
+      state: "Dublin",
+      postcode: "D01 1AA",
+      notes: "This is a test registration from development.",
+    };
+
+    setFormData(testData);
+
+    // Save each field to draft if sessionId exists
+    if (sessionId) {
+      Object.entries(testData).forEach(([field, value]) => {
+        saveDraft.mutate({
+          sessionId,
+          field,
+          value,
+        });
+      });
+    }
+
+    // Clear errors
+    setErrors({});
   }
 
   const formattedTotal = useMemo(() => {
@@ -450,6 +554,7 @@ export default function RegisterForm() {
           customerName: `${formData.firstName} ${formData.lastName}`.trim(),
           customerCompany: formData.company,
           customerPhone: formData.phone,
+          participants,
         }),
       });
       if (!res.ok) {
@@ -490,11 +595,18 @@ export default function RegisterForm() {
           }}
           className="space-y-6"
         >
+          {process.env.NODE_ENV === "development" && (
+            <div className="mt-4 flex w-full items-center justify-center rounded-lg bg-yellow-500 px-6 py-3 font-semibold text-white transition-colors duration-200 hover:bg-yellow-600 disabled:bg-yellow-400">
+              <button
+                type="button"
+                onClick={populateTestData}
+                className="w-full"
+              >
+                Test Data
+              </button>
+            </div>
+          )}
           <div className="space-y-4">
-            <h3 className="border-b pb-2 text-lg font-medium text-gray-900">
-              Personal Information
-            </h3>
-
             <div className="space-y-2">
               <label
                 htmlFor="email"
@@ -601,7 +713,7 @@ export default function RegisterForm() {
 
           <div className="space-y-4">
             <h3 className="border-b pb-2 text-lg font-medium text-gray-900">
-              Company Information
+              Billing details
             </h3>
 
             <div className="space-y-2">
@@ -644,10 +756,28 @@ export default function RegisterForm() {
                 onBlur={() => handleInputBlur("vatNumber")}
                 placeholder="Enter your VAT number"
               />
-              <p className="text-sm text-gray-500">
-                If you are a corporate customer from an EU member state, please
-                provide your corporate VAT number to avoid a 23% VAT charge
-              </p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="border-b pb-2 text-lg font-medium text-gray-900">
+              PO number
+            </h3>
+            <div className="space-y-2">
+              <label
+                htmlFor="poNumber"
+                className="block text-sm font-medium text-gray-900"
+              >
+                Purchase Order Number{" "}
+                <span className="text-gray-500">(optional)</span>
+              </label>
+              <Input
+                id="poNumber"
+                type="text"
+                value={formData.poNumber}
+                onChange={(e) => handleInputChange("poNumber", e.target.value)}
+                onBlur={() => handleInputBlur("poNumber")}
+                placeholder="Enter your PO number (if applicable)"
+              />
             </div>
           </div>
 
@@ -658,7 +788,7 @@ export default function RegisterForm() {
 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-900">
-                Country / Region <span className="text-red-500">*</span>
+                Country <span className="text-red-500">*</span>
               </label>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
@@ -863,9 +993,7 @@ export default function RegisterForm() {
         <div className="sticky top-24 rounded-lg bg-white p-6 shadow-lg">
           <div className="mb-6 flex items-center">
             <Building className="text-secondary mr-2 h-5 w-5" />
-            <h2 className="text-xl font-semibold text-gray-900">
-              Order Summary
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900">Summary</h2>
           </div>
 
           <div className="mb-6 space-y-4">
@@ -916,6 +1044,9 @@ export default function RegisterForm() {
                   );
                 })}
               </div>
+              {errors.eventDate && (
+                <p className="mt-2 text-sm text-red-600">{errors.eventDate}</p>
+              )}
             </div>
           )}
 
@@ -956,6 +1087,45 @@ export default function RegisterForm() {
             </div>
           </div>
 
+          {/* Participants section */}
+          <div className="mt-5">
+            <div className="space-y-3">
+              {participants.map((p, idx) => (
+                <div key={idx}>
+                  <label
+                    htmlFor="name"
+                    className="block text-sm font-medium text-gray-900"
+                  >
+                    Participant {idx + 1}
+                  </label>
+                  <div
+                    className="grid grid-cols-1 gap-2 md:grid-cols-2"
+                  >
+                    <Input
+                      type="text"
+                      value={p.name}
+                      onChange={(e) =>
+                        handleParticipantChange(idx, "name", e.target.value)
+                      }
+                      placeholder={`Name`}
+                    />
+                    <Input
+                      type="email"
+                      value={p.email}
+                      onChange={(e) =>
+                        handleParticipantChange(idx, "email", e.target.value)
+                      }
+                      placeholder={`Email`}
+                    />
+                  </div>
+                </div>
+              ))}
+              {errors.participants && (
+                <p className="text-sm text-red-600">{errors.participants}</p>
+              )}
+            </div>
+          </div>
+
           <div>
             <div className="my-4">
               <h4 className="mb-2 text-sm font-medium text-gray-900">
@@ -988,9 +1158,6 @@ export default function RegisterForm() {
               <span>Total:</span>
               <span className="flex items-center gap-2">{formattedTotal}</span>
             </div>
-            <p className="mt-2 text-sm text-gray-600">
-              Secure payment powered by Stripe
-            </p>
           </div>
 
           <div className="mt-6 border-t border-gray-200 pt-6">
@@ -1021,7 +1188,7 @@ export default function RegisterForm() {
                 <SelectItem value="invoice">
                   <span className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-gray-600" />
-                    Invoice (Net 30)
+                    Invoice
                   </span>
                 </SelectItem>
               </SelectContent>
@@ -1046,7 +1213,7 @@ export default function RegisterForm() {
               ) : (
                 <>
                   <CreditCard className="mr-2 h-4 w-4" />
-                  Proceed to Payment
+                  Register
                 </>
               )}
             </button>

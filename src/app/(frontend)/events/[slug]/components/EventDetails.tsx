@@ -3,17 +3,76 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import * as moment from "moment-timezone";
 
 interface EventDetailsProps {
   event: any;
 }
 
-const TRAINING_TIMES = [
-  { time: "13:30 - 18:00", city: "Vienna" },
-  { time: "12:30 - 17:00", city: "London" },
-  { time: "07:30 - 12:00", city: "New York" },
-  { time: "04:30 - 09:00", city: "Los Angeles" },
-];
+// Timezone mappings for major cities
+const TIMEZONE_MAPPINGS = {
+  Vienna: "Europe/Vienna",
+  London: "Europe/London",
+  "New York": "America/New_York",
+  "Los Angeles": "America/Los_Angeles",
+};
+
+const convertTimeToTimezone = (
+  viennaTime: string,
+  targetTimezone: string,
+  eventDate: Date,
+): string => {
+  if (!viennaTime) return "";
+
+  const timeParts = viennaTime.split(":");
+  if (timeParts.length !== 2 || !timeParts[0] || !timeParts[1]) return "";
+
+  const hours = parseInt(timeParts[0], 10);
+  const minutes = parseInt(timeParts[1], 10);
+
+  if (isNaN(hours) || isNaN(minutes)) return "";
+
+  // Create a moment object in Vienna timezone for the event date
+  const viennaMoment = moment
+    .tz(eventDate, "Europe/Vienna")
+    .hour(hours)
+    .minute(minutes)
+    .second(0);
+
+  // Convert to target timezone (handles DST automatically)
+  const targetMoment = viennaMoment.clone().tz(targetTimezone);
+
+  return targetMoment.format("HH:mm");
+};
+
+// Generate training times based on Vienna time from database
+const generateTrainingTimes = (
+  viennaStartTime?: string,
+  viennaEndTime?: string,
+  eventDate?: Date,
+) => {
+  if (!viennaStartTime || !viennaEndTime || !eventDate) {
+    return [
+      { time: "TBA", city: "Vienna" },
+      { time: "TBA", city: "London" },
+      { time: "TBA", city: "New York" },
+      { time: "TBA", city: "Los Angeles" },
+    ];
+  }
+
+  return Object.entries(TIMEZONE_MAPPINGS).map(([city, timezone]) => {
+    const startTime = convertTimeToTimezone(
+      viennaStartTime,
+      timezone,
+      eventDate,
+    );
+    const endTime = convertTimeToTimezone(viennaEndTime, timezone, eventDate);
+    return {
+      time: `${startTime} - ${endTime}`,
+      city,
+    };
+  });
+};
 
 export function EventDetails({ event }: EventDetailsProps) {
   const router = useRouter();
@@ -25,8 +84,26 @@ export function EventDetails({ event }: EventDetailsProps) {
   };
 
   const eventDates = event["Event Dates"] || [];
-  
-  const formatDateRange = (startDate: Date, endDate: Date) => {
+
+  // Get Vienna times from the first event date range (assuming Vienna is the base timezone)
+  const firstDateRange = eventDates[0];
+  const viennaStartTime = firstDateRange?.["Start Time"];
+  const viennaEndTime = firstDateRange?.["End Time"];
+  const eventDate = parseDate(firstDateRange?.["Start Date"]);
+
+  // Generate training times for all timezones based on Vienna time
+  const trainingTimes = generateTrainingTimes(
+    viennaStartTime,
+    viennaEndTime,
+    eventDate,
+  );
+
+  const formatDateRange = (
+    startDate: Date,
+    endDate: Date,
+    startTime?: string,
+    endTime?: string,
+  ) => {
     const startMonth = startDate.toLocaleDateString("en-GB", {
       month: "long",
     });
@@ -34,16 +111,32 @@ export function EventDetails({ event }: EventDetailsProps) {
     const startYear = startDate.getFullYear();
     const endYear = endDate.getFullYear();
 
+    // Format time display
+    const formatTime = (time?: string) => {
+      if (!time) return "";
+      return ` at ${time}`;
+    };
+
     if (startDate.getTime() === endDate.getTime()) {
-      return startDate.toLocaleDateString("en-GB", {
+      const dateStr = startDate.toLocaleDateString("en-GB", {
         day: "numeric",
         month: "long",
         year: "numeric",
       });
+      const timeStr =
+        startTime && endTime
+          ? ` ${startTime} - ${endTime}`
+          : formatTime(startTime);
+      return `${dateStr}${timeStr}`;
     }
 
     if (startMonth === endMonth && startYear === endYear) {
-      return `${startDate.getDate()} – ${endDate.getDate()} ${startMonth} ${startYear}`;
+      const dateStr = `${startDate.getDate()} – ${endDate.getDate()} ${startMonth} ${startYear}`;
+      const timeStr =
+        startTime && endTime
+          ? ` ${startTime} - ${endTime}`
+          : formatTime(startTime);
+      return `${dateStr}${timeStr}`;
     }
 
     if (startYear === endYear) {
@@ -56,7 +149,12 @@ export function EventDetails({ event }: EventDetailsProps) {
         month: "long",
         year: "numeric",
       });
-      return `${startFormatted} – ${endFormatted}`;
+      const dateStr = `${startFormatted} – ${endFormatted}`;
+      const timeStr =
+        startTime && endTime
+          ? ` ${startTime} - ${endTime}`
+          : formatTime(startTime);
+      return `${dateStr}${timeStr}`;
     }
 
     const startFormatted = startDate.toLocaleDateString("en-GB", {
@@ -69,24 +167,32 @@ export function EventDetails({ event }: EventDetailsProps) {
       month: "long",
       year: "numeric",
     });
-
-    return `${startFormatted} – ${endFormatted}`;
+    const dateStr = `${startFormatted} – ${endFormatted}`;
+    const timeStr =
+      startTime && endTime
+        ? ` ${startTime} - ${endTime}`
+        : formatTime(startTime);
+    return `${dateStr}${timeStr}`;
   };
 
   const formatAllDateRanges = () => {
     if (!eventDates || eventDates.length === 0) return "Date to be announced";
-    
-    const formattedRanges = eventDates.map((dateRange: any) => {
-      const startDate = parseDate(dateRange["Start Date"]);
-      const endDate = parseDate(dateRange["End Date"]);
-      
-      if (!startDate || !endDate) return null;
-      return formatDateRange(startDate, endDate);
-    }).filter(Boolean);
-    
+
+    const formattedRanges = eventDates
+      .map((dateRange: any) => {
+        const startDate = parseDate(dateRange["Start Date"]);
+        const endDate = parseDate(dateRange["End Date"]);
+        const startTime = dateRange["Start Time"];
+        const endTime = dateRange["End Time"];
+
+        if (!startDate || !endDate) return null;
+        return formatDateRange(startDate, endDate, startTime, endTime);
+      })
+      .filter(Boolean);
+
     if (formattedRanges.length === 0) return "Date to be announced";
     if (formattedRanges.length === 1) return formattedRanges[0];
-    
+
     // For multiple date ranges, display them vertically
     return formattedRanges.join("\n");
   };
@@ -108,7 +214,12 @@ export function EventDetails({ event }: EventDetailsProps) {
 
   const mutateOrder = useMutation({
     mutationKey: ["mutateOrder"],
-    mutationFn: async (params: { orderId?: string; sessionId?: string; field: string; value: unknown }) => {
+    mutationFn: async (params: {
+      orderId?: string;
+      sessionId?: string;
+      field: string;
+      value: unknown;
+    }) => {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -129,13 +240,17 @@ export function EventDetails({ event }: EventDetailsProps) {
 
     const slug = String(event.slug ?? "");
     try {
-      await mutateOrder.mutateAsync({ sessionId, field: "event_slug", value: slug });
+      await mutateOrder.mutateAsync({
+        sessionId,
+        field: "event_slug",
+        value: slug,
+      });
     } catch (e) {
       console.error("Failed to initialize draft order", e);
       return;
     }
 
-    router.push('/register');
+    router.push("/register");
   };
 
   return (
@@ -144,9 +259,11 @@ export function EventDetails({ event }: EventDetailsProps) {
         <div className="space-y-8">
           <div>
             <div className="text-xl font-semibold text-gray-900">
-              {formatAllDateRanges().split('\n').map((date: string, index: number) => (
-                <div key={index}>{date}</div>
-              ))}
+              {formatAllDateRanges()
+                .split("\n")
+                .map((date: string, index: number) => (
+                  <div key={index}>{date}</div>
+                ))}
             </div>
             {priceEUR != null && priceEUR > 0 && (
               <p className="mt-2 text-4xl font-bold text-gray-900">
@@ -171,27 +288,50 @@ export function EventDetails({ event }: EventDetailsProps) {
         </div>
 
         <div className="rounded-3xl border-2 border-[#FBBB00] p-8 px-10 shadow-sm">
-          <div className="flex gap-6">
+          <div className="flex items-center justify-around">
             <div className="tracking-wide">
-              <p className="mb-4 text-lg font-bold">TRAINING TIMES</p>
-              <ul className="space-y-2">
-                {TRAINING_TIMES.map(({ time, city }) => (
-                  <li key={city} className="flex gap-3 text-lg">
-                    <span className="font-mono">{time}</span>
-                    <span>{city}</span>
-                  </li>
-                ))}
-              </ul>
+              {event["Training Type"] === "in-person" ? (
+                <>
+                  <p className="mb-4 text-lg font-bold">TRAINING LOCATION</p>
+                  <div className="flex items-center gap-3 text-lg">
+                    <span className="font-semibold">
+                      {event["Training Location"] || "Location TBA"}
+                    </span>
+                  </div>
+                  <div className="pt-4 font-mono">
+                    {firstDateRange["Start Time"]} -{" "}
+                    {firstDateRange["End Time"]}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="mb-4 text-lg font-bold">TRAINING TIMES</p>
+                  <ul className="space-y-2">
+                    {trainingTimes.map(({ time, city }) => (
+                      <li key={city} className="flex gap-3 text-lg">
+                        <span className="font-mono">{time}</span>
+                        <span>{city}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
 
-            <div className="flex items-center justify-center flex-1 text-[#FBBB00]">
-              <Image
-                src="https://www.symmetric.events/wp-content/uploads/2025/06/online_training.jpg"
-                alt="Online Training"
-                width={150}
-                height={150}
-              />
-            </div>
+            <Image
+              src={
+                event["Training Type"] === "in-person"
+                  ? "https://www.symmetric.events/wp-content/uploads/2025/08/face2face.png"
+                  : "https://www.symmetric.events/wp-content/uploads/2025/06/online_training.jpg"
+              }
+              alt={
+                event["Training Type"] === "in-person"
+                  ? "In-Person Training"
+                  : "Online Training"
+              }
+              width={150}
+              height={150}
+            />
           </div>
         </div>
       </div>

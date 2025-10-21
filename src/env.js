@@ -15,6 +15,9 @@ export const env = createEnv({
     STRIPE_SECRET_KEY: z.string().min(1),
     STRIPE_WEBHOOK_SECRET: z.string().min(1),
     IDOKLAD_API_KEY: z.string().min(1).optional(),
+    IDOKLAD_CLIENT_ID: z.string().min(1).optional(),
+    IDOKLAD_CLIENT_SECRET: z.string().min(1).optional(),
+    IDOKLAD_APPLICATION_ID: z.string().min(1).optional(),
   },
 
   /**
@@ -24,6 +27,7 @@ export const env = createEnv({
    */
   client: {
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1),
+    NEXT_PUBLIC_APP_URL: z.url().optional(),
   },
 
   /**
@@ -37,8 +41,12 @@ export const env = createEnv({
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     IDOKLAD_API_KEY: process.env.IDOKLAD_API_KEY,
+    IDOKLAD_CLIENT_ID: process.env.IDOKLAD_CLIENT_ID,
+    IDOKLAD_CLIENT_SECRET: process.env.IDOKLAD_CLIENT_SECRET,
+    IDOKLAD_APPLICATION_ID: process.env.IDOKLAD_APPLICATION_ID,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

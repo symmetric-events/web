@@ -11,7 +11,7 @@ export function NavLink({ href, children, className = "" }: NavLinkProps) {
   return (
     <Link
       href={href}
-      className={`text-primary hover:text-secondary py-2 font-semibold transition-colors duration-300 whitespace-nowrap ${className}`}
+      className={`text-primary text-sm hover:text-secondary py-2 font-semibold transition-colors duration-300 whitespace-nowrap ${className}`}
     >
       {children}
     </Link>

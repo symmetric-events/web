@@ -74,71 +74,73 @@ export const ScrollNavigation: React.FC = () => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
-
   return (
     <>
       {isHomePage ? (
         <>
-          {/* Transparent Navigation (Homepage Only) */}
-          <header className="absolute top-0 right-0 left-0 z-50 bg-gradient-to-b from-black/40 to-transparent pt-5 pb-10">
-            <div className="mx-auto max-w-7xl px-5">
-              <div className="flex items-center justify-between">
-                <div className="logo">
-                  <Link href="/" className="no-underline">
-                    <Image
-                      src="/api/media/file/Symmetric.png"
-                      alt="Symmetric"
-                      width={200}
-                      height={0}
-                      className="w-32 sm:w-40 md:w-48 lg:w-52 xl:w-56"
-                    />
-                  </Link>
-                </div>
-                
-                {/* Desktop Navigation */}
-                <div className="hidden lg:block">
-                  <NavigationMenu />
-                </div>
+          {/* Transparent Navigation (Homepage Only - When Not Scrolled) */}
+          {!isScrolled && (
+            <header className="absolute top-0 right-0 left-0 z-50 bg-gradient-to-b from-black/40 to-transparent py-4">
+              <div className="mx-auto max-w-7xl px-5">
+                <div className="flex items-center justify-between lg:justify-around">
+                  <div className="logo">
+                    <Link href="/" className="no-underline">
+                      <Image
+                        src="/api/media/file/Symmetric.png"
+                        alt="Symmetric"
+                        width={200}
+                        height={0}
+                        className="w-32 sm:w-40 md:w-48 lg:w-52 xl:w-56"
+                      />
+                    </Link>
+                  </div>
+                  
+                  {/* Desktop Navigation */}
+                  <div className="hidden lg:block">
+                    <NavigationMenu />
+                  </div>
 
-                {/* Mobile Menu Button */}
-                <button
-                  className="lg:hidden text-white p-2"
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  aria-label="Toggle mobile menu"
-                >
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                  {/* Mobile Menu Button */}
+                  <button
+                    className="lg:hidden text-white p-2"
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    aria-label="Toggle mobile menu"
                   >
-                    {isMobileMenuOpen ? (
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    ) : (
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 6h16M4 12h16M4 18h16"
-                      />
-                    )}
-                  </svg>
-                </button>
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      {isMobileMenuOpen ? (
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      ) : (
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 6h16M4 12h16M4 18h16"
+                        />
+                      )}
+                    </svg>
+                  </button>
+                </div>
               </div>
-
-            </div>
-          </header>
+            </header>
+          )}
 
           {/* Fixed Black Navigation (Homepage - When Scrolled) */}
-          <StaticNavigation 
-            isMobileMenuOpen={isMobileMenuOpen} 
-            setIsMobileMenuOpen={setIsMobileMenuOpen} 
-          />
+          {isScrolled && (
+            <StaticNavigation 
+              isMobileMenuOpen={isMobileMenuOpen} 
+              setIsMobileMenuOpen={setIsMobileMenuOpen} 
+            />
+          )}
         </>
       ) : (
         /* Fixed Black Navigation (All Other Pages) */
@@ -168,7 +170,7 @@ const StaticNavigation: React.FC<StaticNavigationProps> = ({ isMobileMenuOpen, s
   return (
     <header className="fixed top-0 right-0 left-0 z-50 bg-black">
       <div className="mx-auto max-w-7xl px-5">
-        <div className="flex items-center justify-between py-4">
+        <div className="flex items-center justify-between lg:justify-around py-4">
           <div className="logo">
             <Link href="/" className="no-underline">
               <Image
@@ -183,7 +185,7 @@ const StaticNavigation: React.FC<StaticNavigationProps> = ({ isMobileMenuOpen, s
           
           {/* Desktop Navigation */}
           <div className="hidden lg:block">
-            <NavigationMenu className="mt-1" />
+            <NavigationMenu />
           </div>
 
           {/* Mobile Menu Button */}

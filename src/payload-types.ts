@@ -178,13 +178,29 @@ export interface Event {
   category: (number | Category)[];
   'Event Dates': {
     'Start Date': string;
+    /**
+     * Format: HH:MM (24-hour format, e.g., 09:00, 14:30)
+     */
+    'Start Time'?: string | null;
     'End Date': string;
+    /**
+     * Format: HH:MM (24-hour format, e.g., 17:00, 18:30)
+     */
+    'End Time'?: string | null;
     id?: string | null;
   }[];
   Price: {
     USD: number;
     EUR: number;
   };
+  /**
+   * Select whether this training will be conducted online or in-person
+   */
+  'Training Type': 'online' | 'in-person';
+  /**
+   * Enter the physical location for in-person training (e.g., "Vienna, Austria", "London, UK")
+   */
+  'Training Location'?: string | null;
   Description?: string | null;
   'Featured Image'?: string | null;
   'Key Topic'?:
@@ -446,7 +462,9 @@ export interface EventsSelect<T extends boolean = true> {
     | T
     | {
         'Start Date'?: T;
+        'Start Time'?: T;
         'End Date'?: T;
+        'End Time'?: T;
         id?: T;
       };
   Price?:
@@ -455,6 +473,8 @@ export interface EventsSelect<T extends boolean = true> {
         USD?: T;
         EUR?: T;
       };
+  'Training Type'?: T;
+  'Training Location'?: T;
   Description?: T;
   'Featured Image'?: T;
   'Key Topic'?:

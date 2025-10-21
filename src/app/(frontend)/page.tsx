@@ -75,28 +75,38 @@ export default async function HomePage() {
           </div>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {latest.docs.map((event: any) => {
-              // Handle multiple date ranges - use first date range or fallback to legacy field
+              // Handle multiple date ranges - use first range when available
               const eventDates = event["Event Dates"] || [];
-              let displayDate = "Date to be announced";
-              
-              if (eventDates && eventDates.length > 0) {
-                const firstDateRange = eventDates[0];
-                if (firstDateRange["Start Date"]) {
-                  displayDate = firstDateRange["Start Date"];
-                }
-              } else if (event["Start Date"]) {
-                // Fallback to legacy field for backward compatibility
-                displayDate = event["Start Date"];
+              const firstDateRange = Array.isArray(eventDates) && eventDates.length > 0 ? eventDates[0] : undefined;
+
+              const startDate = firstDateRange?.["Start Date"] || event["Start Date"] || undefined;
+              const endDate = firstDateRange?.["End Date"] || event["End Date"] || undefined;
+              const startTime = firstDateRange?.["Start Time"] || undefined;
+              const endTime = firstDateRange?.["End Time"] || undefined;
+
+              // Featured image resolution: supports absolute URLs or payload file proxy
+              const featured = event["Featured Image"] as string | undefined;
+              let featuredImage: string | undefined = undefined;
+              if (featured) {
+                featuredImage = /^https?:\/\//i.test(featured)
+                  ? featured
+                  : `/api/media/file/${encodeURIComponent(featured)}`;
               }
 
               return (
                 <CourseCard
                   key={event.id}
                   title={event.Title}
-                  date={displayDate}
                   slug={event.slug}
                   status="Upcoming"
                   statusColor="green"
+                  trainingType={event['Training Type']}
+                  trainingLocation={event['Training Location']}
+                  featuredImage={featuredImage}
+                  startDate={startDate}
+                  endDate={endDate}
+                  startTime={startTime}
+                  endTime={endTime}
                 />
               );
             })}

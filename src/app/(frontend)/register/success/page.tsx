@@ -12,7 +12,7 @@ function CheckoutSuccessContent() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-gray-100 pt-22">
       <div className="max-w-2xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-lg p-8 text-center">
           <div className="mb-6">
@@ -36,24 +36,24 @@ function CheckoutSuccessContent() {
               {paymentMethod === 'invoice' ? (
                 <>
                   <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 text-sm font-medium">1</span>
+                    <div className="flex-shrink-0 w-6 h-6 bg-[#FF9800]/10 rounded-full flex items-center justify-center">
+                      <span className="text-secondary text-sm font-medium">1</span>
                     </div>
                     <p className="text-gray-700">
-                      You will receive an invoice via email within the next few minutes with payment terms (Net 30).
+                      You will receive an invoice via email within the next few minutes with payment terms.
                     </p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 text-sm font-medium">2</span>
+                    <div className="flex-shrink-0 w-6 h-6 bg-[#FF9800]/10 rounded-full flex items-center justify-center">
+                      <span className="text-secondary text-sm font-medium">2</span>
                     </div>
                     <p className="text-gray-700">
                       Once payment is received, you will get a confirmation email with your registration details.
                     </p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 text-sm font-medium">3</span>
+                    <div className="flex-shrink-0 w-6 h-6 bg-[#FF9800]/10 rounded-full flex items-center justify-center">
+                      <span className="text-secondary text-sm font-medium">3</span>
                     </div>
                     <p className="text-gray-700">
                       Training materials and access instructions will be sent closer to the event date.
@@ -63,24 +63,24 @@ function CheckoutSuccessContent() {
               ) : (
                 <>
                   <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 text-sm font-medium">1</span>
+                    <div className="flex-shrink-0 w-6 h-6 bg-[#FF9800]/10 rounded-full flex items-center justify-center">
+                      <span className="text-secondary text-sm font-medium">1</span>
                     </div>
                     <p className="text-gray-700">
                       You will receive a confirmation email with your registration details within the next few minutes.
                     </p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 text-sm font-medium">2</span>
+                    <div className="flex-shrink-0 w-6 h-6 bg-[#FF9800]/10 rounded-full flex items-center justify-center">
+                      <span className="text-secondary text-sm font-medium">2</span>
                     </div>
                     <p className="text-gray-700">
                       Training materials and access instructions will be sent to you closer to the event date.
                     </p>
                   </div>
                   <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 text-sm font-medium">3</span>
+                    <div className="flex-shrink-0 w-6 h-6 bg-[#FF9800]/10 rounded-full flex items-center justify-center">
+                      <span className="text-secondary text-sm font-medium">3</span>
                     </div>
                     <p className="text-gray-700">
                       If you have any questions, please contact our support team.
@@ -94,7 +94,7 @@ function CheckoutSuccessContent() {
           <div className="space-y-4">
             <Link
               href="/events"
-              className="inline-flex items-center justify-center w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
+              className="inline-flex items-center justify-center w-full bg-secondary hover:text-secondary hover:bg-transparent border-2 border-secondary text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
             >
               Browse More Events
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -106,12 +106,6 @@ function CheckoutSuccessContent() {
             >
               Contact Support
             </Link>
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-500">
-              Session ID: {sessionId}
-            </p>
           </div>
         </div>
       </div>

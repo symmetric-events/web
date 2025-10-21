@@ -19,8 +19,7 @@ export function EventHeader({ event }: EventHeaderProps) {
       <div className="mx-auto py-8">
         <Image
           src={
-            imageUrl ||
-            "https://www.symmetric.events/wp-content/uploads/2025/08/SYM_062_1200x350_web-HDR.jpg"
+            event["Featured Image"] 
           }
           alt={event.Title || "Event image"}
           width={1000}

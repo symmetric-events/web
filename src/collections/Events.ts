@@ -72,9 +72,41 @@ export const Events: CollectionConfig = {
           required: true,
         },
         {
+          name: 'Start Time',
+          type: 'text',
+          admin: {
+            description: 'Format: HH:MM (24-hour format, e.g., 09:00, 14:30)',
+            placeholder: '09:00',
+          },
+          validate: (value: string | string[] | null | undefined) => {
+            if (!value || Array.isArray(value)) return true; // Optional field
+            const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+            if (!timeRegex.test(value)) {
+              return 'Please enter time in HH:MM format (24-hour)';
+            }
+            return true;
+          },
+        },
+        {
           name: 'End Date',
           type: 'date',
           required: true,
+        },
+        {
+          name: 'End Time',
+          type: 'text',
+          admin: {
+            description: 'Format: HH:MM (24-hour format, e.g., 17:00, 18:30)',
+            placeholder: '17:00',
+          },
+          validate: (value: string | string[] | null | undefined) => {
+            if (!value || Array.isArray(value)) return true; // Optional field
+            const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+            if (!timeRegex.test(value)) {
+              return 'Please enter time in HH:MM format (24-hour)';
+            }
+            return true;
+          },
         },
       ],
     },
@@ -97,6 +129,27 @@ export const Events: CollectionConfig = {
           defaultValue: 0,
         },
       ],
+    },
+    {
+      name: 'Training Type',
+      type: 'select',
+      required: true,
+      defaultValue: 'online',
+      options: [
+        { label: 'Online', value: 'online' },
+        { label: 'In-Person', value: 'in-person' },
+      ],
+      admin: {
+        description: 'Select whether this training will be conducted online or in-person',
+      },
+    },
+    {
+      name: 'Training Location',
+      type: 'text',
+      admin: {
+        condition: (data) => data['Training Type'] === 'in-person',
+        description: 'Enter the physical location for in-person training (e.g., "Vienna, Austria", "London, UK")',
+      },
     },
     {
       name: 'Description',
