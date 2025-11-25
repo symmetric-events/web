@@ -42,7 +42,7 @@ export default async function TrainersPage() {
               {trainers.map((trainer) => (
                 <TrainerCard
                   key={trainer.id}
-                  id={trainer.id}
+                  slug={trainer.slug || trainer.id}
                   name={trainer.name}
                   position={trainer.position}
                   excerpt={trainer.excerpt || trainer.biography}

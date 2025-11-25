@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import config from "~/payload.config";
 import { EventDetails } from "./components/EventDetails";
+import { EventPricing } from "./components/EventPricing";
 import { EventWhyAttend } from "./components/EventWhyAttend";
 import { EventTrainingExperience } from "./components/EventTrainingExperience";
 import { EventLearningObjectives } from "./components/EventLearningObjectives";
@@ -56,6 +57,8 @@ export default async function EventPage({ params }: Props) {
           <EventTrainers event={event} />
           <br />
           <EventTestimonials event={event} />
+          <br />
+          <EventPricing event={event} />
         </div>
       </div>
     );

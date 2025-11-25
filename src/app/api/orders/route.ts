@@ -2,6 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '~/payload.config'
+import { buildAirtablePayload } from '~/lib/airtable'
+import { env } from '~/env'
+import { getPriceFromDates } from '~/lib/pricing'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -11,8 +14,30 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const sessionId = searchParams.get('sessionId') || undefined
+    const testAirtable = searchParams.get('testAirtable') === 'true'
 
     const payload = await getPayload({ config })
+    
+    if (testAirtable) {
+      // Get latest order for testing
+      const found = await payload.find({
+        collection: 'orders',
+        sort: '-createdAt',
+        limit: 1,
+      })
+      const order = found.docs?.[0]
+      if (!order) {
+        return NextResponse.json({ error: 'No orders found' }, { status: 404 })
+      }
+      
+      // Build Airtable payload
+      const airtablePayload = buildAirtablePayload(order as any)
+      return NextResponse.json({
+        order: order,
+        airtablePayload: airtablePayload
+      })
+    }
+    
     if (sessionId) {
       const found = await payload.find({
         collection: 'orders',
@@ -42,6 +67,55 @@ export async function POST(request: NextRequest) {
 
     const payload = await getPayload({ config })
 
+    // Special test Airtable branch
+    if (field === 'test_airtable') {
+      // Get latest order
+      const found = await payload.find({
+        collection: 'orders',
+        sort: '-createdAt',
+        limit: 1,
+      })
+      const order = found.docs?.[0]
+      if (!order) {
+        return NextResponse.json({ error: 'No orders found' }, { status: 404 })
+      }
+
+      // Build Airtable payload
+      const airtablePayload = buildAirtablePayload(order as any)
+      
+      // Post to Hookdeck webhook
+      try {
+        const webhookUrl = 'https://hkdk.events/dm3pw8amcsw1dt'
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(airtablePayload),
+        })
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          throw new Error(`Webhook error: ${response.status} ${errorText}`)
+        }
+
+        const result = await response.json()
+        return NextResponse.json({
+          success: true,
+          order: order,
+          airtablePayload: airtablePayload,
+          webhookResult: result
+        })
+      } catch (error) {
+        console.error('Failed to post to webhook:', error)
+        return NextResponse.json({ 
+          error: 'Failed to post to webhook', 
+          details: error instanceof Error ? error.message : 'Unknown error',
+          airtablePayload: airtablePayload
+        }, { status: 500 })
+      }
+    }
+
     // Special create-from-event branch
     if (field === 'event_slug') {
       if (!value || typeof value !== 'string') {
@@ -58,9 +132,19 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Event not found' }, { status: 404 })
       }
 
-      // Prices in both currencies (rounded whole units)
-      const priceEUR = eventDoc?.Price?.EUR
-      const priceUSD = eventDoc?.Price?.USD
+      // Derive price globally from event duration (2-day / 3-day pricing)
+      const eventDates = eventDoc?.['Event Dates'] || []
+      const firstDateRange =
+        Array.isArray(eventDates) && eventDates.length > 0
+          ? eventDates[0]
+          : undefined
+      const startISO = firstDateRange?.['Start Date']
+      const endISO = firstDateRange?.['End Date']
+      const derivedPrice = getPriceFromDates(startISO, endISO)
+
+      // Prices in both currencies (same numeric value for simplicity)
+      const priceEUR = derivedPrice
+      const priceUSD = derivedPrice
       // Prepare order data
       const data: any = {
         status: 'draft',

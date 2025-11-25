@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "next/navigation";
 import {
   Building,
   CreditCard,
@@ -19,8 +20,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { CountryDropdown } from "react-country-region-selector";
 import ReactSelect from "react-select";
+import { getPriceForQuantity } from "~/lib/pricing";
 
 type ReactSelectOption = {
   label: string;
@@ -59,6 +68,9 @@ type FormErrors = Partial<
 >;
 
 export default function RegisterForm() {
+  const searchParams = useSearchParams();
+  const hasProcessedUrlQuantity = useRef(false);
+  
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -95,8 +107,19 @@ export default function RegisterForm() {
     ReactSelectOption | undefined
   >();
   const [participants, setParticipants] = useState<
-    { name: string; email: string }[]
-  >([{ name: "", email: "" }]);
+    { name: string; email: string; jobPosition: string }[]
+  >([{ name: "", email: "", jobPosition: "" }]);
+  const [editingParticipant, setEditingParticipant] = useState<number | null>(
+    null,
+  );
+  const [discountCode, setDiscountCode] = useState<string>("");
+  const [discount, setDiscount] = useState<
+    { code: string; type: "percentage" | "flat"; value: number } | undefined
+  >(undefined);
+  const [discountError, setDiscountError] = useState<string | undefined>(
+    undefined,
+  );
+  const [showDiscountInput, setShowDiscountInput] = useState<boolean>(false);
 
   // Custom render function for React Select integration
   const customRender = (props: any) => {
@@ -299,8 +322,10 @@ export default function RegisterForm() {
     },
   });
 
-  // Keep local quantity in sync with order when it changes
+
+  // Keep local quantity in sync with order when it changes (but only if we haven't processed URL param)
   useEffect(() => {
+    if (hasProcessedUrlQuantity.current) return;
     const q = orderQuery.data?.quantity;
     if (typeof q === "number" && Number.isFinite(q) && q > 0) {
       setQuantity(q);
@@ -316,6 +341,7 @@ export default function RegisterForm() {
         const toAdd = Array.from({ length: target - prev.length }, () => ({
           name: "",
           email: "",
+          jobPosition: "",
         }));
         return [...prev, ...toAdd];
       }
@@ -374,6 +400,21 @@ export default function RegisterForm() {
     },
   });
 
+  // Read quantity from URL params on initial load (only once)
+  // Note: EventPricing already saves the quantity to the API, so we just need to set it locally
+  useEffect(() => {
+    if (hasProcessedUrlQuantity.current) return;
+    const quantityParam = searchParams.get("quantity");
+    if (quantityParam) {
+      const parsedQuantity = parseInt(quantityParam, 10);
+      if (!isNaN(parsedQuantity) && parsedQuantity >= 1 && parsedQuantity <= 1000) {
+        hasProcessedUrlQuantity.current = true;
+        setQuantity(parsedQuantity);
+        // Don't save here - EventPricing already saved it before navigation
+      }
+    }
+  }, [searchParams]);
+
   useEffect(() => {
     if (
       orderQuery.data?.currency === "USD" ||
@@ -385,13 +426,13 @@ export default function RegisterForm() {
 
   function validate(): boolean {
     const next: FormErrors = {};
-    
+
     // Basic required fields
     if (!formData.email) next.email = "Email is required";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       next.email = "Please enter a valid email address";
     }
-    
+
     if (!formData.firstName) next.firstName = "First name is required";
     if (!formData.lastName) next.lastName = "Last name is required";
     if (!formData.phone) next.phone = "Phone is required";
@@ -400,26 +441,31 @@ export default function RegisterForm() {
     if (!formData.address1) next.address1 = "Address is required";
     if (!formData.city) next.city = "City is required";
     if (!formData.postcode) next.postcode = "Postcode is required";
-    
+
     // Event date validation
     if (!orderQuery.data?.startDate || !orderQuery.data?.endDate) {
       next.eventDate = "Please select an event date";
     }
-    
+
     // Participant validation
-    const invalidParticipants = participants.some(p => !p.name.trim() || !p.email.trim());
+    const invalidParticipants = participants.some(
+      (p) => !p.name.trim() || !p.email.trim(),
+    );
     if (invalidParticipants) {
-      next.participants = "All participants must have both name and email";
+      next.participants =
+        "All participants must have  name  email and job position";
     }
-    
+
     // Validate participant emails
-    const invalidParticipantEmails = participants.some(p => 
-      p.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email.trim())
+    const invalidParticipantEmails = participants.some(
+      (p) =>
+        p.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email.trim()),
     );
     if (invalidParticipantEmails) {
-      next.participants = "Please enter valid email addresses for all participants";
+      next.participants =
+        "Please enter valid email addresses for all participants";
     }
-    
+
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -450,15 +496,16 @@ export default function RegisterForm() {
 
   function handleParticipantChange(
     index: number,
-    field: "name" | "email",
+    field: "name" | "email" | "jobPosition",
     value: string,
   ) {
     setParticipants((prev) => {
       const next = [...prev];
-      const current = next[index] ?? { name: "", email: "" };
+      const current = next[index] ?? { name: "", email: "", jobPosition: "" };
       next[index] = { ...current, [field]: value } as {
         name: string;
         email: string;
+        jobPosition: string;
       };
       return next;
     });
@@ -510,16 +557,122 @@ export default function RegisterForm() {
     setErrors({});
   }
 
-  const formattedTotal = useMemo(() => {
+  const priceBreakdown = useMemo(() => {
     const order = orderQuery.data;
-    if (!order) return "—";
-    const unit =
-      currency === "EUR" ? (order.priceEUR ?? 0) : (order.priceUSD ?? 0);
+    if (!order) return null;
+    
     const qty = quantity ?? 1;
-    const total = unit * qty;
+    
+    // Get base unit price for 1 participant (for display purposes)
+    const unitPrice =
+      currency === "EUR" ? (order.priceEUR ?? 0) : (order.priceUSD ?? 0);
+    
+    // Calculate subtotal (full price * quantity) for display
+    const subtotal = unitPrice * qty;
+    
+    // Get the actual price for this quantity based on event dates
+    // This uses the new pricing structure (2-day: 1500/2300/3000, 3-day: 1750/2800/3500)
+    let actualPrice = unitPrice;
+    let groupDiscount = 0;
+    
+    if (order.startDate && order.endDate) {
+      // Calculate the maximum discount (achieved at 3 participants)
+      const priceFor3 = getPriceForQuantity(
+        order.startDate,
+        order.endDate,
+        3,
+      );
+      const subtotalFor3 = unitPrice * 3;
+      const maxDiscount = Math.max(0, subtotalFor3 - priceFor3);
+      
+      // Get price for current quantity
+      const priceForQty = getPriceForQuantity(
+        order.startDate,
+        order.endDate,
+        qty,
+      );
+      // Convert to USD if needed (assuming 1:1 conversion for now, adjust if needed)
+      actualPrice =
+        currency === "USD"
+          ? priceForQty
+          : priceForQty; // TODO: Add USD conversion if needed
+      
+      // Calculate discount for current quantity
+      const currentDiscount = Math.max(0, subtotal - actualPrice);
+      
+      // For 4+ participants, always use the maximum discount (from 3 participants)
+      if (qty >= 4) {
+        groupDiscount = maxDiscount;
+        // Recalculate actual price to ensure discount stays at maximum
+        actualPrice = subtotal - maxDiscount;
+      } else {
+        groupDiscount = currentDiscount;
+      }
+    } else {
+      // Fallback: if no dates, use old discount logic for backward compatibility
+      if (qty === 2) {
+        actualPrice = unitPrice * 2 - 500;
+        groupDiscount = 500;
+      } else if (qty === 3) {
+        actualPrice = unitPrice * 3 - 1500;
+        groupDiscount = 1500;
+      } else {
+        // For 4+, maintain the same discount as 3 participants
+        const maxDiscount = 1500; // Discount for 3 participants
+        groupDiscount = maxDiscount;
+        actualPrice = subtotal - maxDiscount;
+      }
+    }
+    
+    // Apply discount code on top of the actual price
+    let discountCodeAmount = 0;
+    if (discount) {
+      if (discount.type === "percentage") {
+        discountCodeAmount = (actualPrice * discount.value) / 100;
+      } else {
+        discountCodeAmount = discount.value;
+      }
+    }
+    
+    const finalTotal = Math.max(0, actualPrice - discountCodeAmount);
+    
+    return {
+      subtotal,
+      groupDiscount,
+      discountCodeAmount,
+      finalTotal,
+    };
+  }, [orderQuery.data, currency, quantity, discount]);
+
+  const formattedTotal = useMemo(() => {
+    if (!priceBreakdown) return "—";
     const symbol = currency === "EUR" ? "€" : "$";
-    return `${symbol} ${total.toLocaleString(undefined, { minimumFractionDigits: 0 })}`;
-  }, [orderQuery.data, currency, quantity]);
+    return `${symbol} ${priceBreakdown.finalTotal.toLocaleString(undefined, { minimumFractionDigits: 0 })}`;
+  }, [priceBreakdown, currency]);
+
+  async function validateDiscount(code: string) {
+    setDiscountError(undefined);
+    setDiscount(undefined);
+    const trimmed = code.trim();
+    if (!trimmed) return;
+    try {
+      const res = await fetch(
+        `/api/discount?code=${encodeURIComponent(trimmed)}`,
+        {
+          method: "GET",
+          cache: "no-store",
+        },
+      );
+      const data = await res.json();
+      if (!res.ok || !data?.valid) {
+        setDiscountError(data?.message || "Invalid code");
+        return;
+      }
+      setDiscount({ code: data.code, type: data.type, value: data.value });
+    } catch (e) {
+      setDiscountError("Failed to validate code");
+    }
+  }
 
   async function handleSubmit() {
     if (!validate()) return;
@@ -527,9 +680,35 @@ export default function RegisterForm() {
     setIsProcessing(true);
     try {
       const order = orderQuery.data;
-      const priceWhole =
-        currency === "EUR" ? (order.priceEUR ?? 0) : (order.priceUSD ?? 0);
-      const priceInCents = Math.round(priceWhole * 100);
+      const qty = quantity ?? order.quantity ?? 1;
+
+      // Get the actual price for this quantity based on event dates
+      // This uses the new pricing structure (2-day: 1500/2300/3000, 3-day: 1750/2800/3500)
+      let total = 0;
+      if (order.startDate && order.endDate) {
+        total = getPriceForQuantity(order.startDate, order.endDate, qty);
+        // Convert to USD if needed (assuming 1:1 conversion for now, adjust if needed)
+        if (currency === "USD") {
+          total = total; // TODO: Add USD conversion if needed
+        }
+      } else {
+        // Fallback: if no dates, use base price * quantity
+        const unitPrice =
+          currency === "EUR" ? (order.priceEUR ?? 0) : (order.priceUSD ?? 0);
+        total = unitPrice * qty;
+      }
+
+      // Apply manual discount code on top (if any)
+      if (discount) {
+        if (discount.type === "percentage") {
+          total = Math.max(0, total - (total * discount.value) / 100);
+        } else {
+          total = Math.max(0, total - discount.value);
+        }
+      }
+
+      const effectiveUnit = total / qty;
+      const priceInCents = Math.round(effectiveUnit * 100);
       const items = [
         {
           eventId: order.id,
@@ -579,7 +758,7 @@ export default function RegisterForm() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+    <div className="grid-cols-5 gap-8 md:grid">
       <div className="col-span-3 rounded-lg bg-white p-6 shadow-lg">
         <div className="mb-6 flex items-center">
           <User className="text-secondary mr-2 h-5 w-5" />
@@ -989,7 +1168,7 @@ export default function RegisterForm() {
         </form>
       </div>
 
-      <div className="col-span-2">
+      <div className="col-span-2 mt-10 md:mt-0">
         <div className="sticky top-24 rounded-lg bg-white p-6 shadow-lg">
           <div className="mb-6 flex items-center">
             <Building className="text-secondary mr-2 h-5 w-5" />
@@ -998,11 +1177,46 @@ export default function RegisterForm() {
 
           <div className="mb-6 space-y-4">
             {orderQuery.data ? (
-              <div className="border-b border-gray-200 py-4">
+              <div className="border-b border-gray-200 ">
                 <div className="mb-1 text-sm text-gray-600">Event</div>
                 <div className="text-lg font-medium text-gray-900">
                   {orderQuery.data.eventTitle || "Event"}
                 </div>
+                {availableDateRanges.length > 0 && (
+                  <div className="my-5">
+                    {availableDateRanges.map((dateRange) => {
+                      const selected =
+                        orderQuery.data?.startDate === dateRange.startDate &&
+                        orderQuery.data?.endDate === dateRange.endDate;
+                      return (
+                        <label
+                          key={dateRange.id}
+                          className="flex cursor-pointer items-center space-x-2"
+                        >
+                          <input
+                            type="radio"
+                            name={`dateRange`}
+                            value={dateRange.id}
+                            checked={selected}
+                            onChange={() => handleSelectDateRange(dateRange)}
+                            className="text-secondary focus:ring-secondary h-4 w-4 cursor-pointer"
+                          />
+                          <span className="text-sm text-gray-900">
+                            {formatDateRange(
+                              new Date(dateRange.startDate),
+                              new Date(dateRange.endDate),
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
+                    {errors.eventDate && (
+                      <p className="mt-2 text-sm text-red-600">
+                        {errors.eventDate}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-sm text-gray-500">
@@ -1011,51 +1225,12 @@ export default function RegisterForm() {
             )}
           </div>
 
-          {availableDateRanges.length > 0 && (
-            <div className="my-5">
-              <label className="mb-2 block text-sm font-medium text-gray-900">
-                Select event date:
-              </label>
-              <div className="space-y-2">
-                {availableDateRanges.map((dateRange) => {
-                  const selected =
-                    orderQuery.data?.startDate === dateRange.startDate &&
-                    orderQuery.data?.endDate === dateRange.endDate;
-                  return (
-                    <label
-                      key={dateRange.id}
-                      className="flex cursor-pointer items-center space-x-2"
-                    >
-                      <input
-                        type="radio"
-                        name={`dateRange`}
-                        value={dateRange.id}
-                        checked={selected}
-                        onChange={() => handleSelectDateRange(dateRange)}
-                        className="text-secondary focus:ring-secondary h-4 w-4"
-                      />
-                      <span className="text-sm text-gray-900">
-                        {formatDateRange(
-                          new Date(dateRange.startDate),
-                          new Date(dateRange.endDate),
-                        )}
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-              {errors.eventDate && (
-                <p className="mt-2 text-sm text-red-600">{errors.eventDate}</p>
-              )}
-            </div>
-          )}
-
           {/* Seats Input */}
           <div className="mt-5">
-            <label className="text-sm font-medium text-gray-900">
-              Number of seats:
+            <label className="mb-2 block text-sm font-medium text-gray-900">
+              Number of participants:
             </label>
-            <div className="mt-2 flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <button
                 type="button"
                 onClick={() =>
@@ -1088,36 +1263,26 @@ export default function RegisterForm() {
           </div>
 
           {/* Participants section */}
-          <div className="mt-5">
+          <div className="mt-5 border-b border-gray-200 pb-5">
             <div className="space-y-3">
               {participants.map((p, idx) => (
-                <div key={idx}>
-                  <label
-                    htmlFor="name"
-                    className="block text-sm font-medium text-gray-900"
-                  >
-                    Participant {idx + 1}
-                  </label>
-                  <div
-                    className="grid grid-cols-1 gap-2 md:grid-cols-2"
-                  >
-                    <Input
-                      type="text"
-                      value={p.name}
-                      onChange={(e) =>
-                        handleParticipantChange(idx, "name", e.target.value)
-                      }
-                      placeholder={`Name`}
-                    />
-                    <Input
-                      type="email"
-                      value={p.email}
-                      onChange={(e) =>
-                        handleParticipantChange(idx, "email", e.target.value)
-                      }
-                      placeholder={`Email`}
-                    />
+                <div
+                  key={idx}
+                  className="flex items-center justify-between gap-2 rounded border p-2"
+                >
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="font-medium text-gray-900">
+                      Participant {idx + 1}:
+                    </span>
+                    <span className="text-gray-600">{p.name || "not set"}</span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditingParticipant(idx)}
+                    className="rounded-md border px-3 py-1 text-sm hover:bg-gray-50"
+                  >
+                    Edit
+                  </button>
                 </div>
               ))}
               {errors.participants && (
@@ -1126,37 +1291,192 @@ export default function RegisterForm() {
             </div>
           </div>
 
+          {/* Participant editor modal */}
+          <Dialog
+            open={editingParticipant !== null}
+            onOpenChange={(open) => !open && setEditingParticipant(null)}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Participant details</DialogTitle>
+              </DialogHeader>
+              {typeof editingParticipant === "number" &&
+                participants[editingParticipant] && (
+                  <div className="grid grid-cols-1 gap-3">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-900">
+                        Name
+                      </label>
+                      <Input
+                        type="text"
+                        value={participants[editingParticipant].name}
+                        onChange={(e) =>
+                          handleParticipantChange(
+                            editingParticipant,
+                            "name",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="Full name"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-900">
+                        Email
+                      </label>
+                      <Input
+                        type="email"
+                        value={participants[editingParticipant].email}
+                        onChange={(e) =>
+                          handleParticipantChange(
+                            editingParticipant,
+                            "email",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="Email address"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-900">
+                        Job Position
+                      </label>
+                      <Input
+                        type="text"
+                        value={participants[editingParticipant].jobPosition}
+                        onChange={(e) =>
+                          handleParticipantChange(
+                            editingParticipant,
+                            "jobPosition",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="e.g. Senior QA Engineer"
+                      />
+                    </div>
+                  </div>
+                )}
+              <DialogFooter>
+                <button
+                  type="button"
+                  onClick={() => setEditingParticipant(null)}
+                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                  Done
+                </button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           <div>
+            {/* discount code input */}
             <div className="my-4">
-              <h4 className="mb-2 text-sm font-medium text-gray-900">
-                Currency
-              </h4>
-              <div className="flex items-center gap-4">
-                <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-gray-800">
-                  <input
-                    type="radio"
-                    name="currency"
-                    value="EUR"
-                    checked={currency === "EUR"}
-                    onChange={() => handleCurrencyChange("EUR")}
-                  />
-                  EUR
-                </label>
-                <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-gray-800">
-                  <input
-                    type="radio"
-                    name="currency"
-                    value="USD"
-                    checked={currency === "USD"}
-                    onChange={() => handleCurrencyChange("USD")}
-                  />
-                  USD
-                </label>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowDiscountInput((v) => !v)}
+                className="mb-2 text-left text-sm font-medium text-gray-900 underline underline-offset-4 hover:text-gray-700"
+                aria-expanded={showDiscountInput}
+                aria-controls="discount-code-container"
+              >
+                Discount code
+              </button>
+              {showDiscountInput && (
+                <div id="discount-code-container">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Enter discount code"
+                      value={discountCode}
+                      onChange={(e) => {
+                        setDiscountCode(e.target.value);
+                        if (discountError) setDiscountError(undefined);
+                      }}
+                      onBlur={() => validateDiscount(discountCode)}
+                    />
+                  </div>
+                  {discount && (
+                    <p className="mt-1 text-sm text-green-600">
+                      Code applied: {discount.code}{" "}
+                      {discount.type === "percentage"
+                        ? `(${discount.value}% off)`
+                        : `(-${discount.value} ${currency})`}
+                    </p>
+                  )}
+                  {discountError && (
+                    <p className="mt-1 text-sm text-red-600">{discountError}</p>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="flex items-center justify-between text-lg font-semibold text-gray-900">
-              <span>Total:</span>
-              <span className="flex items-center gap-2">{formattedTotal}</span>
+            <div className="space-y-2">
+              {priceBreakdown && (
+                <div className="space-y-1 text-sm text-gray-600">
+                  <div className="flex justify-between">
+                    <span>Subtotal:</span>
+                    <span>
+                      {currency === "EUR" ? "€" : "$"}{" "}
+                      {priceBreakdown.subtotal.toLocaleString(undefined, {
+                        minimumFractionDigits: 0,
+                      })}
+                    </span>
+                  </div>
+                  {priceBreakdown.groupDiscount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Group Discount:</span>
+                      <span>
+                        -{currency === "EUR" ? "€" : "$"}{" "}
+                        {priceBreakdown.groupDiscount.toLocaleString(undefined, {
+                          minimumFractionDigits: 0,
+                        })}
+                      </span>
+                    </div>
+                  )}
+                  {priceBreakdown.discountCodeAmount > 0 && discount && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discount Code ({discount.code}):</span>
+                      <span>
+                        -{currency === "EUR" ? "€" : "$"}{" "}
+                        {priceBreakdown.discountCodeAmount.toLocaleString(
+                          undefined,
+                          { minimumFractionDigits: 0 },
+                        )}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="flex items-center gap-4 text-lg font-semibold text-gray-900">
+                <p>Total:</p>
+                <span className="flex items-center gap-2">{formattedTotal}</span>
+                {(quantity ?? 1) >= 4 && (
+                  <p className="text-sm font-normal text-gray-600">
+                    For 4+ participants, contact us for group pricing.
+                  </p>
+                )}
+              </div>
+              <div className="">
+                <div className="flex flex-col">
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-gray-800">
+                    <input
+                      type="radio"
+                      name="currency"
+                      value="EUR"
+                      checked={currency === "EUR"}
+                      onChange={() => handleCurrencyChange("EUR")}
+                    />
+                    EUR
+                  </label>
+                  <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-gray-800">
+                    <input
+                      type="radio"
+                      name="currency"
+                      value="USD"
+                      checked={currency === "USD"}
+                      onChange={() => handleCurrencyChange("USD")}
+                    />
+                    USD
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1188,7 +1508,7 @@ export default function RegisterForm() {
                 <SelectItem value="invoice">
                   <span className="flex items-center gap-2">
                     <FileText className="h-4 w-4 text-gray-600" />
-                    Invoice
+                    Bank Transfer
                   </span>
                 </SelectItem>
               </SelectContent>
@@ -1208,7 +1528,7 @@ export default function RegisterForm() {
               ) : paymentMethod === "invoice" ? (
                 <>
                   <FileText className="mr-2 h-4 w-4" />
-                  Request Invoice
+                  Register
                 </>
               ) : (
                 <>

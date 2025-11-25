@@ -15,6 +15,7 @@ import { Trainers } from './collections/Trainers'
 import { Testimonials } from './collections/Testimonials'
 import { Categories } from './collections/Categories'
 import { Orders } from './collections/Orders'
+import { DiscountCodes } from './collections/DiscountCodes'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -26,7 +27,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Events, Trainers, Testimonials, Categories, Orders],
+  collections: [Users, Media, Events, Trainers, Testimonials, Categories, Orders, DiscountCodes],
   editor: lexicalEditor(),
   secret: env.PAYLOAD_SECRET,
   typescript: {

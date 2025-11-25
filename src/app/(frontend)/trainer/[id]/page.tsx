@@ -4,29 +4,93 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import config from "~/payload.config";
+import { CourseCard } from "~/app/(frontend)/components/CourseCard";
+import type { Event, Category } from "~/payload-types";
 
 interface TrainerPageProps {
   params: Promise<{
-    id: string;
+    id: string; // this is the trainer slug in the URL
   }>;
 }
 
 export default async function TrainerPage({ params }: TrainerPageProps) {
-  const { id } = await params;
+  const { id: slug } = await params;
   const payloadConfig = await config;
   const payload = await getPayload({ config: payloadConfig });
 
   try {
-    // Fetch the specific trainer by ID
-    const trainer = await payload.findByID({
+    // Fetch the specific trainer by slug (taken from the URL segment)
+    const trainerRes = await payload.find({
       collection: "trainers",
-      id: parseInt(id),
+      where: {
+        slug: {
+          equals: slug,
+        },
+      },
       depth: 1, // Include related data like images
+      limit: 1,
     });
+
+    console.log(trainerRes);
+
+    let trainer = trainerRes.docs[0];
+
+    // Fallback: support old numeric ID URLs or trainers without slug yet
+    if (!trainer) {
+      const numericId = Number(slug);
+      if (!Number.isNaN(numericId)) {
+        try {
+          trainer = await payload.findByID({
+            collection: "trainers",
+            id: numericId,
+            depth: 1,
+          });
+        } catch {
+          // ignore and let notFound() handle it below
+        }
+      }
+    }
 
     if (!trainer) {
       notFound();
     }
+
+    // Fetch events where this trainer is included in the Trainers relationship
+    const trainerId = trainer.id;
+    
+    // Fetch all published events and filter for this trainer
+    // This approach is more reliable than querying relationship fields directly
+    const allEventsRes = await payload.find({
+      collection: "events",
+      // where: {
+      //   status: {
+      //     equals: "published",
+      //   },
+      // },
+      depth: 1, // Populate categories and trainers relationships
+      limit: 1000,
+    });
+
+    console.log(allEventsRes);
+    
+    // Filter events where trainer is in the Trainers array
+    const trainerEvents = allEventsRes.docs.filter((event: any) => {
+      const trainers = event.Trainers || [];
+      if (trainers.length === 0) return false;
+      
+      // Check if trainer ID matches (handle both populated objects and IDs)
+      return trainers.some((t: any) => {
+        const trainerIdValue = typeof t === "object" && t !== null ? t.id : t;
+        return trainerIdValue === trainerId;
+      });
+    }) as Event[];
+    
+    // Sort by creation date (newest first)
+    trainerEvents.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateB - dateA;
+    });
 
     return (
       <div className="pt-12">
@@ -125,6 +189,81 @@ export default async function TrainerPage({ params }: TrainerPageProps) {
           </div>
         </section>
 
+        {/* Training Courses Section */}
+        {trainerEvents.length > 0 && (
+          <section className="bg-gray-50 py-20">
+            <div className="mx-auto max-w-7xl px-5">
+              <h2 className="mb-8 text-center text-4xl font-bold text-gray-800">
+                Training Courses by {trainer.name}
+              </h2>
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {trainerEvents.map((event) => {
+                  // Handle multiple date ranges - use first range when available
+                  const eventDates = event["Event Dates"] || [];
+                  const firstDateRange =
+                    Array.isArray(eventDates) && eventDates.length > 0
+                      ? eventDates[0]
+                      : undefined;
+
+                  const startDate =
+                    firstDateRange?.["Start Date"] || undefined;
+                  const endDate =
+                    firstDateRange?.["End Date"] || undefined;
+                  const startTime =
+                    firstDateRange?.["Start Time"] || undefined;
+                  const endTime = firstDateRange?.["End Time"] || undefined;
+
+                  // Featured image resolution
+                  const featured = event["Featured Image"] as
+                    | string
+                    | undefined;
+                  let featuredImage: string | undefined = undefined;
+                  if (featured) {
+                    featuredImage = /^https?:\/\//i.test(featured)
+                      ? featured
+                      : `/api/media/file/${encodeURIComponent(featured)}`;
+                  }
+
+                  // Get primary category name for display
+                  let categoryName = "";
+                  if (event.category && event.category.length > 0) {
+                    const firstCat = event.category[0];
+                    if (
+                      typeof firstCat === "object" &&
+                      firstCat !== null
+                    ) {
+                      categoryName = (firstCat as Category).name;
+                    }
+                  }
+
+                  return (
+                    <CourseCard
+                      key={event.id}
+                      title={event.Title}
+                      slug={event.slug}
+                      status="Upcoming"
+                      statusColor="green"
+                      trainingType={event["Training Type"]}
+                      trainingLocation={
+                        event["Training Location"] || undefined
+                      }
+                      featuredImage={featuredImage}
+                      startDate={startDate}
+                      endDate={endDate}
+                      startTime={startTime}
+                      endTime={endTime}
+                      category={categoryName}
+                      description={event.Description || undefined}
+                      priceEUR={event.Price?.EUR}
+                      priceUSD={event.Price?.USD}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Back to Trainers CTA */}
         <section className="bg-gray-50 py-20">
           <div className="mx-auto max-w-7xl px-5 text-center">
@@ -163,7 +302,7 @@ export async function generateStaticParams() {
     });
 
     return trainers.docs.map((trainer) => ({
-      id: trainer.id.toString(),
+      id: trainer.slug,
     }));
   } catch (error) {
     console.error("Error generating static params:", error);

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
-import { getPayloadHMR } from '@payloadcms/next/utilities'
+import { getPayload } from 'payload'
 import payloadConfig from '@payload-config'
+import { getPriceFromDates } from '~/lib/pricing'
 
 type ParsedEvent = {
   title: string
@@ -452,10 +453,22 @@ async function handleImport(url: string) {
 
   const toIsoOrUndefined = (d?: string | null, t?: string | null): string | undefined => {
     if (!d) return undefined
-    const datePart = d
-    const timePart = (t && /\d{1,2}:\d{2}/.test(t) ? t : '00:00') + ':00'
+    let datePart = d.trim()
+
+    // WP often stores dates as "YYYY-MM-DD HH:MM:SS" — strip the time part if present
+    const matchDateOnly = /^(\d{4}-\d{2}-\d{2})\b/
+    const m = datePart.match(matchDateOnly)
+    if (m && m[1]) {
+      datePart = m[1]
+    }
+
+    const timePart = (t && /\d{1,2}:\d{2}/.test(t) ? t.trim() : '00:00') + ':00'
     const iso = new Date(`${datePart}T${timePart}Z`)
-    return isNaN(iso.getTime()) ? undefined : iso.toISOString()
+    if (!isNaN(iso.getTime())) return iso.toISOString()
+
+    // Fallback: try letting JS parse the original value directly
+    const fallback = new Date(d)
+    return isNaN(fallback.getTime()) ? undefined : fallback.toISOString()
   }
 
   const merged = {
@@ -483,11 +496,8 @@ async function handleImport(url: string) {
   if (!merged.title) {
     return NextResponse.json({ error: 'Could not parse title from page' }, { status: 422 })
   }
-  if (!merged.startDate || !merged.endDate) {
-    return NextResponse.json({ error: 'Could not parse date range from page' }, { status: 422 })
-  }
 
-  const payload = await getPayloadHMR({ config: payloadConfig })
+  const payload = await getPayload({ config: await payloadConfig })
 
   // Handle featured image from Yoast og_image
   const ogImageUrl = wpMeta?.yoast_head_json?.og_image?.[0]?.url
@@ -532,50 +542,85 @@ async function handleImport(url: string) {
   // Ensure we have a valid slug
   const finalSlug = slugFromApi || slugify(merged.title)
   console.log('Final slug:', finalSlug)
-  
+
   if (!finalSlug || finalSlug.length === 0) {
     return NextResponse.json({ error: 'Could not generate valid slug' }, { status: 422 })
   }
 
-  const createdEvent = await payload.create({
-    collection: 'events',
-    // Cast to any to avoid over-strict generated types in runtime route
-    data: {
-      slug: finalSlug,
-      Title: merged.title,
-      status: 'draft',
-      category: categoryIds,
-      'Event Dates': [
-        {
-          'Start Date': merged.startDate,
-          'End Date': merged.endDate,
+  // Common data payload for create/update
+  const eventData: any = {
+    slug: finalSlug,
+    Title: merged.title,
+    status: 'draft',
+    category: categoryIds,
+    Description: merged.description ?? '',
+    Price: {
+      EUR: getPriceFromDates(merged.startDate, merged.endDate),
+      USD: getPriceFromDates(merged.startDate, merged.endDate),
+    },
+    ...(ogImageUrl ? { 'Featured Image': ogImageUrl } : {}),
+    ...(trainerIds.length ? { Trainers: trainerIds } : {}),
+    // Only include Event Dates if we have valid start and end dates
+    ...(merged.startDate && merged.endDate
+      ? {
+          'Event Dates': [
+            {
+              'Start Date': merged.startDate,
+              'End Date': merged.endDate,
+              ...(startTimeFromApi ? { 'Start Time': startTimeFromApi } : {}),
+              ...(endTimeFromApi ? { 'End Time': endTimeFromApi } : {}),
+            },
+          ],
         }
-      ],
-      'Start Time': startTimeFromApi || undefined,
-      'End Time': endTimeFromApi || undefined,
-      Description: merged.description ?? '',
-      Price: { EUR: merged.eurPrice ?? 0, USD: 0 },
-      ...(ogImageUrl ? { 'Featured Image': ogImageUrl } : {}),
-      ...(trainerIds.length ? { Trainers: trainerIds } : {}),
-      ...(merged.whoFor && merged.whoFor.length
-        ? { 'Who Is Training For': merged.whoFor.map((item) => ({ item })) }
-        : {}),
-      ...(merged.keyTopics && merged.keyTopics.length
-        ? { 'Key Topic': merged.keyTopics.map((item) => ({ item })) }
-        : {}),
-      ...(merged.learningObjectives && merged.learningObjectives.length
-        ? { 'Learning Objectives': merged.learningObjectives.map((lo) => ({ Title: lo.title, Description: lo.description })) }
-        : {}),
-      ...(merged.whyAttend && merged.whyAttend.length
-        ? { 'Why Attend': merged.whyAttend.map((wa) => ({ Title: wa.title, Description: wa.description })) }
-        : {}),
-      ...(merged.trainingExperience && merged.trainingExperience.length
-        ? { 'Training Experience': merged.trainingExperience }
-        : {}),
-    } as any,
+      : {}),
+    ...(merged.whoFor && merged.whoFor.length
+      ? { 'Who Is Training For': merged.whoFor.map((item) => ({ item })) }
+      : {}),
+    ...(merged.keyTopics && merged.keyTopics.length
+      ? { 'Key Topic': merged.keyTopics.map((item) => ({ item })) }
+      : {}),
+    ...(merged.learningObjectives && merged.learningObjectives.length
+      ? {
+          'Learning Objectives': merged.learningObjectives.map((lo) => ({
+            Title: lo.title,
+            Description: lo.description,
+          })),
+        }
+      : {}),
+    ...(merged.whyAttend && merged.whyAttend.length
+      ? {
+          'Why Attend': merged.whyAttend.map((wa) => ({
+            Title: wa.title,
+            Description: wa.description,
+          })),
+        }
+      : {}),
+    ...(merged.trainingExperience && merged.trainingExperience.length
+      ? { 'Training Experience': merged.trainingExperience }
+      : {}),
+  }
+
+  // If an event with this slug already exists, update it instead of creating a duplicate
+  const existing = await payload.find({
+    collection: 'events',
+    where: { slug: { equals: finalSlug } },
+    limit: 1,
   })
 
-  return NextResponse.json({ ok: true, event: createdEvent })
+  const savedEvent =
+    existing.docs && existing.docs[0]
+      ? await payload.update({
+          collection: 'events',
+          // @ts-ignore id may be string or number depending on adapter
+          id: existing.docs[0].id,
+          data: eventData,
+        })
+      : await payload.create({
+          collection: 'events',
+          data: eventData,
+        })
+
+  return NextResponse.json({ ok: true, event: savedEvent })
 }
 
 export async function POST(req: NextRequest) {

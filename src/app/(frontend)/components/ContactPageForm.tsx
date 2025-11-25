@@ -39,97 +39,104 @@ export function ContactPageForm({ onSubmit }: ContactPageFormProps) {
 
   if (isSubmitted) {
     return (
-      <div className="text-center py-8">
-        <div className="text-green-600 text-6xl mb-4">✓</div>
-        <h3 className="text-xl font-bold text-gray-800 mb-2">Thank You!</h3>
+      <div className="rounded-lg bg-green-50 p-8 text-center border border-green-100">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600">
+          <span className="text-2xl">✓</span>
+        </div>
+        <h3 className="mb-2 text-xl font-bold text-gray-800">Thank You!</h3>
         <p className="text-gray-600">Your message has been submitted successfully. Our team will get back to you soon.</p>
       </div>
     )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 gap-4">
-        <div className="flex items-center">
-          <label htmlFor="name" className="w-48 text-sm font-medium text-gray-700">
-            Your name *
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* Name */}
+        <div>
+          <label htmlFor="name" className="mb-1 block text-sm font-medium text-gray-700">
+            Your name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             id="name"
             name="name"
             required
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Enter your full name"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            placeholder="Full name"
           />
         </div>
-        
-        <div className="flex items-center">
-          <label htmlFor="company" className="w-48 text-sm font-medium text-gray-700">
-            Your company *
+
+        {/* Company */}
+        <div>
+          <label htmlFor="company" className="mb-1 block text-sm font-medium text-gray-700">
+            Your company <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             id="company"
             name="company"
             required
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Enter your company name"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            placeholder="Company name"
           />
         </div>
-        
-        <div className="flex items-center">
-          <label htmlFor="email" className="w-48 text-sm font-medium text-gray-700">
-            Your email *
+
+        {/* Email */}
+        <div>
+          <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
+            Your email <span className="text-red-500">*</span>
           </label>
           <input
             type="email"
             id="email"
             name="email"
             required
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Enter your email address"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            placeholder="email@example.com"
           />
         </div>
-        
-        <div className="flex items-center">
-          <label htmlFor="phone" className="w-48 text-sm font-medium text-gray-700">
-            Your contact number *
+
+        {/* Phone */}
+        <div>
+          <label htmlFor="phone" className="mb-1 block text-sm font-medium text-gray-700">
+            Your contact number <span className="text-red-500">*</span>
           </label>
           <input
             type="tel"
             id="phone"
             name="phone"
             required
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Enter your phone number"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            placeholder="+1 234 567 8900"
           />
         </div>
-        
-        <div className="flex items-start">
-          <label htmlFor="message" className="w-48 text-sm font-medium text-gray-700 pt-3">
-            Message
-          </label>
-          <input
-            type="text"
-            id="message"
-            name="message"
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Enter your message"
-          />
-        </div>
-        
-        <div className="flex items-center">
-          <div className="w-48"></div>
-          <Button 
-            type="submit" 
-            variant="primary"
-            disabled={isSubmitting}
-            className="px-8 py-3"
-          >
-            {isSubmitting ? 'Submitting...' : 'Submit'}
-          </Button>
-        </div>
+      </div>
+      
+      {/* Message */}
+      <div>
+        <label htmlFor="message" className="mb-1 block text-sm font-medium text-gray-700">
+          Message
+        </label>
+        <textarea
+          id="message"
+          name="message"
+          rows={4}
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+          placeholder="How can we help you?"
+        />
+      </div>
+      
+      {/* Submit Button */}
+      <div>
+        <Button 
+          type="submit" 
+          variant="primary"
+          disabled={isSubmitting}
+          className="w-full md:w-auto px-8 py-2.5 text-sm"
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit Message'}
+        </Button>
       </div>
     </form>
   )

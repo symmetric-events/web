@@ -1,9 +1,11 @@
 "use client";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import * as moment from "moment-timezone";
+import { AddToCalendar } from "~/app/(frontend)/components/AddToCalendar";
+import type { CalendarEvent } from "~/lib/calendar";
+import { getPriceFromDates } from "~/lib/pricing";
 
 interface EventDetailsProps {
   event: any;
@@ -75,8 +77,6 @@ const generateTrainingTimes = (
 };
 
 export function EventDetails({ event }: EventDetailsProps) {
-  const router = useRouter();
-  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const parseDate = (iso?: string) => {
     if (!iso) return undefined;
     const d = new Date(iso);
@@ -197,73 +197,98 @@ export function EventDetails({ event }: EventDetailsProps) {
     return formattedRanges.join("\n");
   };
 
-  const priceEUR = event?.Price?.EUR ?? null;
+  const priceEUR =
+    firstDateRange && firstDateRange["Start Date"] && firstDateRange["End Date"]
+      ? getPriceFromDates(
+          firstDateRange["Start Date"],
+          firstDateRange["End Date"],
+        )
+      : 0;
 
-  // Ensure we have a persistent session id on client for draft orders
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const existing = window.localStorage.getItem("sessionId");
-    if (existing) {
-      setSessionId(existing);
-    } else {
-      const sid = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      window.localStorage.setItem("sessionId", sid);
-      setSessionId(sid);
+  const handleRegister = () => {
+    // Scroll to pricing section
+    const pricingElement = document.getElementById("pricing");
+    if (pricingElement) {
+      pricingElement.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, []);
-
-  const mutateOrder = useMutation({
-    mutationKey: ["mutateOrder"],
-    mutationFn: async (params: {
-      orderId?: string;
-      sessionId?: string;
-      field: string;
-      value: unknown;
-    }) => {
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
-        cache: "no-store",
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "Failed to update order");
-      }
-      return res.json() as Promise<{ orderId?: string }>;
-    },
-  });
-
-  const handleRegister = async () => {
-    if (!event) return;
-    if (!sessionId) return;
-
-    const slug = String(event.slug ?? "");
-    try {
-      await mutateOrder.mutateAsync({
-        sessionId,
-        field: "event_slug",
-        value: slug,
-      });
-    } catch (e) {
-      console.error("Failed to initialize draft order", e);
-      return;
-    }
-
-    router.push("/register");
   };
+
+  // Prepare calendar event data
+  const getCalendarEvent = (): CalendarEvent | null => {
+    if (!firstDateRange || !eventDate) return null;
+
+    const startDate = parseDate(firstDateRange["Start Date"]);
+    const endDate = parseDate(firstDateRange["End Date"]);
+    const startTime = firstDateRange["Start Time"];
+    const endTime = firstDateRange["End Time"];
+
+    if (!startDate || !endDate) return null;
+
+    // Convert Vienna time to UTC for calendar (ICS format uses UTC)
+    let calendarStartDate = startDate;
+    let calendarEndDate = endDate;
+    let calendarStartTime = startTime;
+    let calendarEndTime = endTime;
+
+    if (startTime && endTime) {
+      // Create moment objects in Vienna timezone
+      const viennaStartMoment = moment
+        .tz(startDate, "Europe/Vienna")
+        .hour(parseInt(startTime.split(":")[0], 10))
+        .minute(parseInt(startTime.split(":")[1], 10))
+        .second(0);
+
+      const viennaEndMoment = moment
+        .tz(endDate, "Europe/Vienna")
+        .hour(parseInt(endTime.split(":")[0], 10))
+        .minute(parseInt(endTime.split(":")[1], 10))
+        .second(0);
+
+      // Convert to UTC for calendar
+      calendarStartDate = viennaStartMoment.utc().toDate();
+      calendarEndDate = viennaEndMoment.utc().toDate();
+      calendarStartTime = viennaStartMoment.utc().format("HH:mm");
+      calendarEndTime = viennaEndMoment.utc().format("HH:mm");
+    }
+
+    const eventUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/events/${event.slug}`
+        : "";
+
+    return {
+      title: event.Title || "Training Event",
+      description: event.Description || undefined,
+      location:
+        event["Training Type"] === "in-person"
+          ? event["Training Location"] || undefined
+          : "Online Training",
+      startDate: calendarStartDate,
+      endDate: calendarEndDate,
+      startTime: calendarStartTime,
+      endTime: calendarEndTime,
+      url: eventUrl,
+    };
+  };
+
+  const calendarEvent = getCalendarEvent();
 
   return (
     <section className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
       <div className="grid gap-8 lg:grid-cols-[2fr_3fr] lg:items-center">
         <div className="space-y-8">
           <div>
-            <div className="text-xl font-semibold text-gray-900">
-              {formatAllDateRanges()
-                .split("\n")
-                .map((date: string, index: number) => (
-                  <div key={index}>{date}</div>
-                ))}
+            <div className="flex items-start gap-3">
+              <div className="text-xl font-semibold text-gray-900">
+                {formatAllDateRanges()
+                  .split("\n")
+                  .map((date: string, index: number) => (
+                    <div key={index}>{date}</div>
+                  ))}
+              </div>
+              {calendarEvent && (
+                <AddToCalendar event={calendarEvent} className="mt-1" />
+              )}
             </div>
             {priceEUR != null && priceEUR > 0 && (
               <p className="mt-2 text-4xl font-bold text-gray-900">
@@ -276,13 +301,12 @@ export function EventDetails({ event }: EventDetailsProps) {
           <div className="space-y-4">
             <button
               onClick={handleRegister}
-              disabled={mutateOrder.isPending || !sessionId}
-              className="hover:bg-primary hover:text-secondary w-full cursor-pointer rounded-full border-2 border-[#FBBB00] bg-[#FBBB00] py-4 text-lg font-semibold uppercase transition-colors duration-200 disabled:opacity-70"
+              className="hover:bg-primary hover:text-secondary w-full cursor-pointer rounded-full border-2 border-[#FBBB00] bg-[#FBBB00] py-4 text-lg font-semibold uppercase transition-colors duration-200"
             >
-              {mutateOrder.isPending ? "Preparing…" : "Register Now"}
+              Register Now
             </button>
             <button className="w-full cursor-pointer rounded-full border-2 border-[#FBBB00] py-4 text-lg font-semibold text-[#FBBB00] uppercase transition-colors duration-200 hover:bg-[#FBBB00] hover:text-black">
-              Request Event Agenda
+              Request Training Agenda
             </button>
           </div>
         </div>

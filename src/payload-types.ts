@@ -74,6 +74,7 @@ export interface Config {
     testimonials: Testimonial;
     categories: Category;
     orders: Order;
+    'discount-codes': DiscountCode;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -87,6 +88,7 @@ export interface Config {
     testimonials: TestimonialsSelect<false> | TestimonialsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
+    'discount-codes': DiscountCodesSelect<false> | DiscountCodesSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -176,19 +178,21 @@ export interface Event {
   Title: string;
   status?: ('draft' | 'published' | 'archived') | null;
   category: (number | Category)[];
-  'Event Dates': {
-    'Start Date': string;
-    /**
-     * Format: HH:MM (24-hour format, e.g., 09:00, 14:30)
-     */
-    'Start Time'?: string | null;
-    'End Date': string;
-    /**
-     * Format: HH:MM (24-hour format, e.g., 17:00, 18:30)
-     */
-    'End Time'?: string | null;
-    id?: string | null;
-  }[];
+  'Event Dates'?:
+    | {
+        'Start Date'?: string | null;
+        /**
+         * Format: HH:MM (24-hour format, e.g., 09:00, 14:30)
+         */
+        'Start Time'?: string | null;
+        'End Date'?: string | null;
+        /**
+         * Format: HH:MM (24-hour format, e.g., 17:00, 18:30)
+         */
+        'End Time'?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   Price: {
     USD: number;
     EUR: number;
@@ -272,6 +276,7 @@ export interface Testimonial {
  */
 export interface Trainer {
   id: number;
+  slug: string;
   name: string;
   biography?: string | null;
   excerpt?: string | null;
@@ -334,6 +339,31 @@ export interface Order {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "discount-codes".
+ */
+export interface DiscountCode {
+  id: number;
+  code: string;
+  type: 'percentage' | 'flat';
+  /**
+   * Percentage (e.g. 10 for 10%) or flat amount depending on type
+   */
+  value: number;
+  expiresAt?: string | null;
+  /**
+   * Limit the number of times this code can be used
+   */
+  limitedUsage?: boolean | null;
+  /**
+   * Number of remaining uses when limited
+   */
+  usesLeft?: number | null;
+  active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -366,6 +396,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'orders';
         value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'discount-codes';
+        value: number | DiscountCode;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -520,6 +554,7 @@ export interface EventsSelect<T extends boolean = true> {
  * via the `definition` "trainers_select".
  */
 export interface TrainersSelect<T extends boolean = true> {
+  slug?: T;
   name?: T;
   biography?: T;
   excerpt?: T;
@@ -598,6 +633,21 @@ export interface OrdersSelect<T extends boolean = true> {
   completedAt?: T;
   vatNumber?: T;
   notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "discount-codes_select".
+ */
+export interface DiscountCodesSelect<T extends boolean = true> {
+  code?: T;
+  type?: T;
+  value?: T;
+  expiresAt?: T;
+  limitedUsage?: T;
+  usesLeft?: T;
+  active?: T;
   updatedAt?: T;
   createdAt?: T;
 }

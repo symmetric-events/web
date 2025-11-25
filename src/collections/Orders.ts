@@ -10,7 +10,7 @@ export const Orders: CollectionConfig = {
     read: () => true, // Allow reading for order management
     create: () => true, // Allow creating for checkout
     update: () => true, // Allow updating for payment status
-    delete: () => false, // Prevent deletion of orders
+    delete: () => true, // Allow deletion of orders
   },
   fields: [
     {

@@ -18,6 +18,9 @@ export const env = createEnv({
     IDOKLAD_CLIENT_ID: z.string().min(1).optional(),
     IDOKLAD_CLIENT_SECRET: z.string().min(1).optional(),
     IDOKLAD_APPLICATION_ID: z.string().min(1).optional(),
+    AIRTABLE_API_KEY: z.string().min(1).optional(),
+    AIRTABLE_BASE_ID: z.string().min(1).optional(),
+    AIRTABLE_TABLE_ID: z.string().min(1).optional(),
   },
 
   /**
@@ -44,6 +47,9 @@ export const env = createEnv({
     IDOKLAD_CLIENT_ID: process.env.IDOKLAD_CLIENT_ID,
     IDOKLAD_CLIENT_SECRET: process.env.IDOKLAD_CLIENT_SECRET,
     IDOKLAD_APPLICATION_ID: process.env.IDOKLAD_APPLICATION_ID,
+    AIRTABLE_API_KEY: process.env.AIRTABLE_API_KEY,
+    AIRTABLE_BASE_ID: process.env.AIRTABLE_BASE_ID,
+    AIRTABLE_TABLE_ID: process.env.AIRTABLE_TABLE_ID,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,

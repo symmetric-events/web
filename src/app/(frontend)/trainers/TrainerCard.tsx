@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 interface TrainerCardProps {
-  id: number;
+  slug: string | number;
   name: string;
   position?: string | null;
   excerpt?: string | null;
@@ -12,7 +12,7 @@ interface TrainerCardProps {
 }
 
 export function TrainerCard({
-  id,
+  slug,
   name,
   position,
   excerpt,
@@ -20,7 +20,7 @@ export function TrainerCard({
   imageAlt,
 }: TrainerCardProps) {
   return (
-    <Link href={`/trainer/${id}`} className="block">
+    <Link href={`/trainer/${slug}`} className="block">
       <div className="cursor-pointer rounded-lg bg-white p-6 shadow-md transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
       {/* Circular Image Section */}
       <div className="mb-4 flex justify-center">

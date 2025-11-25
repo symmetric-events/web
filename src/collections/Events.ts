@@ -63,13 +63,10 @@ export const Events: CollectionConfig = {
         singular: 'Event Date Range',
         plural: 'Event Date Ranges',
       },
-      required: true,
-      minRows: 1,
       fields: [
         {
           name: 'Start Date',
           type: 'date',
-          required: true,
         },
         {
           name: 'Start Time',
@@ -90,7 +87,6 @@ export const Events: CollectionConfig = {
         {
           name: 'End Date',
           type: 'date',
-          required: true,
         },
         {
           name: 'End Time',

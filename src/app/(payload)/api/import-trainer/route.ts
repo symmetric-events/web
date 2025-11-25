@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
-import { getPayloadHMR } from '@payloadcms/next/utilities'
+import { getPayload } from 'payload'
 import payloadConfig from '@payload-config'
 
 type ParsedTrainer = {
@@ -170,7 +170,7 @@ async function handleImport(url: string) {
 }
 
 async function upsertTrainer(data: ParsedTrainer) {
-  const payload = await getPayloadHMR({ config: payloadConfig })
+  const payload = await getPayload({ config: await payloadConfig })
   // Try to find by exact name
   const existing = await payload.find({ collection: 'trainers', where: { name: { equals: data.name } }, limit: 1 })
   if (existing.docs?.[0]) {

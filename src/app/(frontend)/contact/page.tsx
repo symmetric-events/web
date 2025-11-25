@@ -31,10 +31,6 @@ export default function ContactPage() {
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
             {/* Existing Symmetric Customer */}
             <div className="space-y-6">
-              <h2 className="text-3xl font-bold text-gray-800">
-                Existing Symmetric Customer
-              </h2>
-
               <div className="flex gap-6">
                 <div className="flex-shrink-0">
                   <div className="relative h-24 w-24 overflow-hidden rounded-full">
@@ -65,10 +61,6 @@ export default function ContactPage() {
 
             {/* New Symmetric Customer */}
             <div className="space-y-6">
-              <h2 className="text-3xl font-bold text-gray-800">
-                New Symmetric Customer
-              </h2>
-
               <div className="flex gap-6">
                 <div className="flex-shrink-0">
                   <div className="relative h-24 w-24 overflow-hidden rounded-full">
@@ -88,8 +80,7 @@ export default function ContactPage() {
                   <p className="mb-2 font-bold text-gray-800">
                     Laura Kristensen
                   </p>
-                  <p className="mb-1 text-gray-600">US: +1 857 392 2714</p>
-                  <p className="mb-1 text-gray-600">Europe: +421 222 200 543</p>
+                  <p className="mb-1 text-gray-600">+421 944 024 679</p>
                   <a
                     href="mailto:laura.kristensen@symmetricevents.com"
                     className="hover:text-secondary underline"
@@ -97,34 +88,6 @@ export default function ContactPage() {
                     laura.kristensen@symmetricevents.com
                   </a>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Consulting Contact */}
-          <div className="mt-12">
-            <div className="flex gap-6">
-              <div className="flex-shrink-0">
-                <div className="relative h-24 w-24 overflow-hidden rounded-full">
-                  <Image
-                    src="https://www.symmetric.events/wp-content/uploads/2020/12/5da9ae3aa56f394b1ab1a028_Matej-p-500-300x300.jpeg"
-                    alt="Matej Boda"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              </div>
-              <div className="flex-1">
-                <p className="mb-3 text-gray-600 italic">
-                  Questions regarding consulting and in-house courses.
-                </p>
-                <p className="mb-2 font-bold text-gray-800">Matej Boda</p>
-                <a
-                  href="mailto:m.boda@symmetric.events"
-                  className="hover:text-secondary underline"
-                >
-                  m.boda@symmetric.events
-                </a>
               </div>
             </div>
           </div>
@@ -139,7 +102,7 @@ export default function ContactPage() {
       {/* Contact Form and Company Details */}
       <section className="py-20">
         <div className="mx-auto max-w-7xl px-5">
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-12 g:grid-cols-3">
             {/* Contact Form */}
             <div className="lg:col-span-2">
               <h2 className="mb-8 text-3xl font-bold text-gray-800">

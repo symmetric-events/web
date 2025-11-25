@@ -15,10 +15,13 @@ export function EventTrainers({ event }: EventTrainersProps) {
       <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">TRAINERS</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {trainers.map((trainer: any, index: number) => (
+        {trainers.map((trainer: any, index: number) => {
+          const slug = trainer.slug || trainer.id
+          
+          return (
           <Link 
             key={index} 
-            href={`/trainer/${trainer.id}`}
+            href={`/trainer/${slug}`}
             className="block group"
           >
             <div className="bg-white rounded-lg border border-gray-200 p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
@@ -73,7 +76,7 @@ export function EventTrainers({ event }: EventTrainersProps) {
               </div>
             </div>
           </Link>
-        ))}
+        )})}
       </div>
     </section>
   )
