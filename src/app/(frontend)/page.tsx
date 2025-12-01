@@ -29,7 +29,7 @@ export default async function HomePage() {
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="/api/media/file/hero.jpg"
+            src="https://www.symmetric.events/wp-content/uploads/2020/12/bg.jpeg?id=2824"
             alt="Hero background"
             fill
             className="object-cover"

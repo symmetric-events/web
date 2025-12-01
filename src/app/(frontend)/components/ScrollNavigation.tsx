@@ -86,7 +86,7 @@ export const ScrollNavigation: React.FC = () => {
                   <div className="logo">
                     <Link href="/" className="no-underline">
                       <Image
-                        src="/api/media/file/Symmetric.png"
+                        src="https://www.symmetric.events/wp-content/uploads/2020/10/Symmetric_white.png"
                         alt="Symmetric"
                         width={200}
                         height={0}
@@ -174,7 +174,7 @@ const StaticNavigation: React.FC<StaticNavigationProps> = ({ isMobileMenuOpen, s
           <div className="logo">
             <Link href="/" className="no-underline">
               <Image
-                src="/api/media/file/Symmetric.png"
+                src="https://www.symmetric.events/wp-content/uploads/2020/10/Symmetric_white.png"
                 alt="Symmetric"
                 width={200}
                 height={0}
