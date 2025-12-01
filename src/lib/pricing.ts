@@ -52,7 +52,7 @@ export function getPriceFromDates(
  * Get price for a specific number of participants based on event duration
  * @param startISO Start date ISO string
  * @param endISO End date ISO string
- * @param quantity Number of participants (1, 2, or 3)
+ * @param quantity Number of participants
  * @returns Price in EUR
  */
 export function getPriceForQuantity(

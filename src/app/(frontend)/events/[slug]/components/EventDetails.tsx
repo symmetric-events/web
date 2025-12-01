@@ -1,7 +1,5 @@
 "use client";
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
 import * as moment from "moment-timezone";
 import { AddToCalendar } from "~/app/(frontend)/components/AddToCalendar";
 import type { CalendarEvent } from "~/lib/calendar";
