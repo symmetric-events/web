@@ -97,7 +97,7 @@ export function EventPricing({ event }: EventPricingProps) {
   ];
 
   return (
-    <div id="pricing" className="grid gap-6 md:grid-cols-3 items-center">
+    <div id="pricing" className="grid gap-6 md:grid-cols-3 items-center my-10">
       {/* 1 Participant */}
       <div className="flex h-full flex-col rounded-3xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
         <div className="mb-8 text-center">

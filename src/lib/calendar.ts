@@ -141,13 +141,33 @@ export function generateGoogleCalendarURL(event: CalendarEvent): string {
 }
 
 /**
+ * Format date for Outlook Calendar (ISO 8601 format: YYYY-MM-DDTHH:mm:ss)
+ */
+function formatOutlookDate(date: Date, time?: string): string {
+  if (time) {
+    // Use UTC methods since date is in UTC
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const [hours, minutes] = time.split(":").map(Number);
+    return `${year}-${month}-${day}T${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:00`;
+  }
+  // All-day event
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}T00:00:00`;
+}
+
+/**
  * Generate Outlook Calendar URL
  */
 export function generateOutlookCalendarURL(event: CalendarEvent): string {
   const params = new URLSearchParams();
 
-  const start = formatICSDate(event.startDate, event.startTime);
-  const end = formatICSDate(event.endDate, event.endTime || event.startTime);
+  // Outlook expects ISO 8601 format dates
+  const start = formatOutlookDate(event.startDate, event.startTime);
+  const end = formatOutlookDate(event.endDate, event.endTime || event.startTime);
 
   params.set("subject", event.title);
   params.set("startdt", start);

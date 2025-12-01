@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import * as moment from "moment-timezone";
+import { Calendar, Clock } from "lucide-react";
 import { AddToCalendar } from "~/app/(frontend)/components/AddToCalendar";
 import type { CalendarEvent } from "~/lib/calendar";
 import { getPriceFromDates } from "~/lib/pricing";
@@ -96,12 +97,21 @@ export function EventDetails({ event }: EventDetailsProps) {
     eventDate,
   );
 
+  interface DateRangeInfo {
+    dateStr: string;
+    timeStr?: string;
+    startDate: Date;
+    endDate: Date;
+    startTime?: string;
+    endTime?: string;
+  }
+
   const formatDateRange = (
     startDate: Date,
     endDate: Date,
     startTime?: string,
     endTime?: string,
-  ) => {
+  ): DateRangeInfo => {
     const startMonth = startDate.toLocaleDateString("en-GB", {
       month: "long",
     });
@@ -109,35 +119,22 @@ export function EventDetails({ event }: EventDetailsProps) {
     const startYear = startDate.getFullYear();
     const endYear = endDate.getFullYear();
 
-    // Format time display
-    const formatTime = (time?: string) => {
-      if (!time) return "";
-      return ` at ${time}`;
-    };
+    const timeStr =
+      startTime && endTime
+        ? `${startTime} – ${endTime}`
+        : startTime || undefined;
+
+    let dateStr: string;
 
     if (startDate.getTime() === endDate.getTime()) {
-      const dateStr = startDate.toLocaleDateString("en-GB", {
+      dateStr = startDate.toLocaleDateString("en-GB", {
         day: "numeric",
         month: "long",
         year: "numeric",
       });
-      const timeStr =
-        startTime && endTime
-          ? ` ${startTime} - ${endTime}`
-          : formatTime(startTime);
-      return `${dateStr}${timeStr}`;
-    }
-
-    if (startMonth === endMonth && startYear === endYear) {
-      const dateStr = `${startDate.getDate()} – ${endDate.getDate()} ${startMonth} ${startYear}`;
-      const timeStr =
-        startTime && endTime
-          ? ` ${startTime} - ${endTime}`
-          : formatTime(startTime);
-      return `${dateStr}${timeStr}`;
-    }
-
-    if (startYear === endYear) {
+    } else if (startMonth === endMonth && startYear === endYear) {
+      dateStr = `${startDate.getDate()} – ${endDate.getDate()} ${startMonth} ${startYear}`;
+    } else if (startYear === endYear) {
       const startFormatted = startDate.toLocaleDateString("en-GB", {
         day: "numeric",
         month: "long",
@@ -147,36 +144,28 @@ export function EventDetails({ event }: EventDetailsProps) {
         month: "long",
         year: "numeric",
       });
-      const dateStr = `${startFormatted} – ${endFormatted}`;
-      const timeStr =
-        startTime && endTime
-          ? ` ${startTime} - ${endTime}`
-          : formatTime(startTime);
-      return `${dateStr}${timeStr}`;
+      dateStr = `${startFormatted} – ${endFormatted}`;
+    } else {
+      const startFormatted = startDate.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+      const endFormatted = endDate.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+      dateStr = `${startFormatted} – ${endFormatted}`;
     }
 
-    const startFormatted = startDate.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-    const endFormatted = endDate.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-    const dateStr = `${startFormatted} – ${endFormatted}`;
-    const timeStr =
-      startTime && endTime
-        ? ` ${startTime} - ${endTime}`
-        : formatTime(startTime);
-    return `${dateStr}${timeStr}`;
+    return { dateStr, timeStr, startDate, endDate, startTime, endTime };
   };
 
-  const formatAllDateRanges = () => {
-    if (!eventDates || eventDates.length === 0) return "Date to be announced";
+  const getFormattedDateRanges = (): DateRangeInfo[] => {
+    if (!eventDates || eventDates.length === 0) return [];
 
-    const formattedRanges = eventDates
+    return eventDates
       .map((dateRange: any) => {
         const startDate = parseDate(dateRange["Start Date"]);
         const endDate = parseDate(dateRange["End Date"]);
@@ -186,14 +175,10 @@ export function EventDetails({ event }: EventDetailsProps) {
         if (!startDate || !endDate) return null;
         return formatDateRange(startDate, endDate, startTime, endTime);
       })
-      .filter(Boolean);
-
-    if (formattedRanges.length === 0) return "Date to be announced";
-    if (formattedRanges.length === 1) return formattedRanges[0];
-
-    // For multiple date ranges, display them vertically
-    return formattedRanges.join("\n");
+      .filter(Boolean) as DateRangeInfo[];
   };
+
+  const formattedDateRanges = getFormattedDateRanges();
 
   const priceEUR =
     firstDateRange && firstDateRange["Start Date"] && firstDateRange["End Date"]
@@ -211,14 +196,14 @@ export function EventDetails({ event }: EventDetailsProps) {
     }
   };
 
-  // Prepare calendar event data
-  const getCalendarEvent = (): CalendarEvent | null => {
-    if (!firstDateRange || !eventDate) return null;
+  // Prepare calendar event data for a specific date range
+  const getCalendarEvent = (dateRange: any): CalendarEvent | null => {
+    if (!dateRange) return null;
 
-    const startDate = parseDate(firstDateRange["Start Date"]);
-    const endDate = parseDate(firstDateRange["End Date"]);
-    const startTime = firstDateRange["Start Time"];
-    const endTime = firstDateRange["End Time"];
+    const startDate = parseDate(dateRange["Start Date"]);
+    const endDate = parseDate(dateRange["End Date"]);
+    const startTime = dateRange["Start Time"];
+    const endTime = dateRange["End Time"];
 
     if (!startDate || !endDate) return null;
 
@@ -269,30 +254,57 @@ export function EventDetails({ event }: EventDetailsProps) {
     };
   };
 
-  const calendarEvent = getCalendarEvent();
-
   return (
     <section className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
       <div className="grid gap-8 lg:grid-cols-[2fr_3fr] lg:items-center">
         <div className="space-y-8">
-          <div>
-            <div className="flex items-start gap-3">
-              <div className="text-xl font-semibold text-gray-900">
-                {formatAllDateRanges()
-                  .split("\n")
-                  .map((date: string, index: number) => (
-                    <div key={index}>{date}</div>
-                  ))}
+          {/* Date Cards */}
+          <div className="space-y-3">
+            {formattedDateRanges.length > 0 ? (
+              formattedDateRanges.map((dateRange, index) => (
+                <div
+                  key={index}
+                  className="group relative overflow-hidden rounded-2xl border-2 border-[#FBBB00]/20 bg-gradient-to-br from-[#FBBB00]/5 to-transparent px-4 py-2 transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    {/* Calendar Icon Badge */}
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#FBBB00]">
+                      <Calendar className="h-4 w-4 text-white" />
+                    </div>
+
+                    {/* Date & Time Info */}
+
+                    <p className=" tracking-tight text-gray-900">
+                      {dateRange.dateStr}
+                    </p>
+
+                    {/* Add to Calendar Button - show on first and second date ranges */}
+                    {(index === 0 || index === 1) && (() => {
+                      const calendarEvent = getCalendarEvent(eventDates[index]);
+                      return calendarEvent ? (
+                        <AddToCalendar
+                          event={calendarEvent}
+                          className="shrink-0"
+                        />
+                      ) : null;
+                    })()}
+                  </div>
+
+                  {/* Subtle accent line */}
+                  <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-[#FBBB00] via-[#FBBB00]/50 to-transparent opacity-0 transition-opacity duration-300" />
+                </div>
+              ))
+            ) : (
+              <div className="rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50 p-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gray-200">
+                    <Calendar className="h-6 w-6 text-gray-400" />
+                  </div>
+                  <p className="text-lg font-medium text-gray-500">
+                    Date to be announced
+                  </p>
+                </div>
               </div>
-              {calendarEvent && (
-                <AddToCalendar event={calendarEvent} className="mt-1" />
-              )}
-            </div>
-            {priceEUR != null && priceEUR > 0 && (
-              <p className="mt-2 text-4xl font-bold text-gray-900">
-                {priceEUR.toLocaleString("en-US", { minimumFractionDigits: 0 })}{" "}
-                €
-              </p>
             )}
           </div>
 
