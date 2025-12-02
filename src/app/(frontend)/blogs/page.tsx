@@ -30,7 +30,7 @@ export default async function BlogsPage() {
       <PageHeader
         title="Latest Insights & News"
         description="Explore our latest articles on pharmaceutical development, regulatory updates, and industry trends."
-        className="!pt-20 md:!pt-24"
+        className="pt-20 md:pt-24"
       />
 
       <section className="bg-gray-50 py-10 max-w-5xl mx-auto">
