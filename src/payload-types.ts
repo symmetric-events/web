@@ -75,6 +75,7 @@ export interface Config {
     categories: Category;
     orders: Order;
     'discount-codes': DiscountCode;
+    blog: Blog;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
     'payload-migrations': PayloadMigration;
@@ -89,6 +90,7 @@ export interface Config {
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     'discount-codes': DiscountCodesSelect<false> | DiscountCodesSelect<true>;
+    blog: BlogSelect<false> | BlogSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
@@ -364,6 +366,107 @@ export interface DiscountCode {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog".
+ */
+export interface Blog {
+  id: number;
+  /**
+   * URL-friendly version of the title (auto-generated if not provided)
+   */
+  slug: string;
+  title: string;
+  /**
+   * Main blog post content
+   */
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  status?: ('draft' | 'published' | 'private') | null;
+  /**
+   * Short summary of the blog post (used in listings and meta descriptions)
+   */
+  excerpt?: string | null;
+  /**
+   * Original publication date
+   */
+  publishedAt?: string | null;
+  /**
+   * Last modification date
+   */
+  modifiedAt?: string | null;
+  /**
+   * Author from Users collection
+   */
+  author?: (number | null) | User;
+  /**
+   * Author name (used when author is not in Users collection)
+   */
+  authorName?: string | null;
+  /**
+   * Main image for the blog post
+   */
+  featuredImage?: (number | null) | Media;
+  /**
+   * External URL for featured image (if not using Media collection)
+   */
+  featuredImageUrl?: string | null;
+  categories?: (number | Category)[] | null;
+  /**
+   * Tags for categorizing blog posts
+   */
+  tags?:
+    | {
+        name: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Pin this post to the top of blog listings
+   */
+  sticky?: boolean | null;
+  /**
+   * Estimated reading time (e.g., "6 minutes")
+   */
+  readingTime?: string | null;
+  seo?: {
+    /**
+     * SEO title (if different from post title)
+     */
+    metaTitle?: string | null;
+    /**
+     * SEO meta description
+     */
+    metaDescription?: string | null;
+    /**
+     * Image for social media sharing (defaults to featured image)
+     */
+    ogImage?: (number | null) | Media;
+    /**
+     * External URL for Open Graph image
+     */
+    ogImageUrl?: string | null;
+    /**
+     * Canonical URL for SEO (if different from default)
+     */
+    canonicalUrl?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
@@ -400,6 +503,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'discount-codes';
         value: number | DiscountCode;
+      } | null)
+    | ({
+        relationTo: 'blog';
+        value: number | Blog;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -648,6 +755,43 @@ export interface DiscountCodesSelect<T extends boolean = true> {
   limitedUsage?: T;
   usesLeft?: T;
   active?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "blog_select".
+ */
+export interface BlogSelect<T extends boolean = true> {
+  slug?: T;
+  title?: T;
+  content?: T;
+  status?: T;
+  excerpt?: T;
+  publishedAt?: T;
+  modifiedAt?: T;
+  author?: T;
+  authorName?: T;
+  featuredImage?: T;
+  featuredImageUrl?: T;
+  categories?: T;
+  tags?:
+    | T
+    | {
+        name?: T;
+        id?: T;
+      };
+  sticky?: T;
+  readingTime?: T;
+  seo?:
+    | T
+    | {
+        metaTitle?: T;
+        metaDescription?: T;
+        ogImage?: T;
+        ogImageUrl?: T;
+        canonicalUrl?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

@@ -13,7 +13,7 @@ const NAVIGATION_ITEMS = [
   { href: "/consulting", label: "CONSULTING" },
   { href: "/clients", label: "CLIENTS" },
   { href: "/trainers", label: "TRAINERS" },
-  { href: "/blog", label: "BLOG" },
+  { href: "/blogs", label: "BLOG" },
   { href: "/about", label: "ABOUT US" },
   { href: "/contact", label: "CONTACT" },
 ];
