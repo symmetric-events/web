@@ -1,6 +1,7 @@
 import React from "react";
 import "../../styles/globals.css";
 import { Footer } from "./components/footer/Footer";
+import { PrefetchTrainingCourses } from "./components/PrefetchTrainingCourses";
 import { ScrollNavigation } from "./components/ScrollNavigation";
 import Providers from "./providers";
 
@@ -32,6 +33,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         style={{ fontFamily: "Poppins, sans-serif" }}
       >
         <Providers>
+          <PrefetchTrainingCourses />
           <ScrollNavigation />
           <main>
             {children}

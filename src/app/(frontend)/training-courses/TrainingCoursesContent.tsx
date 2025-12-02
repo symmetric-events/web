@@ -14,6 +14,15 @@ let cachedData: {
 
 const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
 
+// Export function to update cache (for prefetching)
+export function updateTrainingCoursesCache(data: { events: Event[]; categories: Category[] }) {
+  cachedData = {
+    events: data.events,
+    categories: data.categories,
+    timestamp: Date.now(),
+  }
+}
+
 export function TrainingCoursesContent() {
   const [events, setEvents] = useState<Event[]>([])
   const [categories, setCategories] = useState<Category[]>([])
