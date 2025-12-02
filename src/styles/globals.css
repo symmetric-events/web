@@ -122,6 +122,36 @@
   * {
     @apply border-border outline-ring/50;
   }
+  
+  /* Responsive base font-size - scales all rem values */
+  html {
+    font-size: 14px; /* Mobile: smaller base */
+  }
+  
+  @media (min-width: 640px) {
+    html {
+      font-size: 15px; /* Small tablets */
+    }
+  }
+  
+  @media (min-width: 768px) {
+    html {
+      font-size: 16px; /* Tablets */
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    html {
+      font-size: 15px; /* Desktop */
+    }
+  }
+  
+  @media (min-width: 1280px) {
+    html {
+      font-size: 17px; /* Large desktop */
+    }
+  }
+  
   body {
     @apply bg-background text-foreground;
   }

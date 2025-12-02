@@ -33,7 +33,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       >
         <Providers>
           <ScrollNavigation />
-          <main>{children}</main>
+          <main>
+            {children}
+          </main>
           <Footer />
         </Providers>
       </body>

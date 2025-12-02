@@ -1,43 +1,38 @@
-import React from 'react'
-import Image from 'next/image'
+import React from "react";
+import Image from "next/image";
 
 interface Expert {
-  name: string
-  specialty: string
+  name: string;
+  specialty: string;
 }
 
 interface ServiceCardProps {
-  title: string
-  description: string
-  imageUrl: string
-  imageAlt: string
-  experts: Expert[]
+  description: string;
+  imageUrl: string;
+  imageAlt: string;
+  experts: Expert[];
 }
 
-export function ServiceCard({ 
-  title, 
-  description, 
-  imageUrl, 
-  imageAlt, 
-  experts 
+export function ServiceCard({
+  description,
+  imageUrl,
+  imageAlt,
+  experts,
 }: ServiceCardProps) {
   return (
-    <div className="space-y-6">
-      <div className="relative h-44 w-full overflow-hidden rounded-lg">
+    <div className="space-y-6 text-sm">
+      <div className="relative w-full overflow-hidden rounded-lg">
         <Image
           src={imageUrl}
           alt={imageAlt}
-          fill
+          width={1000}
+          height={1000}
+          className="object-cover"
         />
       </div>
       <div>
-        <h3 className="mb-4 text-2xl font-bold text-gray-800">
-          {title}
-        </h3>
-        <p className="mb-4 text-gray-600">
-          {description}
-        </p>
-        <div className="space-y-2 text-sm">
+        <p className="mb-4 text-gray-600">{description}</p>
+        <div className="space-y-2">
           {experts.map((expert, index) => (
             <p key={index}>
               <strong>{expert.name}</strong> – {expert.specialty}
@@ -46,5 +41,5 @@ export function ServiceCard({
         </div>
       </div>
     </div>
-  )
+  );
 }

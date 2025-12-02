@@ -178,10 +178,10 @@ export function CourseCard({
   }
 
   return (
-    <Link href={`/events/${slug}`} className="group block">
-      <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg transition-all duration-300 ">
+    <Link href={`/events/${slug}`} className="group block h-full">
+      <div className="flex h-full flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
         {/* Image Section */}
-        <div className="relative h-36 w-full overflow-hidden">
+        <div className="relative h-32 w-full flex-shrink-0 overflow-hidden">
           {featuredImage ? (
             <Image
               src={featuredImage}
@@ -191,14 +191,14 @@ export function CourseCard({
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-              <div className="text-6xl opacity-20">📚</div>
+              <div className="text-2xl opacity-20">📚</div>
             </div>
           )}
 
           {/* Status Badge */}
           {status && (
             <div
-              className={`absolute top-4 right-4 ${statusColorClasses[statusColor]} rounded-full px-3 py-1.5 text-xs font-semibold text-white shadow-lg`}
+              className={`absolute top-3 right-3 ${statusColorClasses[statusColor]} rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm`}
             >
               {status}
             </div>
@@ -206,53 +206,53 @@ export function CourseCard({
 
           {/* Category Badge */}
           {category && (
-            <div className="absolute top-4 left-4 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium backdrop-blur-sm">
+            <div className="absolute top-3 left-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-700 shadow-sm backdrop-blur-md">
               {category}
             </div>
           )}
         </div>
 
         {/* Content Section */}
-        <div className="p-6">
+        <div className="flex flex-grow flex-col p-5">
           {/* Title */}
-          <h3 className="group-hover:text-secondary mb-3 text-xl font-bold text-gray-900 transition-colors">
+          <h3 className="group-hover:text-secondary mb-2 text-lg font-bold leading-tight text-gray-900 transition-colors line-clamp-2">
             {title}
           </h3>
 
           {/* Description */}
           {description && (
-            <p className="mb-4 text-sm text-gray-600">{description}</p>
+            <p className="mb-4 text-sm text-gray-600 line-clamp-2 leading-relaxed">{description}</p>
           )}
 
           {/* Date and Time */}
           {(formattedDate || timeDisplay) && (
-            <div className="mb-4 rounded-lg bg-gray-50 p-3">
+            <div className="mb-4 rounded-lg bg-gray-50 p-2.5">
               {formattedDate && (
                 <div className="flex items-center gap-2">
-                  <Calendar className="text-secondary h-4 w-4" />
-                  <span className="text-sm font-semibold">{formattedDate}</span>
+                  <Calendar className="text-secondary h-4 w-4 flex-shrink-0" />
+                  <span className="text-sm font-medium text-gray-700">{formattedDate}</span>
                 </div>
               )}
               {timeDisplay && (
-                <div className="mt-1 flex items-center gap-2 text-gray-600">
-                  <Clock className="ml-[1px] h-3.5 w-3.5" />
-                  <span className="text-sm">{timeDisplay}</span>
+                <div className="mt-1.5 flex items-center gap-2 text-gray-500">
+                  <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span className="text-xs font-medium">{timeDisplay}</span>
                 </div>
               )}
             </div>
           )}
 
-          {/* Training Type and Location */}
-          <div className="mb-4 flex items-center gap-2">
+          {/* Training Type and Location - Pushed to bottom */}
+          <div className="mt-auto flex items-center gap-3 border-t border-gray-100 pt-3">
             {trainingType === "online" ? (
               <div className="text-secondary flex items-center gap-1.5">
-                <Globe className="h-4 w-4" />
-                <span className="text-sm font-medium">Online</span>
+                <Globe className="h-4 w-4 flex-shrink-0" />
+                <span className="text-xs font-semibold uppercase tracking-wide">Online</span>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5">
-                <MapPin className="text-secondary h-4 w-4" />
-                <span className="text-sm font-medium">
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <MapPin className="text-secondary h-4 w-4 flex-shrink-0" />
+                <span className="text-xs font-semibold uppercase tracking-wide">
                   {trainingLocation || "In-Person"}
                 </span>
               </div>

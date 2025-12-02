@@ -93,7 +93,7 @@ export default async function TrainerPage({ params }: TrainerPageProps) {
     });
 
     return (
-      <div className="pt-12">
+      <div>
         <section className="bg-primary py-20">
           <div className="mx-auto max-w-7xl px-5">
             <div className="text-center">
@@ -193,7 +193,7 @@ export default async function TrainerPage({ params }: TrainerPageProps) {
         {trainerEvents.length > 0 && (
           <section className="bg-gray-50 py-20">
             <div className="mx-auto max-w-7xl px-5">
-              <h2 className="mb-8 text-center text-4xl font-bold text-gray-800">
+              <h2 className="mb-8 text-center text-2xl font-bold text-gray-800">
                 Training Courses by {trainer.name}
               </h2>
               <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">

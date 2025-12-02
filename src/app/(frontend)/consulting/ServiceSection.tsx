@@ -7,7 +7,6 @@ interface Expert {
 }
 
 interface Service {
-  title: string
   description: string
   imageUrl: string
   imageAlt: string
@@ -25,7 +24,6 @@ export function ServiceSection({ services, className = "" }: ServiceSectionProps
       {services.map((service, index) => (
         <ServiceCard
           key={index}
-          title={service.title}
           description={service.description}
           imageUrl={service.imageUrl}
           imageAlt={service.imageAlt}

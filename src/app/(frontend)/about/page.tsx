@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { TeamMemberCard } from "./TeamMemberCard";
+import { PageHeader } from "../components/PageHeader";
 
 export const metadata = {
   title: "About Us - Symmetric",
@@ -48,18 +49,11 @@ export default function AboutUsPage() {
   ];
 
   return (
-    <div className="pt-12">
-      <section className="bg-primary py-20">
-        <div className="mx-auto max-w-7xl px-5">
-          <div className="text-center">
-            <h1 className="mb-6 text-5xl font-bold text-gray-800">About Us</h1>
-            <p className="mx-auto max-w-3xl text-xl">
-              Learn about Symmetric, a leading international training provider
-              for Pharma & Biotech professionals
-            </p>
-          </div>
-        </div>
-      </section>
+    <div>
+      <PageHeader
+        title="About Us"
+        description="Learn about Symmetric, a leading international training provider for Pharma & Biotech professionals"
+      />
 
       {/* Main Content */}
       <section className="py-20">
@@ -413,7 +407,7 @@ export default function AboutUsPage() {
       {/* Management Team Section */}
       <section className="bg-gray-50 py-20">
         <div className="mx-auto max-w-7xl px-5">
-          <h2 className="mb-12 text-center text-4xl font-bold text-gray-800">
+          <h2 className="mb-12 text-center text-2xl font-bold text-gray-800">
             Our Management Team
           </h2>
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8 justify-items-center">

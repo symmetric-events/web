@@ -3,6 +3,7 @@ import React from "react";
 import config from "~/payload.config";
 import { TrainerCard } from "./TrainerCard";
 import type { Trainer } from "~/payload-types";
+import { PageHeader } from "../components/PageHeader";
 
 export default async function TrainersPage() {
   const payloadConfig = await config;
@@ -19,20 +20,11 @@ export default async function TrainersPage() {
   const trainers: Trainer[] = trainersResponse.docs;
 
   return (
-    <div className="pt-12">
-      <section className="bg-primary py-20">
-        <div className="mx-auto max-w-7xl px-5">
-          <div className="text-center">
-            <h1 className="mb-6 text-5xl font-bold text-gray-800">
-              Our Expert Trainers
-            </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Meet our team of industry-leading experts who bring decades of experience 
-              in pharmaceutical and biotech development to our training programs.
-            </p>
-          </div>
-        </div>
-      </section>
+    <div>
+      <PageHeader
+        title="Our Expert Trainers"
+        description="Meet our team of industry-leading experts who bring decades of experience in pharmaceutical and biotech development to our training programs."
+      />
 
       {/* Trainers Grid */}
       <section className="pb-20 bg-primary">
@@ -66,15 +58,15 @@ export default async function TrainersPage() {
         <div className="mx-auto max-w-7xl px-5">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center text-white">
             <div>
-              <div className="text-4xl font-bold mb-2">{trainers.length}+</div>
+              <div className="text-2xl font-bold mb-2">{trainers.length}+</div>
               <div className="text-xl">Expert Trainers</div>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">20+</div>
+              <div className="text-2xl font-bold mb-2">20+</div>
               <div className="text-xl">Years Average Experience</div>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">100%</div>
+              <div className="text-2xl font-bold mb-2">100%</div>
               <div className="text-xl">Industry Professionals</div>
             </div>
           </div>

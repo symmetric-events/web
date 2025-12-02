@@ -48,6 +48,7 @@ export function CourseList({ events, categories }: CourseListProps) {
       <div className="mb-12 flex flex-wrap justify-center gap-2.5">
         <Button
           variant={activeCategory === 'all' ? 'filter-active' : 'filter'}
+          size="sm"
           onClick={() => setActiveCategory('all')}
         >
           All
@@ -56,6 +57,7 @@ export function CourseList({ events, categories }: CourseListProps) {
           <Button
             key={category.id}
             variant={activeCategory === category.slug ? 'filter-active' : 'filter'}
+            size="sm"
             onClick={() => setActiveCategory(category.slug)}
           >
             {category.name}

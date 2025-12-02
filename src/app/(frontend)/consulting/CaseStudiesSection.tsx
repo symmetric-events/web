@@ -18,9 +18,9 @@ export function CaseStudiesSection({
   className = "" 
 }: CaseStudiesSectionProps) {
   return (
-    <section className={`py-20 ${className}`}>
+    <section className={`py-10 max-w-5xl mx-auto ${className}`}>
       <div className="mx-auto max-w-7xl px-5">
-        <h2 className="mb-16 text-center text-4xl font-bold text-gray-800">
+        <h2 className="mb-16 text-center text-2xl font-bold text-gray-800">
           {title}
         </h2>
         

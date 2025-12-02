@@ -27,7 +27,7 @@ export function EventLearningObjectives({
           >
             <div className="flex-shrink-0">
               <img
-                src="/img/learning_objective.webp"
+                src="https://www.symmetric.events/wp-content/uploads/2025/06/learning_objective.jpg"
                 alt="Learning Objective"
                 width={50}
                 height={50}

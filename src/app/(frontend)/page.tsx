@@ -15,17 +15,66 @@ export default async function HomePage() {
   const payloadConfig = await config;
   const payload = await getPayload({ config: payloadConfig });
 
-  const latest = await payload.find({
+  // Fetch all events to filter and sort by date
+  const allEvents = await payload.find({
     collection: "events",
-    sort: "-createdAt",
-    limit: 12,
+    limit: 1000,
     depth: 0,
   });
+
+  // Get current date for filtering upcoming events
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Filter and sort upcoming events
+  const upcomingEvents = allEvents.docs
+    .filter((event: any) => {
+      // Get the earliest start date from Event Dates array
+      const eventDates = event["Event Dates"] || [];
+      if (eventDates.length === 0) {
+        // Fallback to single Start Date field
+        const startDate = event["Start Date"];
+        if (!startDate) return false;
+        const eventDate = new Date(startDate);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate >= today;
+      }
+
+      // Use the first date range's start date
+      const firstDateRange = eventDates[0];
+      const startDate = firstDateRange?.["Start Date"];
+      if (!startDate) return false;
+      
+      const eventDate = new Date(startDate);
+      eventDate.setHours(0, 0, 0, 0);
+      return eventDate >= today;
+    })
+    .sort((a: any, b: any) => {
+      // Get start dates for comparison
+      const getStartDate = (event: any) => {
+        const eventDates = event["Event Dates"] || [];
+        if (eventDates.length > 0) {
+          return eventDates[0]?.["Start Date"] || event["Start Date"];
+        }
+        return event["Start Date"];
+      };
+
+      const dateA = getStartDate(a);
+      const dateB = getStartDate(b);
+
+      if (!dateA) return 1; // Events without dates go to end
+      if (!dateB) return -1;
+
+      const timeA = new Date(dateA).getTime();
+      const timeB = new Date(dateB).getTime();
+      return timeA - timeB; // Ascending order (closest first)
+    })
+    .slice(0, 6); // Limit to 6 events
 
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative py-20 text-center text-white">
+      <section className="relative py-10 text-center text-white">
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <Image
@@ -42,7 +91,7 @@ export default async function HomePage() {
         {/* Content */}
         <div className="relative z-10 mx-auto max-w-7xl px-5 pt-20 pb-10">
           <div className="flex flex-col items-center gap-5">
-            <h2 className="mb-5 text-4xl leading-tight font-bold">
+            <h2 className="mb-5 text-2xl leading-tight font-bold">
               Your Partner for Pharma and Biotech Training
             </h2>
             <p className="mb-8 text-xl leading-relaxed font-bold opacity-90">
@@ -61,20 +110,20 @@ export default async function HomePage() {
       {/* Upcoming Training Courses */}
       <section className="bg-gray-50 py-20">
         <div className="mx-auto max-w-7xl px-5">
-          <h3 className="mb-10 text-center text-4xl text-gray-800">
+          <h3 className="mb-10 text-center text-2xl text-gray-800">
             Upcoming Training Courses
           </h3>
           <div className="mb-12 flex flex-wrap justify-center gap-2.5">
-            <Button>All</Button>
-            <Button>Pharma & Biotech</Button>
-            <Button>CMC</Button>
-            <Button>Medical Devices</Button>
-            <Button>Scale up</Button>
-            <Button>Clinical Trials</Button>
-            <Button>Combination Products</Button>
+            <Button size="sm">All</Button>
+            <Button size="sm">Pharma & Biotech</Button>
+            <Button size="sm">CMC</Button>
+            <Button size="sm">Medical Devices</Button>
+            <Button size="sm">Scale up</Button>
+            <Button size="sm">Clinical Trials</Button>
+            <Button size="sm">Combination Products</Button>
           </div>
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {latest.docs.map((event: any) => {
+          <div className="grid mx-auto max-w-5xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {upcomingEvents.map((event: any) => {
               // Handle multiple date ranges - use first range when available
               const eventDates = event["Event Dates"] || [];
               const firstDateRange = Array.isArray(eventDates) && eventDates.length > 0 ? eventDates[0] : undefined;
@@ -117,7 +166,7 @@ export default async function HomePage() {
       {/* Client Logos */}
       <section className="bg-gray-50 py-20">
         <div className="mx-auto max-w-7xl px-5">
-          <h3 className="mb-12 text-center text-4xl text-gray-800">
+          <h3 className="mb-12 text-center text-2xl text-gray-800">
             Clients that have benefited from our courses
           </h3>
           <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
@@ -141,7 +190,7 @@ export default async function HomePage() {
       {/* Testimonials */}
       <section className="bg-white py-20">
         <div className="mx-auto max-w-7xl px-5">
-          <h3 className="mb-12 text-center text-4xl text-gray-800">
+          <h3 className="mb-12 text-center text-2xl text-gray-800">
             Testimonials
           </h3>
           <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3">

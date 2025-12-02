@@ -14,10 +14,15 @@ import {
 
 interface ContactFormProps {
   title?: string
+  buttonText?: string
   onSubmit?: (data: FormData) => void
 }
 
-export function ContactForm({ title = "Request a Consulting Session", onSubmit }: ContactFormProps) {
+export function ContactForm({ 
+  title = "Request a Consulting Session", 
+  buttonText = "Request a Consulting Session",
+  onSubmit 
+}: ContactFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -52,7 +57,7 @@ export function ContactForm({ title = "Request a Consulting Session", onSubmit }
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="primary" className="text-lg px-4 py-2">
-          Request a Consulting Session
+          {buttonText}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">

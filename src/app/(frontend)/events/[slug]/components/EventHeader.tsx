@@ -26,7 +26,7 @@ export function EventHeader({ event }: EventHeaderProps) {
           height={1000}
           className="h-full w-full object-cover"
         />
-        <h1 className="mt-6 text-4xl font-bold text-gray-900">{event.Title}</h1>
+        <h1 className="mt-6 text-2xl font-bold text-gray-900">{event.Title}</h1>
       </div>
     </div>
   );

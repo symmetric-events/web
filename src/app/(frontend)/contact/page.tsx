@@ -1,6 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import { ContactPageForm } from "../components/ContactPageForm";
+import { PageHeader } from "../components/PageHeader";
 
 export const metadata = {
   title: "Contact Us - Symmetric",
@@ -10,20 +11,11 @@ export const metadata = {
 
 export default function ContactPage() {
   return (
-    <div className="pt-12">
-      <section className="bg-primary py-20">
-        <div className="mx-auto max-w-7xl px-5">
-          <div className="text-center">
-            <h1 className="mb-6 text-5xl font-bold text-gray-800">
-              Contact Us
-            </h1>
-            <p className="mx-auto max-w-3xl text-xl text-gray-600">
-              Get in touch with our team for training courses, consulting, and
-              support
-            </p>
-          </div>
-        </div>
-      </section>
+    <div>
+      <PageHeader
+        title="Contact Us"
+        description="Get in touch with our team for training courses, consulting, and support"
+      />
 
       {/* Contact Information Sections */}
       <section className="py-20">
@@ -101,11 +93,11 @@ export default function ContactPage() {
 
       {/* Contact Form and Company Details */}
       <section className="py-20">
-        <div className="mx-auto max-w-7xl px-5">
-          <div className="grid grid-cols-1 gap-12 g:grid-cols-3">
+        <div className="mx-auto max-w-5xl px-5">
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
             {/* Contact Form */}
             <div className="lg:col-span-2">
-              <h2 className="mb-8 text-3xl font-bold text-gray-800">
+              <h2 className="mb-8 text-2xl font-bold text-gray-800">
                 Contact Us
               </h2>
               <ContactPageForm />
@@ -113,7 +105,7 @@ export default function ContactPage() {
 
             {/* Company Details */}
             <div>
-              <h2 className="mb-8 text-3xl font-bold text-gray-800">
+              <h2 className="mb-8 text-2xl font-bold text-gray-800">
                 Company Details
               </h2>
               <div className="space-y-4">

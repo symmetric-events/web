@@ -4,6 +4,7 @@ import { ContactForm } from "./ContactForm";
 import { ClientLogo } from "../components/clientLogo";
 import { ServiceSection } from "./ServiceSection";
 import { CaseStudiesSection } from "./CaseStudiesSection";
+import { PageHeader } from "../components/PageHeader";
 
 export default function ConsultingPage() {
   // Service data
@@ -88,33 +89,19 @@ export default function ConsultingPage() {
   ];
 
   return (
-    <div className="pt-12">
-      <section className="bg-primary py-20">
-        <div className="mx-auto max-w-7xl px-5">
-          <div className="mb-12 text-center">
-            <h1 className="mb-6 text-5xl font-bold text-gray-800">
-              Request a Consulting Session
-            </h1>
-            <p className="mx-auto mb-8 max-w-4xl text-xl leading-relaxed text-gray-600">
-              Besides online and in-house training, our team of experts is also
-              providing consulting sessions that help clients overcome
-              challenges of pharmaceutical development in order to launch their
-              innovative treatment solutions. Get in touch using the form below
-              today and our team will answer your questions in any area of your
-              product lifecycle.
-            </p>
-
-            {/* Contact Form Modal Trigger */}
-            <div className="flex justify-center">
-              <ContactForm />
-            </div>
-          </div>
+    <div>
+      <PageHeader
+        title="Request a Consulting Session"
+        description="Besides online and in-house training, our team of experts is also providing consulting sessions that help clients overcome challenges of pharmaceutical development in order to launch their innovative treatment solutions. Get in touch using the form below today and our team will answer your questions in any area of your product lifecycle."
+      >
+        <div className="flex justify-center">
+          <ContactForm />
         </div>
-      </section>
+      </PageHeader>
 
       {/* Service Areas */}
-      <section className="pb-10">
-        <div className="mx-auto max-w-7xl px-5">
+      <section className="py-10 max-w-4xl mx-auto">
+        <div className="px-5">
           {/* Drug Development & Quality */}
           <ServiceSection services={drugDevelopmentServices} className="mb-16" />
           
@@ -127,18 +114,17 @@ export default function ConsultingPage() {
       </section>
 
       {/* Consulting Banner */}
-      <section className="bg-gray-50 py-20">
-        <div className="mx-auto max-w-7xl px-5">
-          <div className="text-center">
-            <div className="relative mx-auto h-64 w-full max-w-4xl overflow-hidden rounded-lg">
-              <Image
-                src="https://www.symmetric.events/wp-content/uploads/2022/03/Consulting_Banner-01-1-1024x427.png"
-                alt="pharmaceutical consulting experts"
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 1024px"
-              />
-            </div>
+      <section className="bg-gray-50 py-10">
+        <div className="mx-auto max-w-4xl px-5">
+          <div className="relative aspect-[1024/427] w-full overflow-hidden rounded-lg">
+            <Image
+              src="https://www.symmetric.events/wp-content/uploads/2022/03/Consulting_Banner-01-1-1024x427.png"
+              alt="pharmaceutical consulting experts"
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1024px"
+              priority={false}
+            />
           </div>
         </div>
       </section>
@@ -147,9 +133,9 @@ export default function ConsultingPage() {
       <CaseStudiesSection caseStudies={caseStudies} />
 
       {/* Client Logos */}
-      <section className="bg-gray-50 py-20">
+      <section className="bg-gray-50 py-10 max-w-4xl mx-auto">
         <div className="mx-auto max-w-7xl px-5">
-          <h2 className="mb-16 text-center text-4xl font-bold text-gray-800">
+          <h2 className="mb-16 text-center text-2xl font-bold text-gray-800">
             Some of Our Clients
           </h2>
           <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">

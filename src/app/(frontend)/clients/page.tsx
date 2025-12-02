@@ -1,6 +1,7 @@
 import React from "react";
 import { ClientLogo } from "../components/clientLogo";
 import { TestimonialCard } from "../components/TestimonialCard";
+import { PageHeader } from "../components/PageHeader";
 
 export default function OurClientsPage() {
   const clients = {
@@ -492,35 +493,25 @@ export default function OurClientsPage() {
   };
 
   return (
-    <div className="pt-12">
-      <section className="bg-primary py-20">
-        <div className="mx-auto max-w-7xl px-5">
-          <div className="text-center">
-            <h1 className="mb-6 text-5xl font-bold text-gray-800">
-              Our Clients
-            </h1>
-            <p className="mx-auto max-w-3xl text-xl text-gray-600">
-              We are proud to work with leading pharmaceutical and biotech
-              companies worldwide. Our comprehensive training programs have
-              benefited professionals from over 500 companies across the globe.
-            </p>
-          </div>
-        </div>
-      </section>
+    <div>
+      <PageHeader
+        title="Our Clients"
+        description="We are proud to work with leading pharmaceutical and biotech companies worldwide. Our comprehensive training programs have benefited professionals from over 500 companies across the globe."
+      />
 
       <section className="bg-blue-600 py-20">
         <div className="mx-auto max-w-7xl px-5">
           <div className="grid grid-cols-1 gap-8 text-center text-white md:grid-cols-3">
             <div>
-              <div className="mb-2 text-4xl font-bold">500+</div>
+              <div className="mb-2 text-2xl font-bold">500+</div>
               <div className="text-xl">Companies</div>
             </div>
             <div>
-              <div className="mb-2 text-4xl font-bold">50+</div>
+              <div className="mb-2 text-2xl font-bold">50+</div>
               <div className="text-xl">Countries</div>
             </div>
             <div>
-              <div className="mb-2 text-4xl font-bold">10,000+</div>
+              <div className="mb-2 text-2xl font-bold">10,000+</div>
               <div className="text-xl">Professionals Trained</div>
             </div>
           </div>
@@ -529,7 +520,7 @@ export default function OurClientsPage() {
 
       <section className="bg-gray-50 py-20">
         <div className="mx-auto max-w-7xl px-5">
-          <h3 className="mb-12 text-center text-4xl text-gray-800">
+          <h3 className="mb-12 text-center text-2xl text-gray-800">
             Clients that have benefited from our courses
           </h3>
           <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
@@ -552,7 +543,7 @@ export default function OurClientsPage() {
 
       <section className="bg-white py-20">
         <div className="mx-auto max-w-7xl px-5">
-          <h3 className="mb-12 text-center text-4xl text-gray-800">
+          <h3 className="mb-12 text-center text-2xl text-gray-800">
             Testimonials
           </h3>
           <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3">
