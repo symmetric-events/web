@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { Button } from '../components/Button'
 import { CourseCard } from '../components/CourseCard'
 import type { Event, Category } from '~/payload-types'
@@ -13,33 +13,33 @@ interface CourseListProps {
 export function CourseList({ events, categories }: CourseListProps) {
   const [activeCategory, setActiveCategory] = useState<string>('all')
 
-  const filteredEvents = events.filter((event) => {
-    if (activeCategory === 'all') return true
+  // Memoize filtered events
+  const filteredEvents = useMemo(() => {
+    return events.filter((event) => {
+      if (activeCategory === 'all') return true
 
-    // Check if event has the active category
-    const eventCategories = event.category || []
-    return eventCategories.some((cat) => {
-      // Handle both populated (object) and unpopulated (ID) relationships
-      if (typeof cat === 'object' && cat !== null) {
-        return (cat as Category).slug === activeCategory
-      }
-      return false // Can't filter by ID if we only have slug in state, assume populated
+      // Check if event has the active category
+      const eventCategories = event.category || []
+      return eventCategories.some((cat) => {
+        // Handle both populated (object) and unpopulated (ID) relationships
+        if (typeof cat === 'object' && cat !== null) {
+          return (cat as Category).slug === activeCategory
+        }
+        return false // Can't filter by ID if we only have slug in state, assume populated
+      })
     })
-  })
+  }, [events, activeCategory])
 
-  // Sort events by date if needed, but they should come sorted from server
-  // The HomePage sorted by -createdAt, maybe we want by Start Date here? 
-  // Usually upcoming courses are sorted by start date ascending.
-  // I'll assume server provides them in a reasonable order or I can sort here.
-  // For now, let's trust server order or sort by startDate.
-  
-  const sortedEvents = [...filteredEvents].sort((a, b) => {
-     const dateA = a['Event Dates']?.[0]?.['Start Date']
-     const dateB = b['Event Dates']?.[0]?.['Start Date']
-     if (!dateA) return 1
-     if (!dateB) return -1
-     return new Date(dateA).getTime() - new Date(dateB).getTime()
-  })
+  // Memoize sorted events
+  const sortedEvents = useMemo(() => {
+    return [...filteredEvents].sort((a, b) => {
+      const dateA = a['Event Dates']?.[0]?.['Start Date']
+      const dateB = b['Event Dates']?.[0]?.['Start Date']
+      if (!dateA) return 1
+      if (!dateB) return -1
+      return new Date(dateA).getTime() - new Date(dateB).getTime()
+    })
+  }, [filteredEvents])
 
 
   return (
