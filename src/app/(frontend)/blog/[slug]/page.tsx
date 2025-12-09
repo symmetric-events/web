@@ -5,9 +5,9 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
-import { cookies } from "next/headers";
-import type { Blog, Category, User } from "~/payload-types";
+import type { Blog, Category } from "~/payload-types";
 import type { Metadata } from "next";
+import { EditButton } from "~/app/(frontend)/events/[slug]/components/EditButton";
 
 // Simple Lexical content renderer
 function LexicalContent({ content }: { content: any }) {
@@ -155,17 +155,6 @@ export default async function BlogPage({ params }: BlogPageProps) {
     notFound();
   }
 
-  // Check if user is authenticated by checking for Payload auth cookie
-  let isAuthenticated = false;
-  try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get("payload-token");
-    isAuthenticated = !!token?.value;
-  } catch {
-    // User is not authenticated
-    isAuthenticated = false;
-  }
-
   // Resolve featured image
   let featuredImageUrl = blog.featuredImageUrl;
   if (!featuredImageUrl && blog.featuredImage) {
@@ -180,34 +169,9 @@ export default async function BlogPage({ params }: BlogPageProps) {
     <article className="min-h-screen pb-20">
       {/* Header / Hero */}
       <header className="bg-gray-50 pt-32 pb-16">
-        <div className="mx-auto max-w-4xl px-5">
-          {/* Edit Button - Only show if authenticated */}
-          {isAuthenticated && (
-            <div className="absolute right-10 flex">
-              <Link
-                href={`/admin/collections/blog/${blog.id}`}
-                className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="m5 16l-1 4l4-1L19.586 7.414a2 2 0 0 0 0-2.828l-.172-.172a2 2 0 0 0-2.828 0zM15 6l3 3m-5 11h8"
-                  />
-                </svg>
-                Edit in Admin
-              </Link>
-            </div>
-          )}
+        <div className="mx-auto max-w-4xl px-5 relative">
+          {/* Edit Button - Only show if authenticated (client-side check) */}
+          <EditButton collection="blog" id={blog.id} />
 
           {/* Categories */}
           <div className="mb-6 flex flex-wrap gap-2">

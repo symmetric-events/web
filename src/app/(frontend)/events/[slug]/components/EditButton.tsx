@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 interface EditButtonProps {
-  eventId: string | number;
+  collection: string;
+  id: string | number;
 }
 
-export function EditButton({ eventId }: EditButtonProps) {
+export function EditButton({ collection, id }: EditButtonProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export function EditButton({ eventId }: EditButtonProps) {
   return (
     <div className="absolute right-10 flex">
       <Link
-        href={`/admin/collections/events/${eventId}`}
+        href={`/admin/collections/${collection}/${id}`}
         className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
         target="_blank"
         rel="noopener noreferrer"
