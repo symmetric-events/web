@@ -19,12 +19,15 @@ export function EditButton({ collection, id, isAuthenticated: serverAuth }: Edit
       return;
     }
 
-    // Fallback: Check if user is authenticated by checking for Payload auth cookie
-    const checkAuth = () => {
-      const token = document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("payload-token="));
-      setIsAuthenticated(!!token);
+    // Check authentication via API route (handles HttpOnly cookies)
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("/api/auth/check");
+        const data = await response.json();
+        setIsAuthenticated(data.isAuthenticated);
+      } catch {
+        setIsAuthenticated(false);
+      }
     };
 
     checkAuth();

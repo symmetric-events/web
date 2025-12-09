@@ -20,7 +20,7 @@ export const NewsletterSection: React.FC = () => {
 
   return (
     <div className="newsletter-row bg-[#FBBB00] p-16">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
           {/* Left Column - Newsletter Info */}
           <div>
