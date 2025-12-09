@@ -178,7 +178,7 @@ export function CourseCard({
   }
 
   return (
-    <Link href={`/events/${slug}`} className="group block h-full">
+    <Link href={`/event/${slug}`} className="group block h-full">
       <div className="flex h-full flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
         {/* Image Section */}
         <div className="relative h-32 w-full flex-shrink-0 overflow-hidden">

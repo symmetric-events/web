@@ -3,8 +3,8 @@ import Link from "next/link";
 
 export const FooterInfo: React.FC = () => {
   return (
-    <div className="bg-black py-16 text-white">
-      <div className="mx-auto max-w-7xl px-5">
+    <div className="bg-black p-16 text-white">
+      <div className="mx-auto max-w-7xl">
         <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
           {/* Company Info */}
           <div>

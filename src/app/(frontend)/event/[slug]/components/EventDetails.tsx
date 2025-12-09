@@ -2,12 +2,24 @@
 import Image from "next/image";
 import * as moment from "moment-timezone";
 import { Calendar, Clock } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { AddToCalendar } from "~/app/(frontend)/components/AddToCalendar";
 import type { CalendarEvent } from "~/lib/calendar";
-import { getPriceFromDates } from "~/lib/pricing";
+import { getPriceFromDates, getPriceForQuantity } from "~/lib/pricing";
+import { useCurrency } from "~/app/(frontend)/context/CurrencyContext";
 
 interface EventDetailsProps {
   event: any;
+}
+
+interface PricingInfo {
+  basePrice: number;
+  earlyBirdEligible: boolean;
+  earlyBirdDiscount: number;
+  finalPrice: number;
+  participantCount: number;
+  remainingEarlyBirdSpots: number;
+  wouldGetEarlyBird: boolean;
 }
 
 // Timezone mappings for major cities
@@ -76,6 +88,9 @@ const generateTrainingTimes = (
 };
 
 export function EventDetails({ event }: EventDetailsProps) {
+  const { currency, setCurrency } = useCurrency();
+  const slug = event?.slug;
+
   const parseDate = (iso?: string) => {
     if (!iso) return undefined;
     const d = new Date(iso);
@@ -180,19 +195,69 @@ export function EventDetails({ event }: EventDetailsProps) {
 
   const formattedDateRanges = getFormattedDateRanges();
 
-  const priceEUR =
-    firstDateRange && firstDateRange["Start Date"] && firstDateRange["End Date"]
-      ? getPriceFromDates(
-          firstDateRange["Start Date"],
-          firstDateRange["End Date"],
-        )
-      : 0;
+  const startDate = firstDateRange?.["Start Date"];
+  const endDate = firstDateRange?.["End Date"];
 
-  const handleRegister = () => {
-    // Scroll to pricing section
+  // Fetch pricing info for quantity 1 (to get early bird pricing)
+  const fetchPricing = async (
+    quantity: number,
+    currencyParam: "€" | "$",
+  ): Promise<PricingInfo | null> => {
+    if (!slug || !startDate || !endDate) return null;
+
+    try {
+      const res = await fetch(
+        `/api/events/${slug}/pricing?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&quantity=${quantity}&currency=${currencyParam}`,
+        { cache: "no-store" },
+      );
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (error) {
+      console.error("Failed to fetch pricing:", error);
+      return null;
+    }
+  };
+
+  // Query for current currency
+  const pricingQuery = useQuery({
+    queryKey: ["pricing", slug, startDate, endDate, 1, currency],
+    queryFn: () => fetchPricing(1, currency),
+    enabled: !!slug && !!startDate && !!endDate,
+  });
+
+  // Prefetch the other currency
+  const otherCurrency = currency === "€" ? "$" : "€";
+  useQuery({
+    queryKey: ["pricing", slug, startDate, endDate, 1, otherCurrency],
+    queryFn: () => fetchPricing(1, otherCurrency),
+    enabled: !!slug && !!startDate && !!endDate,
+    staleTime: Infinity, // Keep prefetched data fresh
+  });
+
+  // Calculate base price per person
+  const basePrice =
+    startDate && endDate ? getPriceFromDates(startDate, endDate, currency) : 0;
+
+  // Use final price (with early bird discount if applicable) or fallback to base price
+  const finalPrice =
+    pricingQuery.data?.finalPrice ??
+    (startDate && endDate
+      ? getPriceForQuantity(startDate, endDate, 1, { currency })
+      : 0);
+
+  const basePriceForDisplay = pricingQuery.data?.basePrice ?? basePrice;
+  const hasEarlyBird = (pricingQuery.data?.earlyBirdDiscount ?? 0) > 0;
+
+  const handleSeePricing = () => {
+    // Scroll to pricing section with 100px offset
     const pricingElement = document.getElementById("pricing");
     if (pricingElement) {
-      pricingElement.scrollIntoView({ behavior: "smooth", block: "start" });
+      const elementPosition = pricingElement.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - 100;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
     }
   };
 
@@ -236,7 +301,7 @@ export function EventDetails({ event }: EventDetailsProps) {
 
     const eventUrl =
       typeof window !== "undefined"
-        ? `${window.location.origin}/events/${event.slug}`
+        ? `${window.location.origin}/event/${event.slug}`
         : "";
 
     return {
@@ -257,7 +322,7 @@ export function EventDetails({ event }: EventDetailsProps) {
   return (
     <section className="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
       <div className="grid gap-8 lg:grid-cols-[2fr_3fr] lg:items-center">
-        <div className="space-y-8">
+        <div className="space-y-4">
           {/* Date Cards */}
           <div className="space-y-3">
             {formattedDateRanges.length > 0 ? (
@@ -274,20 +339,23 @@ export function EventDetails({ event }: EventDetailsProps) {
 
                     {/* Date & Time Info */}
 
-                    <p className=" tracking-tight text-gray-900">
+                    <p className="tracking-tight text-gray-900">
                       {dateRange.dateStr}
                     </p>
 
                     {/* Add to Calendar Button - show on first and second date ranges */}
-                    {(index === 0 || index === 1) && (() => {
-                      const calendarEvent = getCalendarEvent(eventDates[index]);
-                      return calendarEvent ? (
-                        <AddToCalendar
-                          event={calendarEvent}
-                          className="shrink-0"
-                        />
-                      ) : null;
-                    })()}
+                    {(index === 0 || index === 1) &&
+                      (() => {
+                        const calendarEvent = getCalendarEvent(
+                          eventDates[index],
+                        );
+                        return calendarEvent ? (
+                          <AddToCalendar
+                            event={calendarEvent}
+                            className="shrink-0"
+                          />
+                        ) : null;
+                      })()}
                   </div>
 
                   {/* Subtle accent line */}
@@ -309,11 +377,65 @@ export function EventDetails({ event }: EventDetailsProps) {
           </div>
 
           <div className="space-y-4">
+            {/* Price and Currency Switcher */}
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-2 py-2">
+              {/* Price Display */}
+              <div className="flex flex-col justify-center">
+                {finalPrice > 0 ? (
+                  <>
+                    {hasEarlyBird && (
+                      <div className="flex items-center gap-2 ml-2">
+                        <span className="text-xs font-semibold text-gray-500 line-through">
+                          {basePriceForDisplay.toLocaleString("en-US")}
+                          {currency}
+                        </span>
+                        <span className="rounded bg-[#FBBB00]/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#FBBB00] uppercase">
+                          Early Bird
+                        </span>
+                      </div>
+                    )}
+                    <span className="text-3xl ml-2 font-bold text-gray-900">
+                      {finalPrice.toLocaleString("en-US")}
+                      {currency}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-sm font-medium text-gray-500">
+                    Price calculation...
+                  </span>
+                )}
+              </div>
+
+              {/* Currency Buttons */}
+              <div className="flex gap-1 rounded-lg border border-gray-200 bg-white p-1">
+                <button
+                  onClick={() => setCurrency("€")}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                    currency === "€"
+                      ? "bg-[#FBBB00] text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  €
+                </button>
+                <button
+                  onClick={() => setCurrency("$")}
+                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                    currency === "$"
+                      ? "bg-[#FBBB00] text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
+                >
+                  $
+                </button>
+              </div>
+            </div>
+
             <button
-              onClick={handleRegister}
+              onClick={handleSeePricing}
               className="hover:bg-primary hover:text-secondary w-full cursor-pointer rounded-full border-2 border-[#FBBB00] bg-[#FBBB00] py-4 text-lg font-semibold uppercase transition-colors duration-200"
             >
-              Register Now
+              See Pricing
             </button>
             <button className="w-full cursor-pointer rounded-full border-2 border-[#FBBB00] py-4 text-lg font-semibold text-[#FBBB00] uppercase transition-colors duration-200 hover:bg-[#FBBB00] hover:text-black">
               Request Training Agenda

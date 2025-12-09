@@ -7,7 +7,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import type { Blog, Category } from "~/payload-types";
 import type { Metadata } from "next";
-import { EditButton } from "~/app/(frontend)/events/[slug]/components/EditButton";
+import { EditButton } from "~/app/(frontend)/event/[slug]/components/EditButton";
 
 // Simple Lexical content renderer
 function LexicalContent({ content }: { content: any }) {

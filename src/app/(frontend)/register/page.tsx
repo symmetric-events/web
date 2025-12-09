@@ -13,7 +13,7 @@ export default async function RegisterPage() {
         {/* Header */}
         <div className="">
           <Link
-            href="/events"
+            href="/event"
             className="text-secondary mb-4 inline-flex items-center hover:text-gray-900"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />

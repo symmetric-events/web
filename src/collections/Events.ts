@@ -109,6 +109,9 @@ export const Events: CollectionConfig = {
     {
       name: 'Price',
       type: 'group',
+      admin: {
+        hidden: true,
+      },
       fields: [
         {
           name: 'USD',
@@ -256,6 +259,36 @@ export const Events: CollectionConfig = {
       type: 'relationship',
       relationTo: 'trainers' as any,
       hasMany: true,
+    },
+    {
+      name: 'video',
+      type: 'text',
+      admin: {
+        description: 'Video URL (e.g., YouTube, Vimeo, or direct video link)',
+      },
+    },
+    {
+      name: 'sneekPeek',
+      type: 'group',
+      admin: {
+        description: 'Sneak peek preview with image and PDF link',
+      },
+      fields: [
+        {
+          name: 'imageUrl',
+          type: 'text',
+          admin: {
+            description: 'URL of the sneak peek image',
+          },
+        },
+        {
+          name: 'pdfLink',
+          type: 'text',
+          admin: {
+            description: 'Link to the PDF file',
+          },
+        },
+      ],
     },
   ],
   timestamps: true,

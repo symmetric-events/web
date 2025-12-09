@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getPriceForQuantity, getPriceFromDates } from "~/lib/pricing";
+import { useCurrency } from "~/app/(frontend)/context/CurrencyContext";
 import { BuyTicketButton } from "./BuyTicketButton";
 
 interface EventPricingProps {
@@ -22,6 +23,7 @@ interface PricingInfo {
 
 export function EventPricing({ event }: EventPricingProps) {
   const router = useRouter();
+  const { currency } = useCurrency();
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [loadingQuantity, setLoadingQuantity] = useState<number | null>(null);
   const eventDates = event?.["Event Dates"] || [];
@@ -105,7 +107,7 @@ export function EventPricing({ event }: EventPricingProps) {
 
     try {
       const res = await fetch(
-        `/api/events/${slug}/pricing?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&quantity=${quantity}`,
+        `/api/events/${slug}/pricing?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&quantity=${quantity}&currency=${currency}`,
         { cache: "no-store" },
       );
       if (!res.ok) return null;
@@ -117,19 +119,19 @@ export function EventPricing({ event }: EventPricingProps) {
   };
 
   const pricing1Query = useQuery({
-    queryKey: ["pricing", slug, startDate, endDate, 1],
+    queryKey: ["pricing", slug, startDate, endDate, 1, currency],
     queryFn: () => fetchPricing(1),
     enabled: !!slug && !!startDate && !!endDate,
   });
 
   const pricing2Query = useQuery({
-    queryKey: ["pricing", slug, startDate, endDate, 2],
+    queryKey: ["pricing", slug, startDate, endDate, 2, currency],
     queryFn: () => fetchPricing(2),
     enabled: !!slug && !!startDate && !!endDate,
   });
 
   const pricing3Query = useQuery({
-    queryKey: ["pricing", slug, startDate, endDate, 3],
+    queryKey: ["pricing", slug, startDate, endDate, 3, currency],
     queryFn: () => fetchPricing(3),
     enabled: !!slug && !!startDate && !!endDate,
   });
@@ -137,19 +139,19 @@ export function EventPricing({ event }: EventPricingProps) {
   // Calculate base price per person
   const basePricePerPerson = useMemo(() => {
     if (!startDate || !endDate) return 0;
-    return getPriceFromDates(startDate, endDate);
-  }, [startDate, endDate]);
+    return getPriceFromDates(startDate, endDate, currency);
+  }, [startDate, endDate, currency]);
 
   // Calculate base prices and group discounts for each quantity
   const basePrice1 =
     pricing1Query.data?.basePrice ??
-    (startDate && endDate ? getPriceForQuantity(startDate, endDate, 1) : 0);
+    (startDate && endDate ? getPriceForQuantity(startDate, endDate, 1, { currency }) : 0);
   const basePrice2 =
     pricing2Query.data?.basePrice ??
-    (startDate && endDate ? getPriceForQuantity(startDate, endDate, 2) : 0);
+    (startDate && endDate ? getPriceForQuantity(startDate, endDate, 2, { currency }) : 0);
   const basePrice3 =
     pricing3Query.data?.basePrice ??
-    (startDate && endDate ? getPriceForQuantity(startDate, endDate, 3) : 0);
+    (startDate && endDate ? getPriceForQuantity(startDate, endDate, 3, { currency }) : 0);
 
   // Calculate group discounts
   const groupDiscount2 = basePricePerPerson * 2 - basePrice2;
@@ -251,35 +253,37 @@ export function EventPricing({ event }: EventPricingProps) {
 
   return (
     <div id="pricing" className="my-10 space-y-6">
-      {/* Date Selection */}
-      {eventDates.length > 1 && (
-        <div className="mb-6">
-          <label className="mb-2 block text-sm font-medium text-gray-900">
-            Select Date:
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {eventDates.map((dateRange: any, index: number) => {
-              const rangeStart = dateRange?.["Start Date"];
-              const rangeEnd = dateRange?.["End Date"];
-              if (!rangeStart || !rangeEnd) return null;
+      {/* Date and Currency Selection */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {eventDates.length > 1 && (
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-900">
+              Select Date:
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {eventDates.map((dateRange: any, index: number) => {
+                const rangeStart = dateRange?.["Start Date"];
+                const rangeEnd = dateRange?.["End Date"];
+                if (!rangeStart || !rangeEnd) return null;
 
-              return (
-                <button
-                  key={index}
-                  onClick={() => setSelectedDateIndex(index)}
-                  className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                    selectedDateIndex === index
-                      ? "bg-[#FBBB00] text-gray-900"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {formatDateRange(rangeStart, rangeEnd)}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedDateIndex(index)}
+                    className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                      selectedDateIndex === index
+                        ? "bg-[#FBBB00] text-gray-900"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {formatDateRange(rangeStart, rangeEnd)}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Early Bird Banner */}
       {earlyBirdInfo?.earlyBirdEligible && (
@@ -324,40 +328,41 @@ export function EventPricing({ event }: EventPricingProps) {
 
           {/* Yellow bottom section */}
           <div className="flex flex-1 flex-col px-6 py-6">
-            {/* Standard price - only show if early bird exists */}
+            {/* Standard price - show if early bird exists */}
             {(pricing1Query.data?.earlyBirdDiscount ?? 0) > 0 && (
               <div className="mb-4 text-center">
-                <div className="text-3xl  font-semibold line-through">
-                  {basePrice1.toLocaleString("en-US")}€
+                <div className="text-3xl font-semibold text-gray-700 line-through">
+                  {basePrice1.toLocaleString("en-US")}{currency}
                 </div>
               </div>
             )}
 
             {/* Price (Early Bird if available, otherwise base price) */}
-            <div className="mb-4 text-center">
-              <div className="text-5xl font-bold">
-                {price1.toLocaleString("en-US")}€
-                
-              </div>
-            </div>
-
-            {/* Early Bird discount button */}
-            {(pricing1Query.data?.earlyBirdDiscount ?? 0) > 0 && (
-              <div className="mb-6 flex justify-center">
-                <div className="bg-secondary rounded-lg px-4 py-2 tracking-widest">
-                  <span className="text-sm font-bold text-gray-900">
-                    EARLY BIRD -€{pricing1Query.data?.earlyBirdDiscount}
-                  </span>
+            <div className="flex flex-col h-full justify-around">
+              <div className="mb-4 text-center">
+                <div className="text-5xl font-bold">
+                  {price1.toLocaleString("en-US")}{currency}
                 </div>
               </div>
-            )}
 
-            {/* Features */}
-            <ul className="mb-6 flex-1 space-y-2 text-center text-sm text-gray-900">
-              {features.map((feature, i) => (
-                <li key={i}>{feature}</li>
-              ))}
-            </ul>
+              {/* Early Bird discount button */}
+              {(pricing1Query.data?.earlyBirdDiscount ?? 0) > 0 && (
+                <div className="mb-6 flex justify-center">
+                  <div className="bg-secondary rounded-lg px-4 py-2 tracking-widest">
+                    <span className="text-sm font-bold text-gray-900">
+                      EARLY BIRD -{currency}{pricing1Query.data?.earlyBirdDiscount}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Features */}
+              <ul className="mb-6 space-y-2 text-center text-sm text-gray-900">
+                {features.map((feature, i) => (
+                  <li key={i}>{feature}</li>
+                ))}
+              </ul>
+            </div>
 
             <BuyTicketButton
               quantity={1}
@@ -381,11 +386,17 @@ export function EventPricing({ event }: EventPricingProps) {
 
           {/* Yellow bottom section */}
           <div className="flex flex-1 flex-col px-6 py-6">
-            {/* Standard price - only show if early bird exists */}
-            {(pricing2Query.data?.earlyBirdDiscount ?? 0) > 0 && (
+            {/* Standard price - show if early bird exists, or show regular price struck through if no early bird */}
+            {(pricing2Query.data?.earlyBirdDiscount ?? 0) > 0 ? (
               <div className="mb-4 text-center">
-                <div className="text-3xl  font-semibold line-through">
-                  {basePrice2.toLocaleString("en-US")}€
+                <div className="text-3xl font-semibold text-gray-700 line-through">
+                  {basePrice2.toLocaleString("en-US")}{currency}
+                </div>
+              </div>
+            ) : (
+              <div className="mb-4 text-center">
+                <div className="text-3xl font-semibold text-gray-700 line-through">
+                  {(basePricePerPerson * 2).toLocaleString("en-US")}{currency}
                 </div>
               </div>
             )}
@@ -393,8 +404,7 @@ export function EventPricing({ event }: EventPricingProps) {
             {/* Price (Early Bird if available, otherwise base price) */}
             <div className="mb-4 text-center">
               <div className="text-5xl font-bold">
-                {price2.toLocaleString("en-US")}€
-                
+                {price2.toLocaleString("en-US")}{currency}
               </div>
             </div>
 
@@ -403,7 +413,7 @@ export function EventPricing({ event }: EventPricingProps) {
               <div className="mb-6 flex justify-center">
                 <div className="rounded-lg bg-gray-900 px-4 py-2 tracking-widest">
                   <span className="text-secondary text-sm font-bold">
-                    EARLY BIRD -€{pricing2Query.data?.earlyBirdDiscount}
+                    EARLY BIRD -{currency}{pricing2Query.data?.earlyBirdDiscount}
                   </span>
                 </div>
               </div>
@@ -436,11 +446,17 @@ export function EventPricing({ event }: EventPricingProps) {
 
           {/* Yellow bottom section */}
           <div className="flex flex-1 flex-col px-6 py-6">
-            {/* Standard price - only show if early bird exists */}
-            {(pricing3Query.data?.earlyBirdDiscount ?? 0) > 0 && (
+            {/* Standard price - show if early bird exists, or show regular price struck through if no early bird */}
+            {(pricing3Query.data?.earlyBirdDiscount ?? 0) > 0 ? (
               <div className="mb-4 text-center">
-                <div className="text-3xl  font-semibold line-through">
-                  {basePrice3.toLocaleString("en-US")}€
+                <div className="text-3xl font-semibold text-gray-700 line-through">
+                  {basePrice3.toLocaleString("en-US")}{currency}
+                </div>
+              </div>
+            ) : (
+              <div className="mb-4 text-center">
+                <div className="text-3xl font-semibold text-gray-700 line-through">
+                  {(basePricePerPerson * 3).toLocaleString("en-US")}{currency}
                 </div>
               </div>
             )}
@@ -448,8 +464,7 @@ export function EventPricing({ event }: EventPricingProps) {
             {/* Price (Early Bird if available, otherwise base price) */}
             <div className="mb-4 text-center">
               <div className="text-5xl font-bold">
-                {price3.toLocaleString("en-US")}€
-                
+                {price3.toLocaleString("en-US")}{currency}
               </div>
             </div>
 
@@ -458,7 +473,7 @@ export function EventPricing({ event }: EventPricingProps) {
               <div className="mb-6 flex justify-center">
                 <div className="bg-secondary rounded-lg px-4 py-2 tracking-widest">
                   <span className="text-sm font-bold text-gray-900">
-                    EARLY BIRD -€{pricing3Query.data?.earlyBirdDiscount}
+                    EARLY BIRD -{currency}{pricing3Query.data?.earlyBirdDiscount}
                   </span>
                 </div>
               </div>

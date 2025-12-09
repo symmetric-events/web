@@ -93,7 +93,7 @@ function CheckoutSuccessContent() {
 
           <div className="space-y-4">
             <Link
-              href="/events"
+              href="/event"
               className="inline-flex items-center justify-center w-full bg-secondary hover:text-secondary hover:bg-transparent border-2 border-secondary text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
             >
               Browse More Events

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '~/payload.config'
-import { getPriceForQuantity } from '~/lib/pricing'
+import { getPriceForQuantity, type Currency } from '~/lib/pricing'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -67,15 +67,16 @@ function getEarlyBirdDiscount(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } },
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   try {
     const { searchParams } = new URL(request.url)
-    const slug = params.slug
+    const { slug } = await params
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     const quantityParam = searchParams.get('quantity')
     const quantity = quantityParam ? parseInt(quantityParam, 10) : 1
+    const currency = (searchParams.get('currency') as Currency) || '€'
 
     if (!slug) {
       return NextResponse.json(
@@ -129,7 +130,7 @@ export async function GET(
     const eligible = isEarlyBirdEligible(startDate)
 
     // Get base price for the quantity
-    const basePrice = getPriceForQuantity(startDate, endDate, quantity)
+    const basePrice = getPriceForQuantity(startDate, endDate, quantity, { currency })
 
     // Calculate early bird discount if eligible
     const earlyBirdDiscount = eligible

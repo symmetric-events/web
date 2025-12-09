@@ -6,13 +6,20 @@ import { useEffect, useState } from "react";
 interface EditButtonProps {
   collection: string;
   id: string | number;
+  isAuthenticated?: boolean;
 }
 
-export function EditButton({ collection, id }: EditButtonProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+export function EditButton({ collection, id, isAuthenticated: serverAuth }: EditButtonProps) {
+  const [isAuthenticated, setIsAuthenticated] = useState(serverAuth ?? false);
 
   useEffect(() => {
-    // Check if user is authenticated by checking for Payload auth cookie
+    // If server-side auth is provided, use it; otherwise check client-side
+    if (serverAuth !== undefined) {
+      setIsAuthenticated(serverAuth);
+      return;
+    }
+
+    // Fallback: Check if user is authenticated by checking for Payload auth cookie
     const checkAuth = () => {
       const token = document.cookie
         .split("; ")
@@ -21,14 +28,14 @@ export function EditButton({ collection, id }: EditButtonProps) {
     };
 
     checkAuth();
-  }, []);
+  }, [serverAuth]);
 
   if (!isAuthenticated) {
     return null;
   }
 
   return (
-    <div className="absolute right-10 flex">
+    <div className="absolute right-5 top-18 flex">
       <Link
         href={`/admin/collections/${collection}/${id}`}
         className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"

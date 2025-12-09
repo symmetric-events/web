@@ -8,7 +8,8 @@ import config from "~/payload.config";
 import { Button } from "./components/Button";
 import { CourseCard } from "./components/CourseCard";
 import { TestimonialCard } from "./components/TestimonialCard";
-import { ClientLogo } from "./components/clientLogo";
+import { ClientLogosCarousel } from "./components/ClientLogosCarousel";
+import { TrainerCard } from "./trainers/TrainerCard";
 
 export default async function HomePage() {
   const headers = await getHeaders();
@@ -71,6 +72,21 @@ export default async function HomePage() {
     })
     .slice(0, 6); // Limit to 6 events
 
+  // Fetch featured trainers
+  const featuredTrainersRes = await payload.find({
+    collection: "trainers",
+    where: {
+      "Featured Trainer": {
+        equals: true,
+      },
+    },
+    depth: 1, // Include related data like images
+    limit: 6, // Limit to 6 featured trainers
+    sort: "name",
+  });
+
+  const featuredTrainers = featuredTrainersRes.docs;
+
   return (
     <div>
       {/* Hero Section */}
@@ -94,7 +110,7 @@ export default async function HomePage() {
             <h2 className="mb-5 text-2xl leading-tight font-bold">
               Your Partner for Pharma and Biotech Training
             </h2>
-            <p className="mb-8 text-xl leading-relaxed font-bold opacity-90">
+            <p className="mb-8 text-xl leading-relaxed opacity-90">
               We train clients from over 500 companies annually.
               <br />
               Enter our global educational platform for pharmaceutical
@@ -164,31 +180,10 @@ export default async function HomePage() {
       </section>
 
       {/* Client Logos */}
-      <section className="bg-gray-50 py-20">
-        <div className="mx-auto max-w-7xl px-5">
-          <h3 className="mb-12 text-center text-2xl text-gray-800">
-            Clients that have benefited from our courses
-          </h3>
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
-            {/* Row 1 */}
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/astra-2-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/annvie-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/teva-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/boe-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/gsk-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/johnson-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/merck-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/novartis.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/novo-1-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/pfizer-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/rocje-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/sanofi-1.png" />
-          </div>
-        </div>
-      </section>
+      <ClientLogosCarousel />
 
       {/* Testimonials */}
-      <section className="bg-white py-20">
+      <section className="bg-white py-10">
         <div className="mx-auto max-w-7xl px-5">
           <h3 className="mb-12 text-center text-2xl text-gray-800">
             Testimonials
@@ -215,6 +210,42 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Featured Trainers */}
+      {featuredTrainers.length > 0 && (
+        <section className="bg-gray-50 py-10">
+          <div className="mx-auto max-w-7xl px-5">
+            <h3 className="mb-12 text-center text-2xl text-gray-800">
+              Featured Trainers
+            </h3>
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {featuredTrainers.map((trainer: any) => (
+                <TrainerCard
+                  key={trainer.id}
+                  slug={trainer.slug || trainer.id}
+                  name={trainer.name}
+                  position={trainer.position}
+                  excerpt={trainer.excerpt || trainer.biography}
+                  imageUrl={
+                    (typeof trainer.image === "object" && trainer.image?.url) ||
+                    trainer.image_url ||
+                    undefined
+                  }
+                  imageAlt={
+                    (typeof trainer.image === "object" && trainer.image?.alt) ||
+                    trainer.name
+                  }
+                />
+              ))}
+            </div>
+            <div className="mt-12 text-center">
+              <Link href="/trainers">
+                <Button variant="primary">View All Trainers</Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

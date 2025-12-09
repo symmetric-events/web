@@ -1,3 +1,44 @@
+// Pricing configuration for 2-day and 3-day courses
+const twoDay = {
+  "€": {
+    perPerson: 1500,
+    quantities: {
+      1: 1500,
+      2: 2300,
+      3: 3000,
+    },
+  },
+  $: {
+    perPerson: 1725,
+    quantities: {
+      1: 1725,
+      2: 2650,
+      3: 3450,
+    },
+  },
+};
+
+const threeDay = {
+  "€": {
+    perPerson: 1750,
+    quantities: {
+      1: 1750,
+      2: 2800,
+      3: 3500,
+    },
+  },
+  $: {
+    perPerson: 1950,
+    quantities: {
+      1: 1950,
+      2: 3220,
+      3: 3950,
+    },
+  },
+};
+
+export type Currency = "€" | "$";
+
 export function getEventDurationDays(
   startISO?: string | null,
   endISO?: string | null,
@@ -37,12 +78,13 @@ export function getEventDurationDays(
 export function getPriceFromDates(
   startISO?: string | null,
   endISO?: string | null,
+  currency: Currency = "€",
 ): number {
   const days = getEventDurationDays(startISO, endISO);
   if (!days) return 0;
 
-  if (days === 2) return 1500;
-  if (days === 3) return 1750;
+  if (days === 2) return twoDay[currency].perPerson;
+  if (days === 3) return threeDay[currency].perPerson;
 
   // For any unexpected duration, return 0 so it's clearly invalid
   return 0;
@@ -120,7 +162,8 @@ export function getEarlyBirdDiscount(
  * @param quantity Number of participants
  * @param options Optional parameters for early bird pricing
  * @param options.participantCount Number of already confirmed participants (required for early bird)
- * @returns Price in EUR (with early bird discount applied if eligible)
+ * @param options.currency Currency to use (defaults to EUR)
+ * @returns Price in specified currency (with early bird discount applied if eligible)
  */
 export function getPriceForQuantity(
   startISO?: string | null,
@@ -128,32 +171,34 @@ export function getPriceForQuantity(
   quantity: number = 1,
   options?: {
     participantCount?: number;
+    currency?: Currency;
   },
 ): number {
   const days = getEventDurationDays(startISO, endISO);
   if (!days) return 0;
 
+  const currency = options?.currency ?? "€";
   let basePrice = 0;
 
   if (days === 2) {
-    // 2-day event pricing
-    if (quantity === 1) basePrice = 1500;
-    else if (quantity === 2) basePrice = 2300;
-    else if (quantity === 3) basePrice = 3000; // 3 for 2
+    const pricing = twoDay[currency];
+    if (quantity === 1) basePrice = pricing.quantities[1];
+    else if (quantity === 2) basePrice = pricing.quantities[2];
+    else if (quantity === 3) basePrice = pricing.quantities[3];
     else {
       // For 4+, use price for 3 + unit price for each additional participant
       // This ensures the discount maxes out at 3 participants
-      basePrice = 3000 + 1500 * (quantity - 3);
+      basePrice = pricing.quantities[3] + pricing.perPerson * (quantity - 3);
     }
   } else if (days === 3) {
-    // 3-day event pricing
-    if (quantity === 1) basePrice = 1750;
-    else if (quantity === 2) basePrice = 2800;
-    else if (quantity === 3) basePrice = 3500; // 3 for 2
+    const pricing = threeDay[currency];
+    if (quantity === 1) basePrice = pricing.quantities[1];
+    else if (quantity === 2) basePrice = pricing.quantities[2];
+    else if (quantity === 3) basePrice = pricing.quantities[3];
     else {
       // For 4+, use price for 3 + unit price for each additional participant
       // This ensures the discount maxes out at 3 participants
-      basePrice = 3500 + 1750 * (quantity - 3);
+      basePrice = pricing.quantities[3] + pricing.perPerson * (quantity - 3);
     }
   }
 

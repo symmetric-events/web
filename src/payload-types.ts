@@ -244,6 +244,23 @@ export interface Event {
       }[]
     | null;
   Trainers?: (number | Trainer)[] | null;
+  /**
+   * Video URL (e.g., YouTube, Vimeo, or direct video link)
+   */
+  video?: string | null;
+  /**
+   * Sneak peek preview with image and PDF link
+   */
+  sneekPeek?: {
+    /**
+     * URL of the sneak peek image
+     */
+    imageUrl?: string | null;
+    /**
+     * Link to the PDF file
+     */
+    pdfLink?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -280,6 +297,10 @@ export interface Trainer {
   id: number;
   slug: string;
   name: string;
+  /**
+   * Mark this trainer as featured
+   */
+  'Featured Trainer'?: boolean | null;
   biography?: string | null;
   excerpt?: string | null;
   position?: string | null;
@@ -653,6 +674,13 @@ export interface EventsSelect<T extends boolean = true> {
         id?: T;
       };
   Trainers?: T;
+  video?: T;
+  sneekPeek?:
+    | T
+    | {
+        imageUrl?: T;
+        pdfLink?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -663,6 +691,7 @@ export interface EventsSelect<T extends boolean = true> {
 export interface TrainersSelect<T extends boolean = true> {
   slug?: T;
   name?: T;
+  'Featured Trainer'?: T;
   biography?: T;
   excerpt?: T;
   position?: T;

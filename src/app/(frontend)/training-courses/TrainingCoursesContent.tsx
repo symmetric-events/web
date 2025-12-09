@@ -114,8 +114,8 @@ export function TrainingCoursesContent() {
       />
 
       {/* Course List Section */}
-      <section className="bg-gray-50">
-        <div className="mx-auto max-w-5xl px-5">
+      <section className="bg-gray-50 pb-10">
+        <div className="mx-auto max-w-5xl">
           {loading ? (
             <>
               {/* Filter Buttons Skeleton */}

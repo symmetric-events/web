@@ -20,7 +20,7 @@ export const Trainers: CollectionConfig = {
             .trim()
             .replace(/\s+/g, '-')
 
-          ;(data as any).slug = slug
+            ; (data as any).slug = slug
         }
 
         return data
@@ -44,6 +44,14 @@ export const Trainers: CollectionConfig = {
       required: true,
     },
     {
+      name: 'Featured Trainer',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        description: 'Mark this trainer as featured',
+      },
+    },
+    {
       name: 'biography',
       type: 'textarea',
     },
@@ -64,7 +72,6 @@ export const Trainers: CollectionConfig = {
       name: 'image_url',
       type: 'text',
     },
-
   ],
 }
 

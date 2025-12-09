@@ -23,7 +23,7 @@ export function Button({
 
   const variantClasses = {
     primary:
-      "bg-secondary border-2 border-secondary text-primary rounded-full font-bold hover:bg-transparent hover:text-secondary",
+      "bg-secondary border-2 border-secondary text-gray-800 rounded-full font-bold hover:bg-transparent hover:text-secondary",
     secondary:
       "bg-white text-secondary p-4 border-2 border-secondary rounded-full font-bold hover:bg-secondary hover:text-white hover:border-white",
     filter:
