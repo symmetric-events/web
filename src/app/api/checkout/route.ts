@@ -13,6 +13,7 @@ type CheckoutItem = {
   quantity: number
   startDate?: string
   endDate?: string
+  earlyBirdDiscount?: number // in cents
 }
 
 type CustomerPayload = {
@@ -286,6 +287,34 @@ function formatDateRangeLabel(startISO: string, endISO: string): string {
   return `${fmt(start, true)} – ${fmt(end, true)}`
 }
 
+/**
+ * Fetch pricing info including early bird discount for an item
+ */
+async function getPricingInfo(
+  eventSlug: string,
+  startDate: string,
+  endDate: string,
+  quantity: number,
+): Promise<{ basePrice: number; earlyBirdDiscount: number; finalPrice: number } | null> {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const res = await fetch(
+      `${baseUrl}/api/events/${eventSlug}/pricing?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&quantity=${quantity}`,
+      { cache: 'no-store' },
+    )
+    if (!res.ok) return null
+    const data = await res.json()
+    return {
+      basePrice: data.basePrice || 0,
+      earlyBirdDiscount: data.earlyBirdDiscount || 0,
+      finalPrice: data.finalPrice || data.basePrice || 0,
+    }
+  } catch (error) {
+    console.error('Failed to fetch pricing info:', error)
+    return null
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -301,13 +330,39 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Event dates are required' }, { status: 400 })
       }
     }
-    const itemsWithDates: CheckoutItem[] = items.map((it) => {
-      const label = formatDateRangeLabel(it.startDate as string, it.endDate as string)
-      return {
-        ...it,
-        eventTitle: `${it.eventTitle} (${label})`,
-      }
-    })
+
+    // Verify early bird eligibility and apply discounts
+    const itemsWithPricing = await Promise.all(
+      items.map(async (it) => {
+        const label = formatDateRangeLabel(it.startDate as string, it.endDate as string)
+        let finalPrice = it.price // Price already in cents
+        let earlyBirdDiscount = 0
+
+        // Fetch pricing info to get early bird discount
+        if (it.eventSlug && it.startDate && it.endDate) {
+          const pricingInfo = await getPricingInfo(
+            it.eventSlug,
+            it.startDate,
+            it.endDate,
+            it.quantity,
+          )
+          if (pricingInfo) {
+            // Convert final price from EUR to cents
+            finalPrice = Math.round(pricingInfo.finalPrice * 100)
+            earlyBirdDiscount = Math.round(pricingInfo.earlyBirdDiscount * 100)
+          }
+        }
+
+        return {
+          ...it,
+          eventTitle: `${it.eventTitle} (${label})`,
+          price: finalPrice, // Update price with early bird discount applied
+          earlyBirdDiscount, // Store early bird discount amount
+        }
+      }),
+    )
+
+    const itemsWithDates: CheckoutItem[] = itemsWithPricing
     const customer: CustomerPayload = {
       firstName: body.firstName,
       lastName: body.lastName,
@@ -392,6 +447,10 @@ export async function POST(request: NextRequest) {
           basePrice: item.price,
           vatAmount: Math.round(item.price * vatRate),
           totalPrice: item.price + Math.round(item.price * vatRate)
+        }))),
+        earlyBirdDiscounts: JSON.stringify(itemsWithDates.map(item => ({
+          eventId: item.eventId,
+          earlyBirdDiscount: item.earlyBirdDiscount || 0,
         }))),
       },
     })

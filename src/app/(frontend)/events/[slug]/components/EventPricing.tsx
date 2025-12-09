@@ -1,30 +1,166 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { getPriceForQuantity } from "~/lib/pricing";
+import { useEffect, useState, useMemo } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { getPriceForQuantity, getPriceFromDates } from "~/lib/pricing";
+import { Button } from "~/app/(frontend)/components/Button";
 
 interface EventPricingProps {
   event: any;
+}
+
+interface PricingInfo {
+  basePrice: number;
+  earlyBirdEligible: boolean;
+  earlyBirdDiscount: number;
+  finalPrice: number;
+  participantCount: number;
+  remainingEarlyBirdSpots: number;
+  wouldGetEarlyBird: boolean;
 }
 
 export function EventPricing({ event }: EventPricingProps) {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const eventDates = event?.["Event Dates"] || [];
-  const firstDateRange =
-    Array.isArray(eventDates) && eventDates.length > 0
-      ? eventDates[0]
-      : undefined;
-  const startDate = firstDateRange?.["Start Date"];
-  const endDate = firstDateRange?.["End Date"];
-  
-  const price1 = startDate && endDate ? getPriceForQuantity(startDate, endDate, 1) : 0;
-  const price2 = startDate && endDate ? getPriceForQuantity(startDate, endDate, 2) : 0;
-  const price3 = startDate && endDate ? getPriceForQuantity(startDate, endDate, 3) : 0;
-  
+
+  // Date selection state
+  const [selectedDateIndex, setSelectedDateIndex] = useState(0);
+  const selectedDateRange = useMemo(() => {
+    return Array.isArray(eventDates) && eventDates.length > selectedDateIndex
+      ? eventDates[selectedDateIndex]
+      : eventDates[0];
+  }, [eventDates, selectedDateIndex]);
+
+  const startDate = selectedDateRange?.["Start Date"];
+  const endDate = selectedDateRange?.["End Date"];
+  const slug = event?.slug;
+
   const isOnline = event?.["Training Type"] === "online";
+
+  // Format date for display
+  const formatDateRange = (start: string, end: string) => {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const sameDay = startDate.toDateString() === endDate.toDateString();
+
+    if (sameDay) {
+      return startDate.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+    }
+
+    const sameYear = startDate.getFullYear() === endDate.getFullYear();
+    const startFormatted = startDate.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: sameYear ? undefined : "numeric",
+    });
+    const endFormatted = endDate.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    return `${startFormatted} – ${endFormatted}`;
+  };
+
+  // Calculate early bird end date (3 months before event start)
+  const earlyBirdEndDate = useMemo(() => {
+    if (!startDate) return null;
+    const eventStart = new Date(startDate);
+    const endDate = new Date(eventStart);
+    endDate.setMonth(endDate.getMonth() - 3);
+    return endDate;
+  }, [startDate]);
+
+  // Format date as DD.MM.YYYY
+  const formatDateShort = (date: Date) => {
+    return date
+      .toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+      .replace(/\//g, ".");
+  };
+
+  // Format date as DD. MONTH YYYY (e.g., "19. JANUARY 2025")
+  const formatDateLong = (date: Date) => {
+    const day = date.getDate();
+    const month = date.toLocaleDateString("en-GB", { month: "long" });
+    const year = date.getFullYear();
+    return `${day}. ${month.toUpperCase()} ${year}`;
+  };
+
+  // Fetch pricing info for each quantity
+  const fetchPricing = async (
+    quantity: number,
+  ): Promise<PricingInfo | null> => {
+    if (!slug || !startDate || !endDate) return null;
+
+    try {
+      const res = await fetch(
+        `/api/events/${slug}/pricing?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&quantity=${quantity}`,
+        { cache: "no-store" },
+      );
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (error) {
+      console.error("Failed to fetch pricing:", error);
+      return null;
+    }
+  };
+
+  const pricing1Query = useQuery({
+    queryKey: ["pricing", slug, startDate, endDate, 1],
+    queryFn: () => fetchPricing(1),
+    enabled: !!slug && !!startDate && !!endDate,
+  });
+
+  const pricing2Query = useQuery({
+    queryKey: ["pricing", slug, startDate, endDate, 2],
+    queryFn: () => fetchPricing(2),
+    enabled: !!slug && !!startDate && !!endDate,
+  });
+
+  const pricing3Query = useQuery({
+    queryKey: ["pricing", slug, startDate, endDate, 3],
+    queryFn: () => fetchPricing(3),
+    enabled: !!slug && !!startDate && !!endDate,
+  });
+
+  // Calculate base price per person
+  const basePricePerPerson = useMemo(() => {
+    if (!startDate || !endDate) return 0;
+    return getPriceFromDates(startDate, endDate);
+  }, [startDate, endDate]);
+
+  // Calculate base prices and group discounts for each quantity
+  const basePrice1 =
+    pricing1Query.data?.basePrice ??
+    (startDate && endDate ? getPriceForQuantity(startDate, endDate, 1) : 0);
+  const basePrice2 =
+    pricing2Query.data?.basePrice ??
+    (startDate && endDate ? getPriceForQuantity(startDate, endDate, 2) : 0);
+  const basePrice3 =
+    pricing3Query.data?.basePrice ??
+    (startDate && endDate ? getPriceForQuantity(startDate, endDate, 3) : 0);
+
+  // Calculate group discounts
+  const groupDiscount2 = basePricePerPerson * 2 - basePrice2;
+  const groupDiscount3 = basePricePerPerson * 3 - basePrice3;
+
+  // Final prices (with early bird if applicable)
+  const price1 = pricing1Query.data?.finalPrice ?? basePrice1;
+  const price2 = pricing2Query.data?.finalPrice ?? basePrice2;
+  const price3 = pricing3Query.data?.finalPrice ?? basePrice3;
+
+  // Get early bird info (use pricing1Query as reference for eligibility)
+  const earlyBirdInfo = pricing1Query.data;
 
   // Ensure we have a persistent session id on client for draft orders
   useEffect(() => {
@@ -64,6 +200,7 @@ export function EventPricing({ event }: EventPricingProps) {
   const handleRegister = async (quantity: number) => {
     if (!event) return;
     if (!sessionId) return;
+    if (!startDate || !endDate) return;
 
     const slug = String(event.slug ?? "");
     try {
@@ -73,12 +210,24 @@ export function EventPricing({ event }: EventPricingProps) {
         field: "event_slug",
         value: slug,
       });
-      
+
       // Set the quantity for the order
       await mutateOrder.mutateAsync({
         sessionId,
         field: "quantity",
         value: quantity,
+      });
+
+      // Set the selected dates
+      await mutateOrder.mutateAsync({
+        sessionId,
+        field: "startDate",
+        value: startDate,
+      });
+      await mutateOrder.mutateAsync({
+        sessionId,
+        field: "endDate",
+        value: endDate,
       });
     } catch (e) {
       console.error("Failed to initialize draft order", e);
@@ -97,93 +246,236 @@ export function EventPricing({ event }: EventPricingProps) {
   ];
 
   return (
-    <div id="pricing" className="grid gap-6 md:grid-cols-3 items-center my-10">
-      {/* 1 Participant */}
-      <div className="flex h-full flex-col rounded-3xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
-        <div className="mb-8 text-center">
-          <h3 className="mb-8 text-lg font-bold uppercase tracking-wide text-gray-900">
-            1 Participant
-          </h3>
-          <div className="text-5xl font-bold text-[#FBBB00]">
-            €{price1.toLocaleString("en-US")}
+    <div id="pricing" className="my-10 space-y-6">
+      {/* Date Selection */}
+      {eventDates.length > 1 && (
+        <div className="mb-6">
+          <label className="mb-2 block text-sm font-medium text-gray-900">
+            Select Date:
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {eventDates.map((dateRange: any, index: number) => {
+              const rangeStart = dateRange?.["Start Date"];
+              const rangeEnd = dateRange?.["End Date"];
+              if (!rangeStart || !rangeEnd) return null;
+
+              return (
+                <button
+                  key={index}
+                  onClick={() => setSelectedDateIndex(index)}
+                  className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                    selectedDateIndex === index
+                      ? "bg-[#FBBB00] text-gray-900"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {formatDateRange(rangeStart, rangeEnd)}
+                </button>
+              );
+            })}
           </div>
         </div>
+      )}
 
-        <ul className="mb-8 flex-1 space-y-4 text-center text-gray-600">
-          {features.map((feature, i) => (
-            <li key={i} className="">
-              {feature}
-            </li>
-          ))}
-        </ul>
+      {/* Early Bird Banner */}
+      {earlyBirdInfo?.earlyBirdEligible && (
+        <div className="mb-8 w-full rounded-lg bg-[#FBBB00] px-6 py-3 text-center">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-900">
+            <span className="font-bold">EARLY BIRD PRICE</span>
+            <span>|</span>
+            <span>
+              {earlyBirdInfo.remainingEarlyBirdSpots > 0 ? (
+                <>
+                  ONLY{" "}
+                  <span className="font-bold">
+                    {earlyBirdInfo.remainingEarlyBirdSpots} OF 5
+                  </span>{" "}
+                  DISCOUNTED SPOTS LEFT
+                </>
+              ) : (
+                "EARLY BIRD SPOTS FILLED"
+              )}
+            </span>
+            <span>|</span>
+            <span>ENDS {formatDateLong(earlyBirdEndDate)}</span>
+          </div>
+        </div>
+      )}
 
-        <button
-          onClick={() => handleRegister(1)}
-          className="w-full cursor-pointer rounded-full bg-[#FBBB00] py-4 text-lg font-bold text-gray-900 uppercase transition-colors hover:bg-[#e5aa00]"
-        >
-          Buy Ticket
-        </button>
+      <div className="mb-2 text-center">
+        <span className="text-2xl font-light tracking-widest">TOP SELLER</span>
       </div>
 
-      {/* 2 Participants (Highlight) */}
-      <div className="relative flex h-full flex-col rounded-3xl bg-[#FBBB00] p-8 text-gray-900 shadow-lg transform md:scale-105 z-10">
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-4 py-1 text-sm font-bold text-[#FBBB00] uppercase ring-1 ring-gray-100 shadow-sm">
-          Top Seller
+      <div className="grid items-start gap-8 md:grid-cols-3">
+        {/* 1 Participant */}
+        <div className="flex h-full flex-col overflow-hidden rounded-3xl border-2 border-[#FBBB00] shadow-lg">
+          {/* Dark grey top section */}
+          <div className="mx-5 border-b-2 border-[#FBBB00] px-6 py-4 text-center">
+            <h3 className="text-2xl font-bold tracking-widest uppercase">
+              1 Participant
+            </h3>
+          </div>
+
+          {/* Yellow bottom section */}
+          <div className="flex flex-1 flex-col px-6 py-6">
+            {/* Standard price - only show if early bird exists */}
+            {(pricing1Query.data?.earlyBirdDiscount ?? 0) > 0 && (
+              <div className="mb-4 text-center">
+                <div className="text-3xl  font-semibold line-through">
+                  {basePrice1.toLocaleString("en-US")}€
+                </div>
+              </div>
+            )}
+
+            {/* Price (Early Bird if available, otherwise base price) */}
+            <div className="mb-4 text-center">
+              <div className="text-5xl font-bold">
+                {price1.toLocaleString("en-US")}€
+                
+              </div>
+            </div>
+
+            {/* Early Bird discount button */}
+            {(pricing1Query.data?.earlyBirdDiscount ?? 0) > 0 && (
+              <div className="mb-6 flex justify-center">
+                <div className="bg-secondary rounded-lg px-4 py-2 tracking-widest">
+                  <span className="text-sm font-bold text-gray-900">
+                    EARLY BIRD -€{pricing1Query.data?.earlyBirdDiscount}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Features */}
+            <ul className="mb-6 flex-1 space-y-2 text-center text-sm text-gray-900">
+              {features.map((feature, i) => (
+                <li key={i}>{feature}</li>
+              ))}
+            </ul>
+
+            <Button
+              onClick={() => handleRegister(2)}
+              variant="primary"
+              size="lg"
+            >
+              Buy Ticket
+            </Button>
+          </div>
         </div>
-        <div className="mb-8 text-center">
-          <h3 className="mb-8 text-lg font-bold uppercase tracking-wide">
-            2 Participants
-          </h3>
-          <div className="mb-2 text-xl text-gray-700 line-through decoration-red-500 decoration-2">
-            €{(price1 * 2).toLocaleString("en-US")}
+
+        {/* 2 Participants (Highlight) - TOP SELLER */}
+        <div className="bg-secondary relative z-10 flex h-full flex-col overflow-hidden rounded-3xl border-2 border-[#FBBB00] text-gray-900 shadow-lg">
+          {/* TOP SELLER label */}
+
+          {/* Dark grey top section */}
+          <div className="mx-5 border-b-2 border-gray-900 py-4 text-center">
+            <h3 className="text-2xl font-bold tracking-widest uppercase">
+              2 Participants
+            </h3>
           </div>
-          <div className="text-5xl font-bold">
-            €{price2.toLocaleString("en-US")}
+
+          {/* Yellow bottom section */}
+          <div className="flex flex-1 flex-col px-6 py-6">
+            {/* Standard price - only show if early bird exists */}
+            {(pricing2Query.data?.earlyBirdDiscount ?? 0) > 0 && (
+              <div className="mb-4 text-center">
+                <div className="text-3xl  font-semibold line-through">
+                  {basePrice2.toLocaleString("en-US")}€
+                </div>
+              </div>
+            )}
+
+            {/* Price (Early Bird if available, otherwise base price) */}
+            <div className="mb-4 text-center">
+              <div className="text-5xl font-bold">
+                {price2.toLocaleString("en-US")}€
+                
+              </div>
+            </div>
+
+            {/* Early Bird discount button */}
+            {(pricing2Query.data?.earlyBirdDiscount ?? 0) > 0 && (
+              <div className="mb-6 flex justify-center">
+                <div className="rounded-lg bg-gray-900 px-4 py-2 tracking-widest">
+                  <span className="text-secondary text-sm font-bold">
+                    EARLY BIRD -€{pricing2Query.data?.earlyBirdDiscount}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Features */}
+            <ul className="mb-6 flex-1 space-y-2 text-center text-sm">
+              {features.map((feature, i) => (
+                <li key={i}>{feature}</li>
+              ))}
+            </ul>
+
+            <Button
+              onClick={() => handleRegister(2)}
+              variant="secondary"
+              size="lg"
+            >
+              Buy Ticket
+            </Button>
           </div>
         </div>
 
-        <ul className="mb-8 flex-1 space-y-4 text-center font-medium">
-          {features.map((feature, i) => (
-            <li key={i}>{feature}</li>
-          ))}
-        </ul>
-
-        <button
-          onClick={() => handleRegister(2)}
-          className="w-full cursor-pointer rounded-full bg-white py-4 text-lg font-bold text-[#FBBB00] uppercase transition-colors hover:bg-gray-50"
-        >
-          Buy Ticket
-        </button>
-      </div>
-
-      {/* 3 FOR 2 */}
-      <div className="flex h-full flex-col rounded-3xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
-        <div className="mb-8 text-center">
-          <h3 className="mb-8 text-lg font-bold uppercase tracking-wide text-gray-900">
-            3 For 2
-          </h3>
-          <div className="mb-2 text-xl text-gray-400 line-through decoration-red-500 decoration-2">
-            €{(price1 * 3).toLocaleString("en-US")}
+        {/* 3 FOR 2 */}
+        <div className="flex h-full flex-col overflow-hidden rounded-3xl border-2 border-[#FBBB00] shadow-lg">
+          {/* Dark grey top section */}
+          <div className="mx-5 border-b-2 border-[#FBBB00] px-6 py-4 text-center">
+            <h3 className="text-2xl font-bold tracking-widest uppercase">
+              3 For 2
+            </h3>
           </div>
-          <div className="text-5xl font-bold text-[#FBBB00]">
-            €{price3.toLocaleString("en-US")}
+
+          {/* Yellow bottom section */}
+          <div className="flex flex-1 flex-col px-6 py-6">
+            {/* Standard price - only show if early bird exists */}
+            {(pricing3Query.data?.earlyBirdDiscount ?? 0) > 0 && (
+              <div className="mb-4 text-center">
+                <div className="text-3xl  font-semibold line-through">
+                  {basePrice3.toLocaleString("en-US")}€
+                </div>
+              </div>
+            )}
+
+            {/* Price (Early Bird if available, otherwise base price) */}
+            <div className="mb-4 text-center">
+              <div className="text-5xl font-bold">
+                {price3.toLocaleString("en-US")}€
+                
+              </div>
+            </div>
+
+            {/* Early Bird discount button */}
+            {(pricing3Query.data?.earlyBirdDiscount ?? 0) > 0 && (
+              <div className="mb-6 flex justify-center">
+                <div className="bg-secondary rounded-lg px-4 py-2 tracking-widest">
+                  <span className="text-sm font-bold text-gray-900">
+                    EARLY BIRD -€{pricing3Query.data?.earlyBirdDiscount}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Features */}
+            <ul className="mb-6 flex-1 space-y-2 text-center text-sm text-gray-900">
+              {features.map((feature, i) => (
+                <li key={i}>{feature}</li>
+              ))}
+            </ul>
+
+            <Button
+              onClick={() => handleRegister(2)}
+              variant="primary"
+              size="lg"
+            >
+              Buy Ticket
+            </Button>
           </div>
         </div>
-
-        <ul className="mb-8 flex-1 space-y-4 text-center text-gray-600">
-          {features.map((feature, i) => (
-            <li key={i} className="">
-              {feature}
-            </li>
-          ))}
-        </ul>
-
-        <button
-          onClick={() => handleRegister(3)}
-          className="w-full cursor-pointer rounded-full bg-[#FBBB00] py-4 text-lg font-bold text-gray-900 uppercase transition-colors hover:bg-[#e5aa00]"
-        >
-          Buy Ticket
-        </button>
       </div>
     </div>
   );

@@ -25,7 +25,7 @@ export function Button({
     primary:
       "bg-secondary border-2 border-secondary text-primary rounded-full font-bold hover:bg-transparent hover:text-secondary",
     secondary:
-      "bg-white text-green-500 p-4 border-0 rounded font-bold hover:bg-gray-50",
+      "bg-white text-secondary p-4 border-2 border-secondary rounded-full font-bold hover:bg-secondary hover:text-white hover:border-white",
     filter:
       "bg-white border-2 border-gray-200 rounded-full font-medium hover:bg-secondary hover:text-white hover:border-secondary",
     "filter-active":

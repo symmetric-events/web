@@ -4,7 +4,7 @@ import { getPayload } from 'payload'
 import config from '~/payload.config'
 import { buildAirtablePayload } from '~/lib/airtable'
 import { env } from '~/env'
-import { getPriceFromDates } from '~/lib/pricing'
+import { getPriceFromDates, getPriceForQuantity } from '~/lib/pricing'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -214,9 +214,51 @@ export async function POST(request: NextRequest) {
         const currencyFromUpdate = typeof (baseData?.currency) === 'string' ? baseData.currency : undefined
         const nextCurrency = currencyFromUpdate ?? currentCurrency
 
-        if (['quantity', 'currency'].includes(field)) {
-          const unit = nextCurrency === 'EUR' ? (doc as any).priceEUR ?? 0 : (doc as any).priceUSD ?? 0
-          nextData.totalAmount = unit * nextQuantity
+        // Recalculate totals when quantity, currency, or dates change
+        if (['quantity', 'currency', 'startDate', 'endDate'].includes(field)) {
+          const startDate = nextData.startDate ?? (doc as any).startDate
+          const endDate = nextData.endDate ?? (doc as any).endDate
+          const eventSlug = (doc as any).eventSlug
+
+          if (startDate && endDate) {
+            // Try to fetch pricing with early bird discount
+            let totalAmount = 0
+            let earlyBirdDiscount = 0
+
+            if (eventSlug) {
+              try {
+                const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+                const pricingRes = await fetch(
+                  `${baseUrl}/api/events/${eventSlug}/pricing?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&quantity=${nextQuantity}`,
+                  { cache: 'no-store' },
+                )
+                if (pricingRes.ok) {
+                  const pricingData = await pricingRes.json()
+                  totalAmount = pricingData.finalPrice || 0
+                  earlyBirdDiscount = pricingData.earlyBirdDiscount || 0
+                } else {
+                  // Fallback to local calculation without early bird
+                  totalAmount = getPriceForQuantity(startDate, endDate, nextQuantity)
+                }
+              } catch (error) {
+                console.error('Failed to fetch pricing for order:', error)
+                // Fallback to local calculation without early bird
+                totalAmount = getPriceForQuantity(startDate, endDate, nextQuantity)
+              }
+            } else {
+              // Fallback to local calculation without early bird
+              totalAmount = getPriceForQuantity(startDate, endDate, nextQuantity)
+            }
+
+            // totalAmount already includes early bird discount (from finalPrice)
+            nextData.totalAmount = totalAmount
+            // Note: earlyBirdDiscount is already included in totalAmount
+            // The discountAmount field is reserved for discount codes applied separately
+          } else {
+            // Fallback: use unit price * quantity if no dates
+            const unit = nextCurrency === 'EUR' ? (doc as any).priceEUR ?? 0 : (doc as any).priceUSD ?? 0
+            nextData.totalAmount = unit * nextQuantity
+          }
         }
 
         const updated = await payload.update({

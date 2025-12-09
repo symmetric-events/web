@@ -322,6 +322,34 @@ export default function RegisterForm() {
     },
   });
 
+  // Fetch pricing info including early bird when dates are selected
+  const pricingQuery = useQuery({
+    queryKey: [
+      "pricing",
+      orderQuery.data?.eventSlug,
+      orderQuery.data?.startDate,
+      orderQuery.data?.endDate,
+      quantity,
+    ],
+    enabled: !!(
+      orderQuery.data?.eventSlug &&
+      orderQuery.data?.startDate &&
+      orderQuery.data?.endDate &&
+      quantity
+    ),
+    queryFn: async () => {
+      const order = orderQuery.data;
+      if (!order?.eventSlug || !order.startDate || !order.endDate) return null;
+      
+      const res = await fetch(
+        `/api/events/${order.eventSlug}/pricing?startDate=${encodeURIComponent(order.startDate)}&endDate=${encodeURIComponent(order.endDate)}&quantity=${quantity ?? 1}`,
+        { cache: "no-store" },
+      );
+      if (!res.ok) return null;
+      return await res.json();
+    },
+  });
+
 
   // Keep local quantity in sync with order when it changes (but only if we haven't processed URL param)
   useEffect(() => {
@@ -570,12 +598,21 @@ export default function RegisterForm() {
     // Calculate subtotal (full price * quantity) for display
     const subtotal = unitPrice * qty;
     
-    // Get the actual price for this quantity based on event dates
-    // This uses the new pricing structure (2-day: 1500/2300/3000, 3-day: 1750/2800/3500)
+    // Use pricing from API if available (includes early bird), otherwise calculate locally
     let actualPrice = unitPrice;
     let groupDiscount = 0;
+    let earlyBirdDiscount = 0;
     
-    if (order.startDate && order.endDate) {
+    if (pricingQuery.data) {
+      // Use pricing from API
+      const basePrice = pricingQuery.data.basePrice; // Price with group discount, without early bird
+      earlyBirdDiscount = pricingQuery.data.earlyBirdDiscount || 0;
+      actualPrice = pricingQuery.data.finalPrice; // basePrice - earlyBirdDiscount
+      
+      // Calculate group discount: difference between subtotal and base price
+      groupDiscount = Math.max(0, subtotal - basePrice);
+    } else if (order.startDate && order.endDate) {
+      // Fallback: calculate locally without early bird
       // Calculate the maximum discount (achieved at 3 participants)
       const priceFor3 = getPriceForQuantity(
         order.startDate,
@@ -639,10 +676,11 @@ export default function RegisterForm() {
     return {
       subtotal,
       groupDiscount,
+      earlyBirdDiscount,
       discountCodeAmount,
       finalTotal,
     };
-  }, [orderQuery.data, currency, quantity, discount]);
+  }, [orderQuery.data, currency, quantity, discount, pricingQuery.data]);
 
   const formattedTotal = useMemo(() => {
     if (!priceBreakdown) return "—";
@@ -683,9 +721,17 @@ export default function RegisterForm() {
       const qty = quantity ?? order.quantity ?? 1;
 
       // Get the actual price for this quantity based on event dates
-      // This uses the new pricing structure (2-day: 1500/2300/3000, 3-day: 1750/2800/3500)
+      // Use pricing from API if available (includes early bird), otherwise calculate locally
       let total = 0;
-      if (order.startDate && order.endDate) {
+      if (pricingQuery.data?.finalPrice !== undefined) {
+        // Use pricing from API which already includes early bird discount
+        total = pricingQuery.data.finalPrice;
+        // Convert to USD if needed (assuming 1:1 conversion for now, adjust if needed)
+        if (currency === "USD") {
+          total = total; // TODO: Add USD conversion if needed
+        }
+      } else if (order.startDate && order.endDate) {
+        // Fallback: calculate locally without early bird
         total = getPriceForQuantity(order.startDate, order.endDate, qty);
         // Convert to USD if needed (assuming 1:1 conversion for now, adjust if needed)
         if (currency === "USD") {
@@ -1425,6 +1471,17 @@ export default function RegisterForm() {
                       <span>
                         -{currency === "EUR" ? "€" : "$"}{" "}
                         {priceBreakdown.groupDiscount.toLocaleString(undefined, {
+                          minimumFractionDigits: 0,
+                        })}
+                      </span>
+                    </div>
+                  )}
+                  {priceBreakdown.earlyBirdDiscount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Early Bird Discount:</span>
+                      <span>
+                        -{currency === "EUR" ? "€" : "$"}{" "}
+                        {priceBreakdown.earlyBirdDiscount.toLocaleString(undefined, {
                           minimumFractionDigits: 0,
                         })}
                       </span>
