@@ -77,14 +77,35 @@ export async function generateStaticParams() {
   const events = await payload.find({
     collection: "events",
     where: {
-      status: {
-        equals: "published",
-      },
+      and: [
+        {
+          status: {
+            equals: "published",
+          },
+        },
+        {
+          "Event Dates.Start Date": {
+            exists: true,
+          },
+        },
+      ],
     },
     limit: 100,
   });
 
-  return events.docs.map((event) => ({
+  // Filter out events where all dates are TBD (null)
+  const eventsWithDates = events.docs.filter((event) => {
+    const eventDates = event["Event Dates"];
+    if (!eventDates || !Array.isArray(eventDates) || eventDates.length === 0) {
+      return false;
+    }
+    // Check if at least one date range has a valid Start Date
+    return eventDates.some(
+      (dateRange: any) => dateRange?.["Start Date"] != null,
+    );
+  });
+
+  return eventsWithDates.map((event) => ({
     slug: event.slug,
   }));
 }
