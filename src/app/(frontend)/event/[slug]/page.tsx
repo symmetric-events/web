@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import config from "~/payload.config";
-import { cookies } from "next/headers";
 import { EventDetails } from "./components/EventDetails";
 import { EventPricing } from "./components/EventPricing";
 import { EventWhyAttend } from "./components/EventWhyAttend";
@@ -40,26 +39,11 @@ export default async function EventPage({ params }: Props) {
       notFound();
     }
 
-    // Check if user is authenticated by checking for Payload auth cookie
-    let isAuthenticated = false;
-    try {
-      const cookieStore = await cookies();
-      const token = cookieStore.get("payload-token");
-      isAuthenticated = !!token?.value;
-    } catch {
-      // User is not authenticated
-      isAuthenticated = false;
-    }
-
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="relative mx-auto max-w-6xl px-5 py-12">
           {/* Edit Button - Only show if authenticated */}
-          <EditButton
-            collection="events"
-            id={event.id}
-            isAuthenticated={isAuthenticated}
-          />
+          <EditButton collection="events" id={event.id} />
           <EventHeader event={event} />
           <EventDetails event={event} />
           <br />
