@@ -23,7 +23,7 @@ export default function InHouseTrainingPage() {
 
       {/* Why Choose Section */}
       <section className="mx-auto max-w-4xl bg-white py-20">
-        <div className="mx-auto max-w-7xl px-5">
+        <div className="mx-auto max-w-6xl px-5">
           <h2 className="mb-12 text-center text-4xl font-extrabold text-gray-900 uppercase">
             WHY CHOOSE AN IN-HOUSE COURSE?
           </h2>
@@ -100,7 +100,7 @@ export default function InHouseTrainingPage() {
 
       {/* Request Form Section */}
       <section className="bg-primary py-20" id="request-form-in-house">
-        <div className="mx-auto max-w-7xl px-5">
+        <div className="mx-auto max-w-6xl px-5">
           <h2 className="mb-4 text-center text-2xl font-bold text-gray-800">
             Request a Tailored In-House Training
           </h2>

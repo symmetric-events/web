@@ -57,7 +57,7 @@ export default function AboutUsPage() {
 
       {/* Main Content */}
       <section className="py-20">
-        <div className="mx-auto max-w-7xl px-5">
+        <div className="mx-auto max-w-6xl px-5">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
             {/* Left Column */}
             <div className="space-y-8">
@@ -406,7 +406,7 @@ export default function AboutUsPage() {
 
       {/* Management Team Section */}
       <section className="bg-gray-50 py-20">
-        <div className="mx-auto max-w-7xl px-5">
+        <div className="mx-auto max-w-6xl px-5">
           <h2 className="mb-12 text-center text-2xl font-bold text-gray-800">
             Our Management Team
           </h2>

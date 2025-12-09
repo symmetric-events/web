@@ -28,7 +28,7 @@ export default async function TrainersPage() {
 
       {/* Trainers Grid */}
       <section className="pb-20 bg-primary">
-        <div className="mx-auto max-w-7xl px-5">
+        <div className="mx-auto max-w-6xl px-5">
           {trainers.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {trainers.map((trainer) => (
@@ -55,7 +55,7 @@ export default async function TrainersPage() {
 
       {/* Stats Section */}
       <section className="bg-blue-600 py-20">
-        <div className="mx-auto max-w-7xl px-5">
+        <div className="mx-auto max-w-6xl px-5">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center text-white">
             <div>
               <div className="text-2xl font-bold mb-2">{trainers.length}+</div>

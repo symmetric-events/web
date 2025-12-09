@@ -6,6 +6,7 @@ import Link from "next/link";
 import config from "~/payload.config";
 import { CourseCard } from "~/app/(frontend)/components/CourseCard";
 import type { Event, Category } from "~/payload-types";
+import { EditButton } from "~/app/(frontend)/components/EditButton";
 
 interface TrainerPageProps {
   params: Promise<{
@@ -30,8 +31,6 @@ export default async function TrainerPage({ params }: TrainerPageProps) {
       depth: 1, // Include related data like images
       limit: 1,
     });
-
-    console.log(trainerRes);
 
     let trainer = trainerRes.docs[0];
 
@@ -71,8 +70,6 @@ export default async function TrainerPage({ params }: TrainerPageProps) {
       limit: 1000,
     });
 
-    console.log(allEventsRes);
-    
     // Filter events where trainer is in the Trainers array
     const trainerEvents = allEventsRes.docs.filter((event: any) => {
       const trainers = event.Trainers || [];
@@ -94,8 +91,9 @@ export default async function TrainerPage({ params }: TrainerPageProps) {
 
     return (
       <div>
+        <EditButton collection="trainers" id={trainer.id} />
         <section className="bg-primary py-20">
-          <div className="mx-auto max-w-7xl px-5">
+          <div className="mx-auto max-w-6xl px-5">
             <div className="text-center">
               <Link
                 href="/trainers"
@@ -192,7 +190,7 @@ export default async function TrainerPage({ params }: TrainerPageProps) {
         {/* Training Courses Section */}
         {trainerEvents.length > 0 && (
           <section className="bg-gray-50 py-20">
-            <div className="mx-auto max-w-7xl px-5">
+            <div className="mx-auto max-w-6xl px-5">
               <h2 className="mb-8 text-center text-2xl font-bold text-gray-800">
                 Training Courses by {trainer.name}
               </h2>
@@ -266,7 +264,7 @@ export default async function TrainerPage({ params }: TrainerPageProps) {
 
         {/* Back to Trainers CTA */}
         <section className="bg-gray-50 py-20">
-          <div className="mx-auto max-w-7xl px-5 text-center">
+          <div className="mx-auto max-w-6xl px-5 text-center">
             <h2 className="mb-6 text-3xl font-bold text-gray-800">
               Meet More Expert Trainers
             </h2>

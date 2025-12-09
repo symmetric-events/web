@@ -5,6 +5,7 @@ import { ClientLogo } from "../components/clientLogo";
 import { ServiceSection } from "./ServiceSection";
 import { CaseStudiesSection } from "./CaseStudiesSection";
 import { PageHeader } from "../components/PageHeader";
+import { ClientLogosCarousel } from "../components/ClientLogosCarousel";
 
 export default function ConsultingPage() {
   // Service data
@@ -133,27 +134,7 @@ export default function ConsultingPage() {
       <CaseStudiesSection caseStudies={caseStudies} />
 
       {/* Client Logos */}
-      <section className="bg-gray-50 py-10 max-w-4xl mx-auto">
-        <div className="mx-auto max-w-7xl px-5">
-          <h2 className="mb-16 text-center text-2xl font-bold text-gray-800">
-            Some of Our Clients
-          </h2>
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/astra-2-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/annvie-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/teva-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/boe-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/gsk-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/johnson-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/merck-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/novartis.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/novo-1-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/pfizer-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/rocje-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/sanofi-1.png" />
-          </div>
-        </div>
-      </section>
+      <ClientLogosCarousel />
     </div>
   );
 }

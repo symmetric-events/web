@@ -2,6 +2,7 @@ import React from "react";
 import { ClientLogo } from "../components/clientLogo";
 import { TestimonialCard } from "../components/TestimonialCard";
 import { PageHeader } from "../components/PageHeader";
+import { ClientLogosCarousel } from "../components/ClientLogosCarousel";
 
 export default function OurClientsPage() {
   const clients = {
@@ -500,49 +501,28 @@ export default function OurClientsPage() {
       />
 
       <section className="bg-blue-600 py-20">
-        <div className="mx-auto max-w-7xl px-5">
+        <div className="mx-auto max-w-6xl px-5">
           <div className="grid grid-cols-1 gap-8 text-center text-white md:grid-cols-3">
             <div>
-              <div className="mb-2 text-2xl font-bold">500+</div>
-              <div className="text-xl">Companies</div>
+              <div className="mb-2 text-3xl font-bold">500+</div>
+              <div className="text-2xl">Companies</div>
             </div>
             <div>
-              <div className="mb-2 text-2xl font-bold">50+</div>
-              <div className="text-xl">Countries</div>
+              <div className="mb-2 text-3xl font-bold">50+</div>
+              <div className="text-2xl">Countries</div>
             </div>
             <div>
-              <div className="mb-2 text-2xl font-bold">10,000+</div>
-              <div className="text-xl">Professionals Trained</div>
+              <div className="mb-2 text-3xl font-bold">10,000+</div>
+              <div className="text-2xl">Professionals Trained</div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-gray-50 py-20">
-        <div className="mx-auto max-w-7xl px-5">
-          <h3 className="mb-12 text-center text-2xl text-gray-800">
-            Clients that have benefited from our courses
-          </h3>
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
-            {/* Row 1 */}
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/astra-2-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/annvie-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/teva-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/boe-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/gsk-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/johnson-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/merck-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/novartis.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/novo-1-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/pfizer-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/rocje-1.png" />
-            <ClientLogo src="https://www.symmetric.events/wp-content/uploads/2022/02/sanofi-1.png" />
-          </div>
-        </div>
-      </section>
+      <ClientLogosCarousel />
 
       <section className="bg-white py-20">
-        <div className="mx-auto max-w-7xl px-5">
+        <div className="mx-auto max-w-6xl px-5">
           <h3 className="mb-12 text-center text-2xl text-gray-800">
             Testimonials
           </h3>
@@ -571,7 +551,7 @@ export default function OurClientsPage() {
 
       {/* Clients Listing */}
       <section className="py-20">
-        <div className="mx-auto max-w-7xl px-5">
+        <div className="mx-auto max-w-6xl px-5">
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
             {Object.entries(clients).map(([letter, companyList]) => (
               <div key={letter} className="bg-white">

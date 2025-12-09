@@ -11,7 +11,7 @@ import { EventKeyTopics } from "./components/EventKeyTopics";
 import { EventTrainer } from "./components/EventTrainer";
 import { EventTestimonials } from "./components/EventTestimonials";
 import { EventHeader } from "./components/EventHeader";
-import { EditButton } from "./components/EditButton";
+import { EditButton } from "~/app/(frontend)/components/EditButton";
 
 type Props = {
   params: Promise<{ slug: string }>;

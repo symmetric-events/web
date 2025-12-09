@@ -105,7 +105,7 @@ export default async function HomePage() {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 mx-auto max-w-7xl px-5 pt-20 pb-10">
+        <div className="relative z-10 mx-auto max-w-6xl px-5 pt-20 pb-10">
           <div className="flex flex-col items-center gap-5">
             <h2 className="mb-5 text-2xl leading-tight font-bold">
               Your Partner for Pharma and Biotech Training
@@ -125,7 +125,7 @@ export default async function HomePage() {
 
       {/* Upcoming Training Courses */}
       <section className="bg-gray-50 py-20">
-        <div className="mx-auto max-w-7xl px-5">
+        <div className="mx-auto max-w-6xl px-5">
           <h3 className="mb-10 text-center text-2xl text-gray-800">
             Upcoming Training Courses
           </h3>
@@ -184,7 +184,7 @@ export default async function HomePage() {
 
       {/* Testimonials */}
       <section className="bg-white py-10">
-        <div className="mx-auto max-w-7xl px-5">
+        <div className="mx-auto max-w-6xl px-5">
           <h3 className="mb-12 text-center text-2xl text-gray-800">
             Testimonials
           </h3>
@@ -214,7 +214,7 @@ export default async function HomePage() {
       {/* Featured Trainers */}
       {featuredTrainers.length > 0 && (
         <section className="bg-gray-50 py-10">
-          <div className="mx-auto max-w-7xl px-5">
+          <div className="mx-auto max-w-6xl px-5">
             <h3 className="mb-12 text-center text-2xl text-gray-800">
               Featured Trainers
             </h3>

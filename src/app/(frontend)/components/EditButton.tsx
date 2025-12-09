@@ -6,19 +6,12 @@ import { useEffect, useState } from "react";
 interface EditButtonProps {
   collection: string;
   id: string | number;
-  isAuthenticated?: boolean;
 }
 
-export function EditButton({ collection, id, isAuthenticated: serverAuth }: EditButtonProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState(serverAuth ?? false);
+export function EditButton({ collection, id }: EditButtonProps) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // If server-side auth is provided, use it; otherwise check client-side
-    if (serverAuth !== undefined) {
-      setIsAuthenticated(serverAuth);
-      return;
-    }
-
     // Check authentication via API route (handles HttpOnly cookies)
     const checkAuth = async () => {
       try {
@@ -31,7 +24,7 @@ export function EditButton({ collection, id, isAuthenticated: serverAuth }: Edit
     };
 
     checkAuth();
-  }, [serverAuth]);
+  }, []);
 
   if (!isAuthenticated) {
     return null;

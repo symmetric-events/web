@@ -287,7 +287,7 @@ export function EventPricing({ event }: EventPricingProps) {
 
       {/* Early Bird Banner */}
       {earlyBirdInfo?.earlyBirdEligible && (
-        <div className="mb-8 w-full rounded-lg bg-[#FBBB00] px-6 py-3 text-center">
+        <div className="mb-8 w-full rounded-lg bg-[#FBBB00] px-6 py-3 text-center mx-auto max-w-2xl">
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-900">
             <span className="font-bold">EARLY BIRD PRICE</span>
             <span>|</span>

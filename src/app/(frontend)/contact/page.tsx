@@ -19,7 +19,7 @@ export default function ContactPage() {
 
       {/* Contact Information Sections */}
       <section className="py-20">
-        <div className="mx-auto max-w-7xl px-5">
+        <div className="mx-auto max-w-6xl px-5">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
             {/* Existing Symmetric Customer */}
             <div className="space-y-6">
@@ -87,7 +87,7 @@ export default function ContactPage() {
       </section>
 
       {/* Divider */}
-      <div className="mx-auto max-w-7xl px-5">
+      <div className="mx-auto max-w-6xl px-5">
         <div className="border-t border-gray-300"></div>
       </div>
 

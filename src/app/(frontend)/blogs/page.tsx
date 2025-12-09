@@ -34,7 +34,7 @@ export default async function BlogsPage() {
       />
 
       <section className="bg-gray-50 py-10 max-w-5xl mx-auto">
-        <div className="mx-auto max-w-7xl px-5">
+        <div className="mx-auto max-w-6xl px-5">
           {blogs.length > 0 ? (
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
               {blogs.map((blog) => {
