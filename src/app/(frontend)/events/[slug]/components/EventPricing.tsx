@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getPriceForQuantity, getPriceFromDates } from "~/lib/pricing";
-import { Button } from "~/app/(frontend)/components/Button";
+import { BuyTicketButton } from "./BuyTicketButton";
 
 interface EventPricingProps {
   event: any;
@@ -23,6 +23,7 @@ interface PricingInfo {
 export function EventPricing({ event }: EventPricingProps) {
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+  const [loadingQuantity, setLoadingQuantity] = useState<number | null>(null);
   const eventDates = event?.["Event Dates"] || [];
 
   // Date selection state
@@ -201,7 +202,9 @@ export function EventPricing({ event }: EventPricingProps) {
     if (!event) return;
     if (!sessionId) return;
     if (!startDate || !endDate) return;
+    if (loadingQuantity !== null) return; // Prevent multiple clicks
 
+    setLoadingQuantity(quantity);
     const slug = String(event.slug ?? "");
     try {
       // Initialize order with event slug
@@ -231,6 +234,7 @@ export function EventPricing({ event }: EventPricingProps) {
       });
     } catch (e) {
       console.error("Failed to initialize draft order", e);
+      setLoadingQuantity(null);
       return;
     }
 
@@ -297,7 +301,9 @@ export function EventPricing({ event }: EventPricingProps) {
               )}
             </span>
             <span>|</span>
-            <span>ENDS {formatDateLong(earlyBirdEndDate)}</span>
+            {earlyBirdEndDate && (
+              <span>ENDS {formatDateLong(earlyBirdEndDate)}</span>
+            )}
           </div>
         </div>
       )}
@@ -353,13 +359,12 @@ export function EventPricing({ event }: EventPricingProps) {
               ))}
             </ul>
 
-            <Button
-              onClick={() => handleRegister(2)}
+            <BuyTicketButton
+              quantity={1}
+              loadingQuantity={loadingQuantity}
+              onClick={handleRegister}
               variant="primary"
-              size="lg"
-            >
-              Buy Ticket
-            </Button>
+            />
           </div>
         </div>
 
@@ -411,13 +416,12 @@ export function EventPricing({ event }: EventPricingProps) {
               ))}
             </ul>
 
-            <Button
-              onClick={() => handleRegister(2)}
+            <BuyTicketButton
+              quantity={2}
+              loadingQuantity={loadingQuantity}
+              onClick={handleRegister}
               variant="secondary"
-              size="lg"
-            >
-              Buy Ticket
-            </Button>
+            />
           </div>
         </div>
 
@@ -467,13 +471,12 @@ export function EventPricing({ event }: EventPricingProps) {
               ))}
             </ul>
 
-            <Button
-              onClick={() => handleRegister(2)}
+            <BuyTicketButton
+              quantity={3}
+              loadingQuantity={loadingQuantity}
+              onClick={handleRegister}
               variant="primary"
-              size="lg"
-            >
-              Buy Ticket
-            </Button>
+            />
           </div>
         </div>
       </div>
