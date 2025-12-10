@@ -260,7 +260,7 @@ export function EventPricing({ event }: EventPricingProps) {
             <label className="mb-2 block text-sm font-medium text-gray-900">
               Select Date:
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col flex-wrap gap-2">
               {eventDates.map((dateRange: any, index: number) => {
                 const rangeStart = dateRange?.["Start Date"];
                 const rangeEnd = dateRange?.["End Date"];
@@ -273,7 +273,7 @@ export function EventPricing({ event }: EventPricingProps) {
                     className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                       selectedDateIndex === index
                         ? "bg-[#FBBB00] text-gray-900"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                   >
                     {formatDateRange(rangeStart, rangeEnd)}
@@ -331,7 +331,7 @@ export function EventPricing({ event }: EventPricingProps) {
             {/* Standard price - show if early bird exists */}
             {(pricing1Query.data?.earlyBirdDiscount ?? 0) > 0 && (
               <div className="mb-4 text-center">
-                <div className="text-3xl font-semibold text-gray-700 line-through">
+                <div className="text-3xl font-semibold line-through opacity-60">
                   {basePrice1.toLocaleString("en-US")}{currency}
                 </div>
               </div>
@@ -389,13 +389,13 @@ export function EventPricing({ event }: EventPricingProps) {
             {/* Standard price - show if early bird exists, or show regular price struck through if no early bird */}
             {(pricing2Query.data?.earlyBirdDiscount ?? 0) > 0 ? (
               <div className="mb-4 text-center">
-                <div className="text-3xl font-semibold text-gray-700 line-through">
+                <div className="text-3xl font-semibold line-through opacity-65">
                   {basePrice2.toLocaleString("en-US")}{currency}
                 </div>
               </div>
             ) : (
               <div className="mb-4 text-center">
-                <div className="text-3xl font-semibold text-gray-700 line-through">
+                <div className="text-3xl font-semibold line-through opacity-65">
                   {(basePricePerPerson * 2).toLocaleString("en-US")}{currency}
                 </div>
               </div>
@@ -449,13 +449,13 @@ export function EventPricing({ event }: EventPricingProps) {
             {/* Standard price - show if early bird exists, or show regular price struck through if no early bird */}
             {(pricing3Query.data?.earlyBirdDiscount ?? 0) > 0 ? (
               <div className="mb-4 text-center">
-                <div className="text-3xl font-semibold text-gray-700 line-through">
+                <div className="text-3xl font-semibold line-through opacity-60">
                   {basePrice3.toLocaleString("en-US")}{currency}
                 </div>
               </div>
             ) : (
               <div className="mb-4 text-center">
-                <div className="text-3xl font-semibold text-gray-700 line-through">
+                <div className="text-3xl font-semibold line-through opacity-60">
                   {(basePricePerPerson * 3).toLocaleString("en-US")}{currency}
                 </div>
               </div>
