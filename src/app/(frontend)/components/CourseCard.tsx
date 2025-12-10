@@ -47,7 +47,7 @@ export function CourseCard({
   const statusColorClasses = {
     green: "bg-green-500",
     blue: "bg-blue-500",
-    yellow: "bg-yellow-500",
+    yellow: "bg-secondary",
     red: "bg-red-500",
   };
 

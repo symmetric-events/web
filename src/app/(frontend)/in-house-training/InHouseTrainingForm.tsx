@@ -1,13 +1,32 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Button } from '../components/Button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '~/components/ui/dialog'
 
-export function InHouseTrainingForm() {
+interface InHouseTrainingFormProps {
+  title?: string
+  buttonText?: string
+  trigger?: React.ReactNode
+}
+
+export function InHouseTrainingForm({ 
+  title = "Request a Tailored In-House Training",
+  buttonText = "Request an In-House Training",
+  trigger
+}: InHouseTrainingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const successMessageRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -81,6 +100,11 @@ export function InHouseTrainingForm() {
 
       setIsSubmitted(true)
       e.currentTarget.reset()
+      // Close modal after successful submission
+      setTimeout(() => {
+        setIsOpen(false)
+        setIsSubmitted(false)
+      }, 2000)
     } catch (error) {
       console.error('Error:', error)
       setError('There was an error submitting your request. Please try again.')
@@ -89,49 +113,37 @@ export function InHouseTrainingForm() {
     }
   }
 
-  // Scroll to success message when it appears
-  useEffect(() => {
-    if (isSubmitted && successMessageRef.current) {
-      // Small delay to ensure the element is rendered
-      setTimeout(() => {
-        successMessageRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'center' 
-        })
-      }, 100)
-    }
-  }, [isSubmitted])
-
-  if (isSubmitted) {
-    return (
-      <div 
-        ref={successMessageRef}
-        className="rounded-lg bg-green-50 p-8 text-center border border-green-100"
-      >
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600">
-          <span className="text-2xl">✓</span>
-        </div>
-        <h3 className="mb-2 text-xl font-bold text-gray-800">Thank You!</h3>
-        <p className="text-gray-600 mb-4">
-          Your request has been submitted successfully. Our team will be in touch soon.
-        </p>
-        <Button
-          variant="primary"
-          onClick={() => {
-            setIsSubmitted(false)
-            if (typeof window !== 'undefined') {
-              window.location.href = '/'
-            }
-          }}
-        >
-          Go to Homepage
-        </Button>
-      </div>
-    )
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto">
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      {trigger ? (
+        <DialogTrigger asChild>
+          {trigger}
+        </DialogTrigger>
+      ) : (
+        <DialogTrigger asChild>
+          <Button variant="primary" className="text-lg px-4 py-2">
+            {buttonText}
+          </Button>
+        </DialogTrigger>
+      )}
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold text-gray-800">
+            {title}
+          </DialogTitle>
+          <DialogDescription className="text-gray-600">
+            Fill out the form below and our team will be in touch to design a program that fits your needs.
+          </DialogDescription>
+        </DialogHeader>
+        
+        {isSubmitted ? (
+          <div className="text-center py-8">
+            <div className="text-green-600 text-6xl mb-4">✓</div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">Thank You!</h3>
+            <p className="text-gray-600">Your request has been submitted successfully. Our team will be in touch soon.</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
         <div className="rounded-lg bg-yellow-50 p-4 border border-yellow-100">
           <p className="text-red-600 text-sm">{error}</p>
@@ -228,18 +240,20 @@ export function InHouseTrainingForm() {
         />
       </div>
 
-      {/* Submit Button */}
-      <div className="flex justify-center">
-        <Button 
-          type="submit" 
-          variant="primary"
-          disabled={isSubmitting}
-          className="px-8 py-3 text-base"
-        >
-          {isSubmitting ? 'Submitting...' : 'Submit Request'}
-        </Button>
-      </div>
-    </form>
+            <DialogFooter>
+              <Button 
+                type="submit" 
+                variant="primary"
+                disabled={isSubmitting}
+                className="w-full md:w-auto"
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Request'}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
   )
 }
 

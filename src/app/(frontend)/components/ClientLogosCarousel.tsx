@@ -53,7 +53,7 @@ export function ClientLogosCarousel({
       <section className={`overflow-hidden py-14 ${backgroundColor} ${className}`}>
         <div className="mx-auto max-w-6xl px-5">
           {title && (
-            <h2 className="mb-12 text-center text-2xl font-bold text-gray-800">
+            <h2 className="mb-12 text-center text-2xl text-gray-800">
               {title}
             </h2>
           )}

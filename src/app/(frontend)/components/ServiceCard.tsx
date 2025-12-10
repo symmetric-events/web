@@ -7,6 +7,7 @@ interface Expert {
 }
 
 interface ServiceCardProps {
+  title?: string;
   description: string;
   imageUrl: string;
   imageAlt: string;
@@ -14,30 +15,38 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({
+  title,
   description,
   imageUrl,
   imageAlt,
   experts,
 }: ServiceCardProps) {
   return (
-    <div className="space-y-6 text-sm">
-      <div className="relative w-full overflow-hidden rounded-lg">
+    <div className="flex h-full cursor-grab flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all select-none hover:shadow-md active:cursor-grabbing">
+      <div className="relative aspect-[1024/322] w-full overflow-hidden">
         <Image
           src={imageUrl}
           alt={imageAlt}
-          width={1000}
-          height={1000}
+          fill
           className="object-cover"
+          sizes="(max-width: 768px) 100vw, 33vw"
         />
       </div>
-      <div>
-        <p className="mb-4 text-gray-600">{description}</p>
-        <div className="space-y-2">
-          {experts.map((expert, index) => (
-            <p key={index}>
-              <strong>{expert.name}</strong> – {expert.specialty}
-            </p>
-          ))}
+      <div className="flex flex-1 flex-col p-4">
+        <p className="mb-3 line-clamp-3 text-sm leading-relaxed text-gray-600">
+          {description}
+        </p>
+        <div className="mt-auto space-y-1 border-t border-gray-100 pt-3">
+          <p className="mb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+            Experts
+          </p>
+          <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+            {experts.slice(0, 6).map((expert, index) => (
+              <p key={index} className="text-xs text-gray-700">
+                <strong className="font-semibold">{expert.name}</strong>
+              </p>
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -331,7 +331,7 @@ export function EventPricing({ event }: EventPricingProps) {
             {/* Standard price - show if early bird exists */}
             {(pricing1Query.data?.earlyBirdDiscount ?? 0) > 0 && (
               <div className="mb-4 text-center">
-                <div className="text-3xl font-semibold line-through opacity-60">
+                <div className="text-xl font-semibold line-through opacity-40">
                   {basePrice1.toLocaleString("en-US")}{currency}
                 </div>
               </div>
@@ -347,8 +347,8 @@ export function EventPricing({ event }: EventPricingProps) {
 
               {/* Early Bird discount button */}
               {(pricing1Query.data?.earlyBirdDiscount ?? 0) > 0 && (
-                <div className="mb-6 flex justify-center">
-                  <div className="bg-secondary rounded-lg px-4 py-2 tracking-widest">
+                <div className="mb-4 flex justify-center">
+                  <div className="bg-secondary rounded-lg px-2 py-1 tracking-widest">
                     <span className="text-sm font-bold text-gray-900">
                       EARLY BIRD -{currency}{pricing1Query.data?.earlyBirdDiscount}
                     </span>
@@ -389,13 +389,13 @@ export function EventPricing({ event }: EventPricingProps) {
             {/* Standard price - show if early bird exists, or show regular price struck through if no early bird */}
             {(pricing2Query.data?.earlyBirdDiscount ?? 0) > 0 ? (
               <div className="mb-4 text-center">
-                <div className="text-3xl font-semibold line-through opacity-65">
+                <div className="text-xl font-semibold line-through opacity-65">
                   {basePrice2.toLocaleString("en-US")}{currency}
                 </div>
               </div>
             ) : (
               <div className="mb-4 text-center">
-                <div className="text-3xl font-semibold line-through opacity-65">
+                <div className="text-xl font-semibold line-through opacity-65">
                   {(basePricePerPerson * 2).toLocaleString("en-US")}{currency}
                 </div>
               </div>
@@ -410,8 +410,8 @@ export function EventPricing({ event }: EventPricingProps) {
 
             {/* Early Bird discount button */}
             {(pricing2Query.data?.earlyBirdDiscount ?? 0) > 0 && (
-              <div className="mb-6 flex justify-center">
-                <div className="rounded-lg bg-gray-900 px-4 py-2 tracking-widest">
+              <div className="mb-4 flex justify-center">
+                <div className="rounded-lg bg-gray-900 px-2 py-1 tracking-widest">
                   <span className="text-secondary text-sm font-bold">
                     EARLY BIRD -{currency}{pricing2Query.data?.earlyBirdDiscount}
                   </span>
@@ -449,13 +449,13 @@ export function EventPricing({ event }: EventPricingProps) {
             {/* Standard price - show if early bird exists, or show regular price struck through if no early bird */}
             {(pricing3Query.data?.earlyBirdDiscount ?? 0) > 0 ? (
               <div className="mb-4 text-center">
-                <div className="text-3xl font-semibold line-through opacity-60">
+                <div className="text-xl font-semibold line-through opacity-40">
                   {basePrice3.toLocaleString("en-US")}{currency}
                 </div>
               </div>
             ) : (
               <div className="mb-4 text-center">
-                <div className="text-3xl font-semibold line-through opacity-60">
+                <div className="text-xl font-semibold line-through opacity-40">
                   {(basePricePerPerson * 3).toLocaleString("en-US")}{currency}
                 </div>
               </div>
@@ -470,8 +470,8 @@ export function EventPricing({ event }: EventPricingProps) {
 
             {/* Early Bird discount button */}
             {(pricing3Query.data?.earlyBirdDiscount ?? 0) > 0 && (
-              <div className="mb-6 flex justify-center">
-                <div className="bg-secondary rounded-lg px-4 py-2 tracking-widest">
+              <div className="mb-4 flex justify-center">
+                <div className="bg-secondary rounded-lg px-2 py-1 tracking-widest">
                   <span className="text-sm font-bold text-gray-900">
                     EARLY BIRD -{currency}{pricing3Query.data?.earlyBirdDiscount}
                   </span>

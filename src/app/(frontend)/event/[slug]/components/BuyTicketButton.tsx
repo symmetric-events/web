@@ -50,7 +50,7 @@ export function BuyTicketButton({
           Processing...
         </span>
       ) : (
-        "Buy Ticket"
+        quantity === 1 ? "Buy Ticket" : "Buy Tickets"
       )}
     </Button>
   );

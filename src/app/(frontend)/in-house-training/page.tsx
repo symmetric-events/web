@@ -1,15 +1,62 @@
 import React from "react";
-import { Target } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
 import { ClientLogosCarousel } from "../components/ClientLogosCarousel";
-import { InHouseTrainingForm } from "./InHouseTrainingForm";
 import { CtaButton } from "./CtaButton";
+import { ContactForm } from "./ContactForm";
+import { CaseStudiesSection } from "./CaseStudiesSection";
+import { ServicesCarousel } from "./ServicesCarousel";
+import { BenefitsList, type Benefit } from "./BenefitsList";
 
 export const metadata = {
   title: "In-House Training - Symmetric",
   description:
     "Bring our expert training in-house. Flexible delivery, cost-efficient solutions, and tailored content for your team.",
 };
+
+const benefits: Benefit[] = [
+  {
+    imageUrl:
+      "https://www.symmetric.events/wp-content/uploads/2025/06/learning_objective.jpg",
+    imageAlt: "Flexible delivery icon",
+    title: "Flexible delivery – onsite or online",
+    description:
+      "Train your team at the time and place that works best for you. Whether in your offices or virtually, we fit around your schedule.",
+  },
+  {
+    imageUrl:
+      "https://www.symmetric.events/wp-content/uploads/2025/06/learning_objective.jpg",
+    imageAlt: "Cost-efficient icon",
+    title: "Cost-efficient solution for entire teams",
+    description:
+      "Save on multiple delegate fees and travel expenses by training everyone together. A single program equips your whole department with the same knowledge and tools.",
+  },
+  {
+    imageUrl:
+      "https://www.symmetric.events/wp-content/uploads/2025/06/learning_objective.jpg",
+    imageAlt: "Tailored content icon",
+    title: "Tailored content & interactive workshops",
+    description:
+      "Get a program that speaks directly to your projects and challenges. We adapt the agenda, case studies, and exercises to your company's real-world needs.",
+  },
+];
+
+const caseStudies = [
+  {
+    title: "Viral Safety for Biologics",
+    description:
+      "A biopharma company attempting to launch a virus clearance of biosimilars study was unsure about their plans for extended Phase I/II study and unable to create Phase III/market study. Thanks to Symmetric's support, the company developed and executed virus clearance study of 3 selected ATMPs in less than 6 months. Discussions and insights about viral clearance reporting to EMA & FDA, design and validation of scale-down models, worst-case parameters and critical process parameters set the team for success.",
+  },
+  {
+    title: "Patient Centricity Opportunities",
+    description:
+      "An orphan-drugs focused pharmaceutical company was struggling to implement patient centricity into their clinical trials development. Symmetric helped the clinical research team apply patient-focused strategies, beyond standard clinical trials. Development of innovative PRO strategies helped this client reduce the usual clinical trial drop-out rate from 30% to just 5%.",
+  },
+  {
+    title: "Paediatric Clinical Trials",
+    description:
+      "A biopharma company was aiming to launch its first paediatric clinical trial. Consulting sessions with one of our experts solved client's most burning issues regarding protocol writing, clinical trial model selection and recruitment of paediatric patients. Moreover, using our global networks, we helped the company cooperate with relevant patient advocacy groups. As a result, client was able to create 5 age-tailored information booklets explaining CTs' aims and procedures.",
+  },
+];
 
 export default function InHouseTrainingPage() {
   return (
@@ -22,95 +69,28 @@ export default function InHouseTrainingPage() {
       </PageHeader>
 
       {/* Why Choose Section */}
-      <section className="mx-auto max-w-4xl bg-white py-20">
-        <div className="mx-auto max-w-6xl px-5">
-          <h2 className="mb-12 text-center text-4xl font-extrabold text-gray-900 uppercase">
-            WHY CHOOSE AN IN-HOUSE COURSE?
-          </h2>
-
-          <div className="">
-            {/* Benefit 1 */}
-            <div className="flex gap-4 pb-8">
-              <div className="h-18 w-18">
-                <img
-                  src="https://www.symmetric.events/wp-content/uploads/2025/06/learning_objective.jpg"
-                  alt="arrow"
-                />
-              </div>
-              <div className="flex-1">
-                <h3 className="mb-2 text-xl font-semibold text-gray-900">
-                  Flexible delivery – onsite or online
-                </h3>
-                <p className="text-base leading-relaxed text-gray-700">
-                  Train your team at the time and place that works best for you.
-                  Whether in your offices or virtually, we fit around your
-                  schedule.
-                </p>
-              </div>
-            </div>
-
-            {/* Separator */}
-            <div className="border-t border-gray-200"></div>
-
-            {/* Benefit 2 */}
-            <div className="flex gap-4 pt-8 pb-8">
-              <div className="h-18 w-18">
-                <img
-                  src="https://www.symmetric.events/wp-content/uploads/2025/06/learning_objective.jpg"
-                  alt="arrow"
-                />
-              </div>
-              <div className="flex-1">
-                <h3 className="mb-2 text-xl font-semibold text-gray-900">
-                  Cost-efficient solution for entire teams
-                </h3>
-                <p className="text-base leading-relaxed text-gray-700">
-                  Save on multiple delegate fees and travel expenses by training
-                  everyone together. A single program equips your whole
-                  department with the same knowledge and tools.
-                </p>
-              </div>
-            </div>
-
-            {/* Separator */}
-            <div className="border-t border-gray-200"></div>
-
-            {/* Benefit 3 */}
-            <div className="flex gap-4 pt-8">
-              <div className="h-18 w-18">
-                <img
-                  src="https://www.symmetric.events/wp-content/uploads/2025/06/learning_objective.jpg"
-                  alt="arrow"
-                />
-              </div>
-              <div className="flex-1">
-                <h3 className="mb-2 text-xl font-semibold text-gray-900">
-                  Tailored content & interactive workshops
-                </h3>
-                <p className="text-base leading-relaxed text-gray-700">
-                  Get a program that speaks directly to your projects and
-                  challenges. We adapt the agenda, case studies, and exercises
-                  to your company's real-world needs.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+      <section className="mx-auto max-w-4xl py-18">
+        <h2 className="mb-10 text-center text-2xl text-gray-800">
+          Why choose our in-house training?
+        </h2>
+        <BenefitsList benefits={benefits} />
       </section>
 
-      {/* Request Form Section */}
-      <section className="bg-primary py-20" id="request-form-in-house">
-        <div className="mx-auto max-w-6xl px-5">
-          <h2 className="mb-4 text-center text-2xl font-bold text-gray-800">
-            Request a Tailored In-House Training
-          </h2>
-          <p className="mx-auto mb-8 max-w-3xl text-center text-lg text-gray-600">
-            Fill out this quick form and our team will be in touch to design a
-            program that fits your needs.
-          </p>
-          <InHouseTrainingForm />
+      <PageHeader
+        className="pt-14!"
+        title="Request a Consulting Session"
+        description="Besides online and in-house training, our team of experts is also providing consulting sessions that help clients overcome challenges of pharmaceutical development in order to launch their innovative treatment solutions. Get in touch using the form below today and our team will answer your questions in any area of your product lifecycle."
+      >
+        <div className="flex justify-center">
+          <ContactForm />
         </div>
-      </section>
+      </PageHeader>
+
+      {/* Service Areas */}
+      <ServicesCarousel />
+
+      {/* Case Studies */}
+      <CaseStudiesSection caseStudies={caseStudies} />
 
       {/* Client Logos Section */}
       <ClientLogosCarousel />

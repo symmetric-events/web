@@ -10,7 +10,6 @@ import { usePathname } from "next/navigation";
 const NAVIGATION_ITEMS = [
   { href: "/training-courses", label: "TRAINING COURSES" },
   { href: "/in-house-training", label: "IN-HOUSE TRAINING" },
-  { href: "/consulting", label: "CONSULTING" },
   { href: "/clients", label: "CLIENTS" },
   { href: "/trainers", label: "TRAINERS" },
   { href: "/blogs", label: "BLOG" },

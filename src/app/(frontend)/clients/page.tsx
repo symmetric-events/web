@@ -500,8 +500,8 @@ export default function OurClientsPage() {
         description="We are proud to work with leading pharmaceutical and biotech companies worldwide. Our comprehensive training programs have benefited professionals from over 500 companies across the globe."
       />
 
-      <section className="bg-blue-600 py-20">
-        <div className="mx-auto max-w-6xl px-5">
+      <section className="bg-secondary py-20">
+        <div className="mx-auto max-w-4xl px-5">
           <div className="grid grid-cols-1 gap-8 text-center text-white md:grid-cols-3">
             <div>
               <div className="mb-2 text-3xl font-bold">500+</div>
@@ -556,14 +556,14 @@ export default function OurClientsPage() {
             {Object.entries(clients).map(([letter, companyList]) => (
               <div key={letter} className="bg-white">
                 <div className="sticky top-20">
-                  <h2 className="mb-6 border-b-2 border-blue-600 pb-2 text-3xl font-bold text-blue-600">
+                  <h2 className="mb-6 border-b-2 border-secondary pb-2 text-3xl font-bold text-secondary">
                     {letter}
                   </h2>
                   <div className="space-y-2">
                     {companyList.map((company, index) => (
                       <div
                         key={index}
-                        className="py-1 text-gray-700 transition-colors duration-200 hover:text-blue-600"
+                        className="py-1 text-gray-700 transition-colors duration-200 hover:text-secondary"
                       >
                         {company}
                       </div>

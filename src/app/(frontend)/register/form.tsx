@@ -7,6 +7,7 @@ import {
   Building,
   CreditCard,
   FileText,
+  Info,
   Mail,
   Phone,
   User,
@@ -821,7 +822,7 @@ export default function RegisterForm() {
           className="space-y-6"
         >
           {process.env.NODE_ENV === "development" && (
-            <div className="mt-4 flex w-full items-center justify-center rounded-lg bg-yellow-500 px-6 py-3 font-semibold text-white transition-colors duration-200 hover:bg-yellow-600 disabled:bg-yellow-400">
+            <div className="mt-4 flex w-full items-center justify-center rounded-lg bg-secondary px-6 py-3 font-semibold text-white transition-colors duration-200 disabled:bg-yellow-400">
               <button
                 type="button"
                 onClick={populateTestData}
@@ -969,9 +970,20 @@ export default function RegisterForm() {
             <div className="space-y-2">
               <label
                 htmlFor="vatNumber"
-                className="block text-sm font-medium text-gray-900"
+                className="flex items-center gap-2 text-sm font-medium text-gray-900"
               >
-                VAT Number <span className="text-gray-500">(optional)</span>
+                <span>
+                  VAT Number <span className="text-gray-500">(EU Companie only)</span>
+                </span>
+                <div className="group relative">
+                  <Info className="h-4 w-4 cursor-help text-gray-400 transition-colors hover:text-gray-600" />
+                  <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100">
+                    <p className="text-left">
+                      If your company is registered in the EU, please provide your valid EU VAT number. Without a VAT number, a 23% VAT charge will apply for European union entities. Companies outside EU are exempt from VAT.
+                    </p>
+                    <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                  </div>
+                </div>
               </label>
               <Input
                 id="vatNumber"

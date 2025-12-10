@@ -13,7 +13,7 @@ export function CollapsibleCard({ title, description }: CollapsibleCardProps) {
   return (
     <div className="mb-4">
       {/* Header */}
-      <button className="bg-secondary flex w-full items-center justify-between rounded-lg px-6 py-4 font-bold text-black shadow-md duration-200">
+      <button className="bg-secondary flex w-full items-center justify-between rounded-lg px-6 py-4 font-bold text-gray-900 shadow-md duration-200">
         <span>{title}</span>
         <div className="border-secondary rounded-full border-2 bg-white p-2">
           <svg

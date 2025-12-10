@@ -349,13 +349,13 @@ export function EventDetails({ event }: EventDetailsProps) {
                         const calendarEvent = getCalendarEvent(
                           eventDates[index],
                         );
-                        return calendarEvent ? (
-                          <AddToCalendar
-                            event={calendarEvent}
-                            className="shrink-0"
-                          />
-                        ) : null;
-                      })()}
+                      return calendarEvent ? (
+                        <AddToCalendar
+                          event={calendarEvent}
+                          className="shrink-0"
+                        />
+                      ) : null;
+                    })()}
                   </div>
 
                   {/* Subtle accent line */}
@@ -437,7 +437,7 @@ export function EventDetails({ event }: EventDetailsProps) {
             >
               See Pricing
             </button>
-            <button className="w-full cursor-pointer rounded-full border-2 border-[#FBBB00] py-4 text-lg font-semibold text-[#FBBB00] uppercase transition-colors duration-200 hover:bg-[#FBBB00] hover:text-black">
+            <button className="w-full cursor-pointer rounded-full border-2 border-[#FBBB00] py-4 text-lg font-semibold text-[#FBBB00] uppercase transition-colors duration-200 hover:bg-[#FBBB00] hover:text-gray-900">
               Request Training Agenda
             </button>
           </div>
