@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
+import { sendGTMEvent } from "@next/third-parties/google";
 import {
   Building,
   CreditCard,
@@ -720,6 +721,21 @@ export default function RegisterForm() {
     try {
       const order = orderQuery.data;
       const qty = quantity ?? order.quantity ?? 1;
+
+      // Send generate_lead event to GTM
+      sendGTMEvent({
+        event: 'generate_lead',
+        form_name: 'event_registration_form',
+        form_location: typeof window !== 'undefined' ? window.location.pathname : '',
+        lead_type: 'event_registration',
+        event_id: String(order.id),
+        event_slug: order.eventSlug || '',
+        event_title: order.eventTitle || '',
+        quantity: qty,
+        company: formData.company,
+        email: formData.email,
+        payment_method: paymentMethod || 'card',
+      });
 
       // Get the actual price for this quantity based on event dates
       // Use pricing from API if available (includes early bird), otherwise calculate locally

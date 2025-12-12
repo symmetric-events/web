@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { sendGTMEvent } from '@next/third-parties/google'
 import { Button } from './Button'
 
 interface ContactPageFormProps {
@@ -16,6 +17,25 @@ export function ContactPageForm({ onSubmit }: ContactPageFormProps) {
     setIsSubmitting(true)
 
     const formData = new FormData(e.currentTarget)
+    
+    // Extract form values for GTM tracking
+    const name = (formData.get('name') as string) || ''
+    const company = (formData.get('company') as string) || ''
+    const email = (formData.get('email') as string) || ''
+    const phone = (formData.get('phone') as string) || ''
+    const message = (formData.get('message') as string) || ''
+    
+    // Send generate_lead event to GTM
+    sendGTMEvent({
+      event: 'generate_lead',
+      form_name: 'contact_page_form',
+      form_location: typeof window !== 'undefined' ? window.location.pathname : '',
+      lead_type: 'contact_inquiry',
+      company: company,
+      email: email,
+      phone: phone,
+      has_message: !!message,
+    })
     
     try {
       if (onSubmit) {

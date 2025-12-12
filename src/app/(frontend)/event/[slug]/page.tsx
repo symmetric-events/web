@@ -11,6 +11,7 @@ import { EventKeyTopics } from "./components/EventKeyTopics";
 import { EventTrainer } from "./components/EventTrainer";
 import { EventTestimonials } from "./components/EventTestimonials";
 import { EventHeader } from "./components/EventHeader";
+import { EventViewTracker } from "./components/EventViewTracker";
 import { EditButton } from "~/app/(frontend)/components/EditButton";
 
 type Props = {
@@ -44,6 +45,8 @@ export default async function EventPage({ params }: Props) {
         <div className="relative mx-auto max-w-6xl px-5 py-12">
           {/* Edit Button - Only show if authenticated */}
           <EditButton collection="events" id={event.id} />
+          {/* Track event view for Google Tag Manager */}
+          <EventViewTracker event={event} />
           <EventHeader event={event} />
           <EventDetails event={event} />
           <br />
@@ -80,6 +83,7 @@ export default async function EventPage({ params }: Props) {
                 {/* Cards Row - 1/3 per item */}
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:items-stretch">
                   {/* Trainers - 1/3 each */}
+                  {event.Trainers && event.Trainers.length === 1 && <div></div>}
                   {event.Trainers?.map((trainer: any) => (
                     <EventTrainer key={trainer.id} trainer={trainer} />
                   ))}

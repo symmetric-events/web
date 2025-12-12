@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { sendGTMEvent } from '@next/third-parties/google'
 import { Button } from '../components/Button'
 import {
   Dialog,
@@ -50,6 +51,18 @@ export function InHouseTrainingForm({
 
     // Capture current URL
     const currentUrl = typeof window !== 'undefined' ? window.location.href : ''
+
+    // Send generate_lead event to GTM
+    sendGTMEvent({
+      event: 'generate_lead',
+      form_name: 'in_house_training_form',
+      form_location: typeof window !== 'undefined' ? window.location.pathname : '',
+      lead_type: 'in_house_training_request',
+      company: company,
+      email: email,
+      has_audience: !!audience,
+      has_training_objective: !!training_objective,
+    })
 
     // Prepare payload
     const payload = {

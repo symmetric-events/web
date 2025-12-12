@@ -23,11 +23,11 @@ export function EventLearningObjectives({
         {learningObjectives.map((objective: any, index: number) => (
           <div 
             key={index} 
-            className="flex gap-4 group cursor-pointer"
+            className="flex gap-4 group cursor-pointer justify-center items-center"
           >
             <div className="flex-shrink-0">
               <img
-                src="https://www.symmetric.events/wp-content/uploads/2025/06/learning_objective.jpg"
+                src="https://www.symmetric.events/wp-content/uploads/2025/12/learning_objective.png"
                 alt="Learning Objective"
                 width={50}
                 height={50}

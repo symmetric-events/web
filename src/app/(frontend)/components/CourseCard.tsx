@@ -1,7 +1,10 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Calendar, MapPin, Globe, Clock, Euro, DollarSign } from "lucide-react";
+import { sendGTMEvent } from "@next/third-parties/google";
 
 interface CourseCardProps {
   title: string;
@@ -177,8 +180,27 @@ export function CourseCard({
     });
   }
 
+  const handleClick = () => {
+    sendGTMEvent({
+      event: "view_item",
+      event_slug: slug,
+      event_title: title,
+      event_category: category,
+      event_status: status,
+      event_price_eur: priceEUR,
+      event_price_usd: priceUSD,
+      training_type: trainingType,
+      training_location: trainingLocation,
+      click_location: "course_card",
+    });
+  };
+
   return (
-    <Link href={`/event/${slug}`} className="group block h-full">
+    <Link
+      href={`/event/${slug}`}
+      className="group block h-full"
+      onClick={handleClick}
+    >
       <div className="flex h-full flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
         {/* Image Section */}
         <div className="relative h-32 w-full flex-shrink-0 overflow-hidden">

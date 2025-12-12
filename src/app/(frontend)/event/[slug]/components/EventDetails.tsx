@@ -329,7 +329,7 @@ export function EventDetails({ event }: EventDetailsProps) {
               formattedDateRanges.map((dateRange, index) => (
                 <div
                   key={index}
-                  className="group relative overflow-hidden rounded-2xl border-2 border-[#FBBB00]/20 bg-gradient-to-br from-[#FBBB00]/5 to-transparent px-4 py-2 transition-all duration-300"
+                  className="group relative overflow-hidden rounded-lg border-2 border-[#FBBB00]/20 bg-gradient-to-br from-[#FBBB00]/5 to-transparent px-4 py-2 transition-all duration-300"
                 >
                   <div className="flex items-center justify-between gap-4">
                     {/* Calendar Icon Badge */}
@@ -433,19 +433,19 @@ export function EventDetails({ event }: EventDetailsProps) {
 
             <button
               onClick={handleSeePricing}
-              className="hover:bg-primary hover:text-secondary w-full cursor-pointer rounded-full border-2 border-[#FBBB00] bg-[#FBBB00] py-4 text-lg font-semibold uppercase transition-colors duration-200"
+              className="hover:bg-primary hover:text-secondary w-full cursor-pointer rounded-full border-2 border-[#FBBB00] bg-[#FBBB00] py-2 text-lg font-semibold uppercase transition-colors duration-200"
             >
               See Pricing
             </button>
-            <button className="w-full cursor-pointer rounded-full border-2 border-[#FBBB00] py-4 text-lg font-semibold text-[#FBBB00] uppercase transition-colors duration-200 hover:bg-[#FBBB00] hover:text-gray-900">
+            <button className="w-full cursor-pointer rounded-full border-2 border-[#FBBB00] py-2 text-lg font-semibold text-[#FBBB00] uppercase transition-colors duration-200 hover:bg-[#FBBB00] hover:text-gray-900">
               Request Training Agenda
             </button>
           </div>
         </div>
 
-        <div className="rounded-3xl border-2 border-[#FBBB00] p-8 px-10 shadow-sm">
-          <div className="flex items-center justify-around">
-            <div className="tracking-wide">
+        <div className="rounded-3xl border-2 border-[#FBBB00] py-4 md:py-10 px-4 shadow-sm">
+          <div className="flex flex-col items-center gap-6 lg:flex-row lg:justify-around lg:items-center">
+            <div className="tracking-wide w-full lg:w-auto">
               {event["Training Type"] === "in-person" ? (
                 <>
                   <p className="mb-4 text-lg font-bold">TRAINING LOCATION</p>
@@ -464,9 +464,9 @@ export function EventDetails({ event }: EventDetailsProps) {
                   <p className="mb-4 text-lg font-bold">TRAINING TIMES</p>
                   <ul className="space-y-2">
                     {trainingTimes.map(({ time, city }) => (
-                      <li key={city} className="flex gap-3 text-lg">
-                        <span className="font-mono">{time}</span>
-                        <span>{city}</span>
+                      <li key={city} className="flex items-center justify-between gap-3 text-lg lg:justify-start">
+                        <span className="font-mono shrink-0">{time}</span>
+                        <span className="text-right lg:text-left">{city}</span>
                       </li>
                     ))}
                   </ul>
@@ -487,6 +487,7 @@ export function EventDetails({ event }: EventDetailsProps) {
               }
               width={150}
               height={150}
+              className="shrink-0"
             />
           </div>
         </div>
