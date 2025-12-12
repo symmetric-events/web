@@ -1,5 +1,6 @@
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import type { CollectionConfig } from 'payload'
+import { env } from '~/env'
 
 export const Events: CollectionConfig = {
   slug: 'events',
@@ -24,6 +25,42 @@ export const Events: CollectionConfig = {
       }
       return data
     }],
+    afterChange: [
+      async ({ doc, operation }) => {
+        // Only revalidate on create/update (not on read).
+        if (operation !== 'create' && operation !== 'update') return doc
+
+        const slug = (doc as any)?.slug
+        if (!slug || typeof slug !== 'string') return doc
+
+        try {
+          const baseUrl = env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
+          const res = await fetch(`${baseUrl}/api/revalidate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              secret: env.REVALIDATION_SECRET,
+              slug,
+            }),
+          })
+
+          if (!res.ok) {
+            const text = await res.text().catch(() => '')
+            console.error(
+              `Failed to revalidate event pages for slug="${slug}": ${res.status} ${text}`,
+            )
+          }
+        } catch (error) {
+          console.error('Failed to call revalidation endpoint for event', {
+            slug,
+            error,
+          })
+        }
+
+        return doc
+      },
+    ],
   },
   fields: [
     {
