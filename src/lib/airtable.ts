@@ -11,10 +11,6 @@ function trimOrEmpty(value: string | null | undefined): string {
   return (value ?? '').toString().trim()
 }
 
-function isUsd(currency: string | null | undefined): boolean {
-  return (currency ?? '').toUpperCase() === 'USD'
-}
-
 function toNumberOrZero(value: unknown): number {
   const num = typeof value === 'number' ? value : Number(value)
   return Number.isFinite(num) ? num : 0
@@ -98,20 +94,9 @@ function buildAddressMarkdown(order: Order): string {
   return [''].concat(lines).join('\n') // Leading blank line to keep Make-style formatting
 }
 
-function computeSubtotal(order: Order, lineItems?: LineItemInput[]): number {
-  const orderSubtotal = toNumberOrZero(order.subtotalAmount)
-  if (orderSubtotal > 0) return orderSubtotal
-  if (Array.isArray(lineItems) && lineItems.length > 0) {
-    return lineItems.reduce((acc, li) => acc + toNumberOrZero(li.subtotal), 0)
-  }
-  const unit = isUsd(order.currency) ? toNumberOrZero(order.priceUSD) : toNumberOrZero(order.priceEUR)
-  const qty = toNumberOrZero(order.quantity) || 1
-  return unit * qty
-}
+
 
 export function buildAirtablePayload(order: Order, opts?: { couponCode?: string; lineItems?: LineItemInput[]; participantDetails?: { participantName?: string; participantJobtitle?: string; participantEmail?: string } }): AirtablePayload {
-  const currencyUsd = isUsd(order.currency)
-  const subtotal = computeSubtotal(order, opts?.lineItems)
   const discount = toNumberOrZero(order.discountAmount)
   const tax = toNumberOrZero(order.taxAmount)
   const firstName = trimOrEmpty(order.customerFirstName)
@@ -119,16 +104,12 @@ export function buildAirtablePayload(order: Order, opts?: { couponCode?: string;
   const fullName = trimOrEmpty(`${firstName} ${lastName}`)
   const status = (order.status === 'cancelled' || order.status === 'failed') ? order.status : order.status
 
-  // VAT/Discount transformations per Make mapping
-  const vatValue = tax === 0 ? '' : (currencyUsd ? (tax / 1.1) : tax)
-  const discountValue = discount === 0 ? '' : (currencyUsd ? (discount / 1.1) : discount)
-  const fullPriceValue = currencyUsd ? (subtotal / 1.1) : subtotal
 
   // Build line items array
   const lineItems = opts?.lineItems || [{
     name: order.eventTitle || 'Training',
     quantity: order.quantity || 1,
-    subtotal: subtotal,
+    subtotal: order.totalAmount.toString(),
     productId: order.eventId || ''
   }]
 

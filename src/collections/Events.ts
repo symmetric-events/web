@@ -126,7 +126,6 @@ export const Events: CollectionConfig = {
           type: 'text',
           admin: {
             description: 'Format: HH:MM (24-hour format, e.g., 09:00, 14:30)',
-            placeholder: '09:00',
           },
           validate: (value: string | string[] | null | undefined) => {
             if (!value || Array.isArray(value)) return true; // Optional field
@@ -146,7 +145,6 @@ export const Events: CollectionConfig = {
           type: 'text',
           admin: {
             description: 'Format: HH:MM (24-hour format, e.g., 17:00, 18:30)',
-            placeholder: '17:00',
           },
           validate: (value: string | string[] | null | undefined) => {
             if (!value || Array.isArray(value)) return true; // Optional field
@@ -206,6 +204,11 @@ export const Events: CollectionConfig = {
     {
       name: 'Description',
       type: 'textarea',
+    },
+    {
+      name: 'NEW Featured Image',
+      type: 'relationship',
+      relationTo: 'media',
     },
     {
       name: 'Featured Image',
@@ -328,10 +331,11 @@ export const Events: CollectionConfig = {
       },
       fields: [
         {
-          name: 'imageUrl',
-          type: 'text',
+          name: 'image',
+          type: 'relationship',
+          relationTo: 'media',
           admin: {
-            description: 'URL of the sneak peek image',
+            description: 'Upload an image for the sneak peek preview',
           },
         },
         {
@@ -345,11 +349,25 @@ export const Events: CollectionConfig = {
     },
     {
       name: 'Agenda',
-      type: 'relationship',
-      relationTo: 'media',
-      admin: {
-        description: 'Upload a PDF file for the event agenda (PDF only)',
-      },
+      type: 'group',
+      fields: [
+        {
+          name: 'pdf',
+          type: 'relationship',
+          relationTo: 'media',
+          admin: {
+            description: 'Upload a PDF file for the event agenda (PDF only)',
+          },
+        },
+        {
+          name: 'Agenda Image',
+          type: 'relationship',
+          relationTo: 'media',
+          admin: {
+            description: 'Upload an image for the event agenda',
+          },
+        },
+      ],
     },
   ],
   timestamps: true,

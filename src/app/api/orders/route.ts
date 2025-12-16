@@ -1,14 +1,31 @@
-
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '~/payload.config'
 import { buildAirtablePayload } from '~/lib/airtable'
-import { env } from '~/env'
-import { getPriceFromDates, getPriceForQuantity } from '~/lib/pricing'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+// Allowed fields for contact information updates
+const ALLOWED_CONTACT_FIELDS = [
+  'email',
+  'firstName',
+  'lastName',
+  'phone',
+  'company',
+  'vatNumber',
+  'poNumber',
+  'notes',
+  'country',
+  'address1',
+  'address2',
+  'city',
+  'state',
+  'postcode',
+  'participants',
+] as const
+
+type ContactField = (typeof ALLOWED_CONTACT_FIELDS)[number]
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +34,7 @@ export async function GET(request: NextRequest) {
     const testAirtable = searchParams.get('testAirtable') === 'true'
 
     const payload = await getPayload({ config })
-    
+
     if (testAirtable) {
       // Get latest order for testing
       const found = await payload.find({
@@ -29,15 +46,15 @@ export async function GET(request: NextRequest) {
       if (!order) {
         return NextResponse.json({ error: 'No orders found' }, { status: 404 })
       }
-      
+
       // Build Airtable payload
       const airtablePayload = buildAirtablePayload(order as any)
       return NextResponse.json({
         order: order,
-        airtablePayload: airtablePayload
+        airtablePayload: airtablePayload,
       })
     }
-    
+
     if (sessionId) {
       const found = await payload.find({
         collection: 'orders',
@@ -49,7 +66,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(null)
     }
 
-    return NextResponse.json({ error: 'Missing orderId or sessionId' }, { status: 400 })
+    return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 })
   } catch (error) {
     console.error('Failed to fetch order', error)
     return NextResponse.json({ error: 'Failed to fetch order' }, { status: 500 })
@@ -59,7 +76,15 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { orderId, sessionId, field, value } = body as { orderId?: string; sessionId?: string; field: string; value: unknown }
+    const { sessionId, field, value } = body as {
+      sessionId?: string
+      field: string
+      value: unknown
+    }
+
+    if (!sessionId) {
+      return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 })
+    }
 
     if (!field) {
       return NextResponse.json({ error: 'Missing field' }, { status: 400 })
@@ -69,7 +94,6 @@ export async function POST(request: NextRequest) {
 
     // Special test Airtable branch
     if (field === 'test_airtable') {
-      // Get latest order
       const found = await payload.find({
         collection: 'orders',
         sort: '-createdAt',
@@ -80,10 +104,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'No orders found' }, { status: 404 })
       }
 
-      // Build Airtable payload
       const airtablePayload = buildAirtablePayload(order as any)
-      
-      // Post to Hookdeck webhook
+
       try {
         const webhookUrl = 'https://hkdk.events/dm3pw8amcsw1dt'
         const response = await fetch(webhookUrl, {
@@ -104,220 +126,116 @@ export async function POST(request: NextRequest) {
           success: true,
           order: order,
           airtablePayload: airtablePayload,
-          webhookResult: result
+          webhookResult: result,
         })
       } catch (error) {
         console.error('Failed to post to webhook:', error)
-        return NextResponse.json({ 
-          error: 'Failed to post to webhook', 
-          details: error instanceof Error ? error.message : 'Unknown error',
-          airtablePayload: airtablePayload
-        }, { status: 500 })
+        return NextResponse.json(
+          {
+            error: 'Failed to post to webhook',
+            details: error instanceof Error ? error.message : 'Unknown error',
+            airtablePayload: airtablePayload,
+          },
+          { status: 500 },
+        )
       }
     }
 
-    // Special create-from-event branch
-    if (field === 'event_slug') {
-      if (!value || typeof value !== 'string') {
-        return NextResponse.json({ error: 'Missing event slug' }, { status: 400 })
-      }
-      const slug = String(value)
-      const ev = await payload.find({
-        collection: 'events',
-        where: { slug: { equals: slug } },
-        limit: 1,
-      })
-      const eventDoc = ev.docs?.[0] as any
-      if (!eventDoc) {
-        return NextResponse.json({ error: 'Event not found' }, { status: 404 })
-      }
+    // Validate field is allowed for contact updates
+    if (!ALLOWED_CONTACT_FIELDS.includes(field as ContactField)) {
+      return NextResponse.json(
+        { error: `Field '${field}' is not allowed. Only contact information fields can be updated.` },
+        { status: 400 },
+      )
+    }
 
-      // Derive price globally from event duration (2-day / 3-day pricing)
-      const eventDates = eventDoc?.['Event Dates'] || []
-      const firstDateRange =
-        Array.isArray(eventDates) && eventDates.length > 0
-          ? eventDates[0]
-          : undefined
-      const startISO = firstDateRange?.['Start Date']
-      const endISO = firstDateRange?.['End Date']
-      const derivedPrice = getPriceFromDates(startISO, endISO)
+    // Find existing draft by sessionId
+    const existing = await payload.find({
+      collection: 'orders',
+      where: {
+        and: [{ sessionId: { equals: sessionId } }, { status: { equals: 'draft' } }],
+      },
+      limit: 1,
+    })
 
-      // Prices in both currencies (same numeric value for simplicity)
-      const priceEUR = derivedPrice
-      const priceUSD = derivedPrice
-      // Prepare order data
-      const data: any = {
-        status: 'draft',
-        eventId: String(eventDoc.id ?? eventDoc._id ?? eventDoc.slug ?? ''),
-        eventTitle: String(eventDoc['Title'] ?? eventDoc.title ?? 'Event'),
-        eventSlug: slug,
-        currency: "EUR",
-        priceEUR,
-        priceUSD,
-        quantity: 1,
-        totalAmount: priceEUR,
+    const doc = existing.docs?.[0]
+    if (!doc) {
+      return NextResponse.json({ error: 'Draft order not found' }, { status: 404 })
+    }
+
+    // Map field to order data
+    const updateData = mapFieldToOrderData(field as ContactField, value)
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: 'No valid data to update' }, { status: 400 })
+    }
+
+    const updated = await payload.update({
+      collection: 'orders',
+      id: doc.id,
+      data: {
+        ...updateData,
         lastActivityAt: new Date().toISOString(),
-      }
+      },
+    })
 
-      if (orderId) {
-        const updated = await payload.update({ collection: 'orders', id: orderId, data })
-        return NextResponse.json({ orderId: (updated as any).id })
-      }
-
-      if (sessionId) {
-        const existing = await payload.find({
-          collection: 'orders',
-          where: { and: [{ sessionId: { equals: sessionId } }, { status: { equals: 'draft' } }] },
-          limit: 1,
-        })
-        const doc = existing.docs?.[0]
-        if (doc) {
-          const updated = await payload.update({ collection: 'orders', id: (doc as any).id, data })
-          return NextResponse.json({ orderId: (updated as any).id })
-        }
-      }
-
-      // Create new draft if none found
-      const created = await payload.create({
-        collection: 'orders',
-        data: {
-          sessionId: sessionId || `${Date.now()}`,
-          ...data,
-        },
-      })
-      return NextResponse.json({ orderId: (created as any).id })
-    }
-
-    // Otherwise, try to find an existing draft by sessionId
-    if (sessionId) {
-      const existing = await payload.find({
-        collection: 'orders',
-        where: {
-          and: [
-            { sessionId: { equals: sessionId } },
-            { status: { equals: 'draft' } },
-          ],
-        },
-        limit: 1,
-      })
-      const doc = existing.docs?.[0]
-      if (doc) {
-        const baseData = mapFieldToOrderData(field, value) as any
-
-        // Recompute totals when quantity or currency changes
-        const nextData: any = { ...baseData }
-        const currentQuantity = typeof doc.quantity === 'number' ? doc.quantity : 1
-        const quantityFromUpdate = typeof (baseData?.quantity) === 'number' ? baseData.quantity : undefined
-        const nextQuantity = typeof quantityFromUpdate === 'number' ? quantityFromUpdate : currentQuantity
-
-        const currentCurrency = typeof doc.currency === 'string' ? doc.currency : 'EUR'
-        const currencyFromUpdate = typeof (baseData?.currency) === 'string' ? baseData.currency : undefined
-        const nextCurrency = currencyFromUpdate ?? currentCurrency
-
-        // Recalculate totals when quantity, currency, or dates change
-        if (['quantity', 'currency', 'startDate', 'endDate'].includes(field)) {
-          const startDate = nextData.startDate ?? (doc as any).startDate
-          const endDate = nextData.endDate ?? (doc as any).endDate
-          const eventSlug = (doc as any).eventSlug
-
-          if (startDate && endDate) {
-            // Try to fetch pricing with early bird discount
-            let totalAmount = 0
-            let earlyBirdDiscount = 0
-
-            if (eventSlug) {
-              try {
-                const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-                const pricingRes = await fetch(
-                  `${baseUrl}/api/events/${eventSlug}/pricing?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}&quantity=${nextQuantity}`,
-                  { cache: 'no-store' },
-                )
-                if (pricingRes.ok) {
-                  const pricingData = await pricingRes.json()
-                  totalAmount = pricingData.finalPrice || 0
-                  earlyBirdDiscount = pricingData.earlyBirdDiscount || 0
-                } else {
-                  // Fallback to local calculation without early bird
-                  totalAmount = getPriceForQuantity(startDate, endDate, nextQuantity)
-                }
-              } catch (error) {
-                console.error('Failed to fetch pricing for order:', error)
-                // Fallback to local calculation without early bird
-                totalAmount = getPriceForQuantity(startDate, endDate, nextQuantity)
-              }
-            } else {
-              // Fallback to local calculation without early bird
-              totalAmount = getPriceForQuantity(startDate, endDate, nextQuantity)
-            }
-
-            // totalAmount already includes early bird discount (from finalPrice)
-            nextData.totalAmount = totalAmount
-            // Note: earlyBirdDiscount is already included in totalAmount
-            // The discountAmount field is reserved for discount codes applied separately
-          } else {
-            // Fallback: use unit price * quantity if no dates
-            const unit = nextCurrency === 'EUR' ? (doc as any).priceEUR ?? 0 : (doc as any).priceUSD ?? 0
-            nextData.totalAmount = unit * nextQuantity
-          }
-        }
-
-        const updated = await payload.update({
-          collection: 'orders',
-          id: doc.id,
-          data: nextData,
-        })
-        return NextResponse.json({ orderId: (updated as any).id })
-      }
-    }
-
+    return NextResponse.json({ orderId: (updated as any).id, success: true })
   } catch (error) {
-    console.error('Failed to save draft field', error)
-    return NextResponse.json({ error: 'Failed to save draft field' }, { status: 500 })
+    console.error('Failed to update order contact info', error)
+    return NextResponse.json({ error: 'Failed to update order' }, { status: 500 })
   }
 }
 
-function mapFieldToOrderData(field: string, value: unknown) {
+function mapFieldToOrderData(field: ContactField, value: unknown): Record<string, unknown> {
   const valueString = typeof value === 'string' ? value : String(value ?? '')
+
   switch (field) {
     case 'email':
-      return { customerEmail: valueString };
+      return { customerEmail: valueString }
     case 'firstName':
-      return { customerFirstName: valueString };
+      return { customerFirstName: valueString }
     case 'lastName':
-      return { customerLastName: valueString };
+      return { customerLastName: valueString }
     case 'phone':
-      return { customerPhone: valueString };
+      return { customerPhone: valueString }
     case 'company':
-      return { customerCompany: valueString };
+      return { customerCompany: valueString }
     case 'vatNumber':
-      return { vatNumber: valueString };
+      return { vatNumber: valueString }
+    case 'poNumber':
+      return { poNumber: valueString }
     case 'notes':
-      return { notes: valueString };
+      return { notes: valueString }
     case 'country':
-      return { address: { country: valueString } };
+      return { address: { country: valueString } }
     case 'address1':
-      return { address: { address1: valueString } };
+      return { address: { address1: valueString } }
     case 'address2':
-      return { address: { address2: valueString } };
+      return { address: { address2: valueString } }
     case 'city':
-      return { address: { city: valueString } };
+      return { address: { city: valueString } }
     case 'state':
-      return { address: { state: valueString } };
+      return { address: { state: valueString } }
     case 'postcode':
-      return { address: { postcode: valueString } };
-    case 'startDate':
-      return { startDate: valueString };
-    case 'endDate':
-      return { endDate: valueString };
-    case 'currency':
-      return { currency: valueString };
-    case 'quantity': {
-      const asNumber = typeof value === 'number' ? value : Number(valueString)
-      const safe = Number.isFinite(asNumber) && asNumber > 0 ? Math.floor(asNumber) : 1
-      return { quantity: safe }
-    }
+      return { address: { postcode: valueString } }
+    case 'participants':
+      // Participants should be an array of participant objects
+      if (Array.isArray(value)) {
+        return { participants: value }
+      }
+      // Try parsing if it's a JSON string
+      if (typeof value === 'string') {
+        try {
+          const parsed = JSON.parse(value)
+          if (Array.isArray(parsed)) {
+            return { participants: parsed }
+          }
+        } catch {
+          // Invalid JSON, ignore
+        }
+      }
+      return {}
     default:
-      return {};
+      return {}
   }
-
 }

@@ -1,0 +1,62 @@
+[
+  {
+    "event": "registration_form_submitted",
+    "description": "User submits the event registration form with contact information and payment method selection",
+    "file_path": "src/app/(frontend)/register/form.tsx"
+  },
+  {
+    "event": "checkout_started",
+    "description": "User clicks 'Buy Ticket(s)' button to begin checkout process for a training event",
+    "file_path": "src/app/(frontend)/event/[slug]/components/EventPricing.tsx"
+  },
+  {
+    "event": "checkout_completed",
+    "description": "User successfully completes a payment or invoice request",
+    "file_path": "src/app/(frontend)/register/success/page.tsx"
+  },
+  {
+    "event": "checkout_cancelled",
+    "description": "User cancels the checkout/payment process",
+    "file_path": "src/app/(frontend)/register/cancel/page.tsx"
+  },
+  {
+    "event": "contact_form_submitted",
+    "description": "User submits the contact page inquiry form",
+    "file_path": "src/app/(frontend)/components/ContactPageForm.tsx"
+  },
+  {
+    "event": "newsletter_signup",
+    "description": "User subscribes to the newsletter via footer form",
+    "file_path": "src/app/(frontend)/components/footer/NewsletterForm.tsx"
+  },
+  {
+    "event": "in_house_training_requested",
+    "description": "User submits a request for customized in-house training",
+    "file_path": "src/app/(frontend)/in-house-training/InHouseTrainingForm.tsx"
+  },
+  {
+    "event": "agenda_requested",
+    "description": "User requests an event agenda to be sent to their email",
+    "file_path": "src/app/(frontend)/event/[slug]/components/RequestAgendaModal.tsx"
+  },
+  {
+    "event": "event_added_to_calendar",
+    "description": "User downloads calendar ICS file to add event to their calendar",
+    "file_path": "src/app/(frontend)/components/AddToCalendar.tsx"
+  },
+  {
+    "event": "discount_code_applied",
+    "description": "User successfully applies a discount code during registration",
+    "file_path": "src/app/(frontend)/register/form.tsx"
+  },
+  {
+    "event": "participant_details_edited",
+    "description": "User opens participant details modal to edit participant information",
+    "file_path": "src/app/(frontend)/register/form.tsx"
+  },
+  {
+    "event": "quantity_changed",
+    "description": "User changes the number of participants/tickets during registration",
+    "file_path": "src/app/(frontend)/register/form.tsx"
+  }
+]

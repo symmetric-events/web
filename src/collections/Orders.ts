@@ -60,12 +60,6 @@ export const Orders: CollectionConfig = {
     { name: 'startDate', type: 'date' },
     { name: 'endDate', type: 'date' },
     {
-      name: 'subtotalAmount',
-      type: 'number',
-      required: false,
-      min: 0,
-    },
-    {
       name: 'discountAmount',
       type: 'number',
       required: false,
@@ -100,18 +94,6 @@ export const Orders: CollectionConfig = {
       type: 'text',
       required: true,
       defaultValue: 'USD',
-    },
-    {
-      name: 'priceEUR',
-      type: 'number',
-      required: true,
-      min: 0,
-    },
-    {
-      name: 'priceUSD',
-      type: 'number',
-      required: true,
-      min: 0,
     },
     {
       name: 'customerEmail',
@@ -161,7 +143,36 @@ export const Orders: CollectionConfig = {
       type: 'date',
     },
     { name: 'vatNumber', type: 'text' },
+    { name: 'poNumber', type: 'text' },
     { name: 'notes', type: 'textarea' },
+    {
+      name: 'participants',
+      type: 'array',
+      label: 'Participants',
+      admin: {
+        description: 'List of participants for this order',
+      },
+      fields: [
+        {
+          name: 'name',
+          type: 'text',
+          required: true,
+          label: 'Name',
+        },
+        {
+          name: 'email',
+          type: 'email',
+          required: true,
+          label: 'Email',
+        },
+        {
+          name: 'jobPosition',
+          type: 'text',
+          required: true,
+          label: 'Job Position',
+        },
+      ],
+    },
   ],
   timestamps: true,
 }

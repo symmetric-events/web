@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getPayload } from "payload";
 import config from "~/payload.config";
+import { getVideoEmbedUrl } from "~/lib/utils";
 import { EventDetails } from "./components/EventDetails";
 import { EventPricing } from "./components/EventPricing";
 import { EventWhyAttend } from "./components/EventWhyAttend";
@@ -64,7 +65,14 @@ export default async function EventPage({ params }: Props) {
           {(() => {
             const trainerCount = event.Trainers?.length || 0;
             const hasVideo = !!event.video;
-            const hasSneakPeek = !!event.sneekPeek?.imageUrl;
+            // Check if sneak peek image exists (could be ID or populated object)
+            const sneakPeekImage = event.sneekPeek?.image;
+            const hasSneakPeek = !!(
+              sneakPeekImage &&
+              (typeof sneakPeekImage === "object"
+                ? sneakPeekImage.url
+                : sneakPeekImage)
+            );
 
             // Only show section if at least one item exists
             if (trainerCount === 0 && !hasVideo && !hasSneakPeek) {
@@ -88,24 +96,28 @@ export default async function EventPage({ params }: Props) {
                   ))}
 
                   {/* Video Card - 1/3 width */}
-                  {hasVideo && event.video && (
-                    <div className="flex md:w-[calc((100%_-_3rem)_/_3)] self-stretch flex-col justify-around rounded-lg border border-gray-200 bg-white p-6 transition-all duration-300">
-                      <iframe
-                        src={event.video}
-                        className="h-[200px] w-full rounded-lg"
-                        allowFullScreen
-                      ></iframe>
-                      <h3 className="text-center text-lg font-semibold">
-                        Video Invitation
-                      </h3>
-                      <p className="line-clamp-3 text-center text-sm leading-relaxed text-gray-600">
-                        Watch the video invitation from the trainer.
-                      </p>
-                    </div>
-                  )}
+                  {hasVideo && event.video && (() => {
+                    const embedUrl = getVideoEmbedUrl(event.video);
+                    return embedUrl ? (
+                      <div className="flex md:w-[calc((100%-3rem)/3)] self-stretch flex-col justify-around rounded-lg border border-gray-200 bg-white p-6 transition-all duration-300">
+                        <iframe
+                          src={embedUrl}
+                          className="h-[165px] w-full rounded-lg"
+                          allowFullScreen
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        ></iframe>
+                        <h3 className="text-center text-lg font-semibold">
+                          Video Invitation
+                        </h3>
+                        <p className="line-clamp-3 text-center text-sm leading-relaxed text-gray-600">
+                          Watch the video invitation from the trainer.
+                        </p>
+                      </div>
+                    ) : null;
+                  })()}
 
                   {/* Sneak Peek Card - 1/3 width */}
-                  {hasSneakPeek && event.sneekPeek?.imageUrl && (
+                  {hasSneakPeek && sneakPeekImage && event.sneekPeek && (
                     <a
                       href={event.sneekPeek.pdfLink || "#"}
                       target={event.sneekPeek.pdfLink ? "_blank" : undefined}
@@ -114,10 +126,16 @@ export default async function EventPage({ params }: Props) {
                           ? "noopener noreferrer"
                           : undefined
                       }
-                      className="group flex md:w-[calc((100%_-_3rem)_/_3)] flex-col justify-between rounded-lg border border-gray-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                      className="group flex md:w-[calc((100%-3rem)/3)] flex-col justify-between rounded-lg border border-gray-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     >
                       <img
-                        src={event.sneekPeek.imageUrl}
+                        src={
+                          typeof sneakPeekImage === "object" && sneakPeekImage?.url
+                            ? sneakPeekImage.url
+                            : typeof sneakPeekImage === "string"
+                              ? `/api/media/file/${encodeURIComponent(sneakPeekImage)}`
+                              : ""
+                        }
                         alt="Sneak peek"
                         className="w-full max-h-[200px] rounded-lg object-contain"
                       />

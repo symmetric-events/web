@@ -212,6 +212,7 @@ export interface Event {
    */
   'Training Location'?: string | null;
   Description?: string | null;
+  'NEW Featured Image'?: (number | null) | Media;
   'Featured Image'?: string | null;
   'Key Topic'?:
     | {
@@ -257,18 +258,24 @@ export interface Event {
    */
   sneekPeek?: {
     /**
-     * URL of the sneak peek image
+     * Upload an image for the sneak peek preview
      */
-    imageUrl?: string | null;
+    image?: (number | null) | Media;
     /**
      * Link to the PDF file
      */
     pdfLink?: string | null;
   };
-  /**
-   * Upload a PDF file for the event agenda (PDF only)
-   */
-  Agenda?: (number | null) | Media;
+  Agenda?: {
+    /**
+     * Upload a PDF file for the event agenda (PDF only)
+     */
+    pdf?: (number | null) | Media;
+    /**
+     * Upload an image for the event agenda
+     */
+    'Agenda Image'?: (number | null) | Media;
+  };
   updatedAt: string;
   createdAt: string;
 }
@@ -334,7 +341,6 @@ export interface Order {
   quantity?: number | null;
   startDate?: string | null;
   endDate?: string | null;
-  subtotalAmount?: number | null;
   discountAmount?: number | null;
   taxAmount?: number | null;
   paymentDueDate?: string | null;
@@ -342,8 +348,6 @@ export interface Order {
   invoiceNumber?: string | null;
   totalAmount: number;
   currency: string;
-  priceEUR: number;
-  priceUSD: number;
   customerEmail?: string | null;
   customerFirstName?: string | null;
   customerLastName?: string | null;
@@ -364,7 +368,19 @@ export interface Order {
   abandonedAt?: string | null;
   completedAt?: string | null;
   vatNumber?: string | null;
+  poNumber?: string | null;
   notes?: string | null;
+  /**
+   * List of participants for this order
+   */
+  participants?:
+    | {
+        name: string;
+        email: string;
+        jobPosition: string;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -668,6 +684,7 @@ export interface EventsSelect<T extends boolean = true> {
   'Training Type'?: T;
   'Training Location'?: T;
   Description?: T;
+  'NEW Featured Image'?: T;
   'Featured Image'?: T;
   'Key Topic'?:
     | T
@@ -708,10 +725,15 @@ export interface EventsSelect<T extends boolean = true> {
   sneekPeek?:
     | T
     | {
-        imageUrl?: T;
+        image?: T;
         pdfLink?: T;
       };
-  Agenda?: T;
+  Agenda?:
+    | T
+    | {
+        pdf?: T;
+        'Agenda Image'?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -770,7 +792,6 @@ export interface OrdersSelect<T extends boolean = true> {
   quantity?: T;
   startDate?: T;
   endDate?: T;
-  subtotalAmount?: T;
   discountAmount?: T;
   taxAmount?: T;
   paymentDueDate?: T;
@@ -778,8 +799,6 @@ export interface OrdersSelect<T extends boolean = true> {
   invoiceNumber?: T;
   totalAmount?: T;
   currency?: T;
-  priceEUR?: T;
-  priceUSD?: T;
   customerEmail?: T;
   customerFirstName?: T;
   customerLastName?: T;
@@ -799,7 +818,16 @@ export interface OrdersSelect<T extends boolean = true> {
   abandonedAt?: T;
   completedAt?: T;
   vatNumber?: T;
+  poNumber?: T;
   notes?: T;
+  participants?:
+    | T
+    | {
+        name?: T;
+        email?: T;
+        jobPosition?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

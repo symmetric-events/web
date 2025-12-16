@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { sendGTMEvent } from '@next/third-parties/google'
+// import { sendGTMEvent } from '@next/third-parties/google'
 import { trackHubSpotFormSubmission, identifyHubSpotUser } from '~/lib/hubspot'
 import { Button } from '../components/Button'
 import {
@@ -43,16 +43,16 @@ export function ContactForm({
     const message = (formData.get('message') as string) || ''
     
     // Send generate_lead event to GTM
-    sendGTMEvent({
-      event: 'generate_lead',
-      form_name: 'consulting_session_form',
-      form_location: typeof window !== 'undefined' ? window.location.pathname : '',
-      lead_type: 'consulting_request',
-      company: company,
-      email: email,
-      phone: phone,
-      has_message: !!message,
-    })
+    // sendGTMEvent({
+    //   event: 'generate_lead',
+    //   form_name: 'consulting_session_form',
+    //   form_location: typeof window !== 'undefined' ? window.location.pathname : '',
+    //   lead_type: 'consulting_request',
+    //   company: company,
+    //   email: email,
+    //   phone: phone,
+    //   has_message: !!message,
+    // })
     
     // Track form submission to HubSpot
     const formLocation = typeof window !== 'undefined' ? window.location.pathname : ''

@@ -1,9 +1,21 @@
 'use client'
 
+import { useRef } from 'react'
 import Link from 'next/link'
 import { XCircle, ArrowLeft, ShoppingCart } from 'lucide-react'
+import posthog from 'posthog-js'
 
 export default function CheckoutCancelPage() {
+  const hasTrackedRef = useRef(false)
+
+  // Track checkout cancellation once on mount via ref to avoid duplicate tracking
+  if (!hasTrackedRef.current) {
+    hasTrackedRef.current = true
+    posthog.capture('checkout_cancelled', {
+      cancellation_source: 'stripe_redirect',
+    })
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-2xl mx-auto px-4">
@@ -24,7 +36,7 @@ export default function CheckoutCancelPage() {
             </h2>
             <div className="space-y-3 text-left">
               <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-blue-600 text-sm font-medium">1</span>
                 </div>
                 <p className="text-gray-700">
@@ -32,7 +44,7 @@ export default function CheckoutCancelPage() {
                 </p>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-blue-600 text-sm font-medium">2</span>
                 </div>
                 <p className="text-gray-700">
@@ -40,7 +52,7 @@ export default function CheckoutCancelPage() {
                 </p>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="shrink-0 w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
                   <span className="text-blue-600 text-sm font-medium">3</span>
                 </div>
                 <p className="text-gray-700">

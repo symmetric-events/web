@@ -330,11 +330,11 @@ export function EventDetails({ event }: EventDetailsProps) {
               formattedDateRanges.map((dateRange, index) => (
                 <div
                   key={index}
-                  className="group relative overflow-hidden rounded-lg border-2 border-secondary/20 bg-linear-to-br from-secondary/5 to-transparent px-4 py-2 transition-all duration-300"
+                  className="group border-secondary/20 from-secondary/5 relative overflow-hidden rounded-lg border-2 bg-linear-to-br to-transparent px-4 py-2 transition-all duration-300"
                 >
                   <div className="flex items-center justify-between gap-4">
                     {/* Calendar Icon Badge */}
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                    <div className="bg-secondary flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
                       <Calendar className="h-4 w-4 text-white" />
                     </div>
 
@@ -360,7 +360,7 @@ export function EventDetails({ event }: EventDetailsProps) {
                   </div>
 
                   {/* Subtle accent line */}
-                  <div className="absolute bottom-0 left-0 h-1 w-full bg-linear-to-r from-secondary via-secondary/50 to-transparent opacity-0 transition-opacity duration-300" />
+                  <div className="from-secondary via-secondary/50 absolute bottom-0 left-0 h-1 w-full bg-linear-to-r to-transparent opacity-0 transition-opacity duration-300" />
                 </div>
               ))
             ) : (
@@ -381,7 +381,7 @@ export function EventDetails({ event }: EventDetailsProps) {
             {/* Price and Currency Switcher */}
             <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-2 py-2">
               {/* Price Display */}
-              <div className="flex gap-4 justify-center">
+              <div className="flex justify-center gap-4">
                 {finalPrice > 0 ? (
                   <>
                     <span className="ml-2 text-3xl font-bold text-gray-900">
@@ -390,7 +390,7 @@ export function EventDetails({ event }: EventDetailsProps) {
                     </span>
                     {hasEarlyBird && (
                       <div className="ml-2 flex items-center gap-2">
-                        <span className="rounded bg-secondary/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-secondary uppercase">
+                        <span className="bg-secondary/10 text-secondary rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wider uppercase">
                           Early Bird
                         </span>
                         <span className="text-xs font-semibold text-gray-500 line-through">
@@ -434,24 +434,27 @@ export function EventDetails({ event }: EventDetailsProps) {
 
             <button
               onClick={handleSeePricing}
-              className="hover:bg-primary hover:text-secondary w-full cursor-pointer rounded-full border-2 border-secondary bg-secondary py-2 text-lg font-semibold uppercase transition-colors duration-200"
+              className="hover:bg-primary hover:text-secondary border-secondary bg-secondary w-full cursor-pointer rounded-full border-2 py-2 text-lg font-semibold uppercase transition-colors duration-200"
             >
               See Pricing
             </button>
-            <RequestAgendaModal
-              eventSlug={slug || ""}
-              eventTitle={event?.Title || ""}
-              eventId={event?.id || ""}
-              trigger={
-                <button className="w-full cursor-pointer rounded-full border-2 border-secondary py-2 text-lg font-semibold text-secondary uppercase transition-colors duration-200 hover:bg-secondary hover:text-gray-900">
-                  Request Training Agenda
-                </button>
-              }
-            />
+            {event["Agenda"]?.pdf && (
+              <RequestAgendaModal
+                eventSlug={slug || ""}
+                eventTitle={event?.Title || ""}
+                eventId={event?.id || ""}
+                eventAgenda={event["Agenda"]}
+                trigger={
+                  <button className="border-secondary text-secondary hover:bg-secondary w-full cursor-pointer rounded-full border-2 py-2 text-lg font-semibold uppercase transition-colors duration-200 hover:text-gray-900">
+                    Request Training Agenda
+                  </button>
+                }
+              />
+            )}
           </div>
         </div>
 
-        <div className="rounded-3xl border-2 border-secondary px-4 py-4 shadow-sm md:py-10">
+        <div className="border-secondary rounded-3xl border-2 px-4 py-4 shadow-sm md:py-10">
           <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-center lg:justify-around">
             <div className="w-full tracking-wide lg:w-auto">
               {event["Training Type"] === "in-person" ? (

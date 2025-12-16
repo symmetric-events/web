@@ -18,9 +18,7 @@ export function EventHeader({ event }: EventHeaderProps) {
     <div className="mt-8">
       <div className="mx-auto py-8">
         <Image
-          src={
-            event["Featured Image"] 
-          }
+          src={event["NEW Featured Image"]?.url || event["Featured Image"]}
           alt={event.Title || "Event image"}
           width={1000}
           height={1000}

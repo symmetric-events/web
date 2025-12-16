@@ -44,19 +44,19 @@ async function getGmailAccessToken(): Promise<string | null> {
     })
 
     const responseText = await response.text()
-    
+
     if (!response.ok) {
       console.error('Failed to get Gmail access token:', {
         status: response.status,
         statusText: response.statusText,
         response: responseText,
       })
-      
+
       // Try to parse error for more details
       try {
         const errorData = JSON.parse(responseText)
         console.error('Gmail API error details:', errorData)
-        
+
         if (errorData.error === 'invalid_grant') {
           console.error(
             'TROUBLESHOOTING: "invalid_grant" error usually means:\n' +
@@ -74,7 +74,7 @@ async function getGmailAccessToken(): Promise<string | null> {
       } catch (e) {
         // Not JSON, that's okay
       }
-      
+
       return null
     }
 
@@ -97,6 +97,7 @@ async function sendAgendaEmail(
   eventTitle: string,
   name: string,
   agendaFileUrl: string | null,
+  agendaFileName: string | null,
   eventDate: string | null,
 ): Promise<boolean> {
   const accessToken = await getGmailAccessToken()
@@ -168,45 +169,70 @@ async function sendAgendaEmail(
   if (agendaFileUrl) {
     try {
       // Download the PDF file
+      console.log('Downloading agenda PDF from:', agendaFileUrl)
       const pdfResponse = await fetch(agendaFileUrl)
+      
       if (!pdfResponse.ok) {
-        console.error('Failed to download PDF file:', pdfResponse.status)
-      } else {
-        const pdfBuffer = await pdfResponse.arrayBuffer()
-        const pdfBase64 = Buffer.from(pdfBuffer).toString('base64')
-        const fileName = agendaFileUrl.split('/').pop() || 'agenda.pdf'
-
-        boundary = `boundary_${Date.now()}`
-        headers.push(`Content-Type: multipart/mixed; boundary="${boundary}"`)
-
-        emailContent = `--${boundary}\r\n`
-        emailContent += `Content-Type: text/html; charset=UTF-8\r\n\r\n`
-        emailContent += `${messageBody}\r\n\r\n`
-        emailContent += `--${boundary}\r\n`
-        emailContent += `Content-Type: application/pdf; name="${fileName}"\r\n`
-        emailContent += `Content-Disposition: attachment; filename="${fileName}"\r\n`
-        emailContent += `Content-Transfer-Encoding: base64\r\n\r\n`
-        // Chunk base64 content into 76-character lines (RFC 2045)
-        const chunks = []
-        for (let i = 0; i < pdfBase64.length; i += 76) {
-          chunks.push(pdfBase64.slice(i, i + 76))
-        }
-        emailContent += chunks.join('\r\n')
-        emailContent += `\r\n`
-        emailContent += `--${boundary}--\r\n`
+        console.error('Failed to download PDF file:', pdfResponse.status, pdfResponse.statusText)
+        throw new Error(`Failed to download PDF: ${pdfResponse.status} ${pdfResponse.statusText}`)
       }
+
+      const pdfBuffer = await pdfResponse.arrayBuffer()
+      const pdfBase64 = Buffer.from(pdfBuffer).toString('base64')
+      
+      // Use provided filename or extract from URL as fallback
+      let finalFileName = agendaFileName || 'agenda.pdf'
+      
+      // If filename doesn't end with .pdf, add it
+      if (!finalFileName.endsWith('.pdf')) {
+        finalFileName = `${finalFileName}.pdf`
+      }
+      
+      console.log('Using filename for attachment:', finalFileName)
+
+      console.log('PDF downloaded successfully, size:', pdfBuffer.byteLength, 'bytes')
+
+      boundary = `boundary_${Date.now()}`
+      headers.push(`Content-Type: multipart/mixed; boundary="${boundary}"`)
+
+      // Build multipart message with HTML body and PDF attachment
+      emailContent = `--${boundary}\r\n`
+      emailContent += `Content-Type: text/html; charset=UTF-8\r\n\r\n`
+      emailContent += `${messageBody}\r\n\r\n`
+      emailContent += `--${boundary}\r\n`
+      emailContent += `Content-Type: application/pdf; name="${finalFileName}"\r\n`
+      emailContent += `Content-Disposition: attachment; filename="${finalFileName}"\r\n`
+      emailContent += `Content-Transfer-Encoding: base64\r\n\r\n`
+      
+      // Chunk base64 content into 76-character lines (RFC 2045)
+      const chunks = []
+      for (let i = 0; i < pdfBase64.length; i += 76) {
+        chunks.push(pdfBase64.slice(i, i + 76))
+      }
+      emailContent += chunks.join('\r\n')
+      emailContent += `\r\n`
+      emailContent += `--${boundary}--\r\n`
+      
+      console.log('PDF attachment prepared successfully')
     } catch (error) {
-      console.error('Error downloading PDF:', error)
+      console.error('Error downloading or attaching PDF:', error)
+      // If PDF download fails, we should still send the email but log the error
+      // The email will be sent without attachment
+      console.warn('Sending email without PDF attachment due to download error')
     }
   }
 
-  // If no PDF attachment, send plain HTML email
+  // If no PDF attachment was prepared, send plain HTML email
   if (!emailContent) {
     headers.push(`Content-Type: text/html; charset=UTF-8\r\n\r\n`)
     emailContent = messageBody
+    if (agendaFileUrl) {
+      console.warn('Agenda URL was provided but attachment was not created')
+    }
   }
 
-  const rawMessage = headers.join('\r\n') + '\r\n' + emailContent
+  // Join headers and ensure proper separation from body
+  const rawMessage = headers.join('\r\n') + '\r\n\r\n' + emailContent
   const encodedMessage = Buffer.from(rawMessage)
     .toString('base64')
     .replace(/\+/g, '-')
@@ -344,19 +370,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get agenda PDF URL
+    // Get agenda PDF URL and filename
+    // Agenda is a group field with 'pdf' and 'Agenda Image' properties
     let agendaFileUrl: string | null = null
-    if (event.Agenda) {
-      // Agenda is a relationship field, so it might be an ID or populated object
+    let agendaFileName: string | null = null
+    
+    if (event.Agenda?.pdf) {
+      // pdf is a relationship field, so it might be an ID or populated object
       let agendaMedia: any = null
-      if (typeof event.Agenda === 'object' && event.Agenda !== null) {
-        agendaMedia = event.Agenda
-      } else if (typeof event.Agenda === 'number' || typeof event.Agenda === 'string') {
+      const pdfField = event.Agenda.pdf
+      
+      if (typeof pdfField === 'object' && pdfField !== null) {
+        agendaMedia = pdfField
+      } else if (typeof pdfField === 'number' || typeof pdfField === 'string') {
         // If it's just an ID, fetch the media
         try {
           agendaMedia = await payload.findByID({
             collection: 'media',
-            id: event.Agenda,
+            id: pdfField,
           })
         } catch (error) {
           console.error('Error fetching agenda media:', error)
@@ -364,6 +395,9 @@ export async function POST(request: NextRequest) {
       }
 
       if (agendaMedia?.url) {
+        // Get filename from media object
+        agendaFileName = agendaMedia.filename || null
+        
         // If URL is relative, make it absolute
         if (agendaMedia.url.startsWith('http')) {
           agendaFileUrl = agendaMedia.url
@@ -371,7 +405,18 @@ export async function POST(request: NextRequest) {
           const baseUrl = env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
           agendaFileUrl = `${baseUrl}${agendaMedia.url}`
         }
+        
+        console.log('Agenda PDF found:', {
+          url: agendaFileUrl,
+          filename: agendaFileName,
+          mimeType: agendaMedia.mimeType,
+          filesize: agendaMedia.filesize,
+        })
+      } else {
+        console.warn('Agenda PDF media object found but no URL available')
       }
+    } else {
+      console.log('No agenda PDF found in event.Agenda.pdf')
     }
 
     // Get event date for email template
@@ -385,6 +430,7 @@ export async function POST(request: NextRequest) {
       eventTitle,
       firstName || name,
       agendaFileUrl,
+      agendaFileName,
       eventDate,
     )
 
@@ -416,8 +462,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message:
-        'Agenda sent successfully. Please check your inbox or spam folder.<br><strong>NOTE:</strong> If you haven\'t received the agenda, please contact us directly at laura.kristensen@symmetricevents.com.',
     })
   } catch (error) {
     console.error('Error processing agenda request:', error)

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { sendGTMEvent } from "@next/third-parties/google";
+// import { sendGTMEvent } from "@next/third-parties/google";
 import type { Event } from "~/payload-types";
 
 interface EventViewTrackerProps {
@@ -26,19 +26,19 @@ export function EventViewTracker({ event }: EventViewTrackerProps) {
           .filter((name): name is string => name !== null && typeof name === "string")
       : [];
 
-    sendGTMEvent({
-      event: "event_view",
-      event_id: String(event.id),
-      event_slug: event.slug,
-      event_title: event.Title,
-      event_category: categoryNames.length > 0 ? categoryNames.join(", ") : undefined,
-      event_status: event.status,
-      event_price_eur: event.Price?.EUR,
-      event_price_usd: event.Price?.USD,
-      training_type: event["Training Type"],
-      training_location: event["Training Location"],
-      page_path: window.location.pathname,
-    });
+    // sendGTMEvent({
+    //   event: "event_view",
+    //   event_id: String(event.id),
+    //   event_slug: event.slug,
+    //   event_title: event.Title,
+    //   event_category: categoryNames.length > 0 ? categoryNames.join(", ") : undefined,
+    //   event_status: event.status,
+    //   event_price_eur: event.Price?.EUR,
+    //   event_price_usd: event.Price?.USD,
+    //   training_type: event["Training Type"],
+    //   training_location: event["Training Location"],
+    //   page_path: window.location.pathname,
+    // });
   }, [event]);
 
   return null;

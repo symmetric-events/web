@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { sendGTMEvent } from "@next/third-parties/google";
+// import { sendGTMEvent } from "@next/third-parties/google";
 import { trackHubSpotFormSubmission, identifyHubSpotUser } from "~/lib/hubspot";
+import posthog from "posthog-js";
 import {
   Building,
   CreditCard,
@@ -32,7 +33,7 @@ import {
 } from "~/components/ui/dialog";
 import { CountryDropdown } from "react-country-region-selector";
 import ReactSelect from "react-select";
-import { getPriceForQuantity } from "~/lib/pricing";
+import { getPriceForQuantity, getPriceFromDates, type Currency } from "~/lib/pricing";
 
 type ReactSelectOption = {
   label: string;
@@ -44,8 +45,6 @@ type DraftOrder = {
   eventTitle?: string;
   eventSlug?: string;
   currency?: "EUR" | "USD";
-  priceEUR?: number;
-  priceUSD?: number;
   quantity?: number;
   totalAmount?: number;
   startDate?: string;
@@ -521,8 +520,17 @@ export default function RegisterForm() {
   function handleQuantityChange(nextQty: number) {
     if (!sessionId) return;
     const safe = Math.max(1, Math.min(1000, Math.floor(nextQty || 1)));
+    const previousQuantity = quantity;
     setQuantity(safe); // optimistic local update for instant UI feedback
     saveDraft.mutate({ sessionId, field: "quantity", value: safe });
+
+    // PostHog: Track quantity change
+    posthog.capture("quantity_changed", {
+      previous_quantity: previousQuantity,
+      new_quantity: safe,
+      event_title: orderQuery.data?.eventTitle || "",
+      event_slug: orderQuery.data?.eventSlug || "",
+    });
   }
 
   function handleParticipantChange(
@@ -588,93 +596,140 @@ export default function RegisterForm() {
     setErrors({});
   }
 
+  // Dev function to test order checkout with webhook
+  async function testOrderCheckout() {
+    const order = orderQuery.data;
+    const mockOrderData = {
+      // Order details
+      orderId: `test-${Date.now()}`,
+      sessionId: sessionId || `test-session-${Date.now()}`,
+      status: "paid",
+      paymentMethod: "card",
+      
+      // Event details
+      eventId: order?.eventSlug || "test-event",
+      eventTitle: order?.eventTitle || "Test Training Course",
+      eventSlug: order?.eventSlug || "test-training-course",
+      startDate: order?.startDate || new Date().toISOString(),
+      endDate: order?.endDate || new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+      
+      // Pricing
+      quantity: quantity || 2,
+      currency: currency || "EUR",
+
+      discountAmount: (priceBreakdown?.groupDiscount || 0) + (priceBreakdown?.earlyBirdDiscount || 0) + (priceBreakdown?.discountCodeAmount || 0),
+      taxAmount: 0,
+      totalAmount: priceBreakdown?.finalTotal || order?.totalAmount || 2400,
+      
+      // Customer details
+      customerEmail: formData.email || "test@example.com",
+      customerFirstName: formData.firstName || "John",
+      customerLastName: formData.lastName || "Developer",
+      customerCompany: formData.company || "Test Company Ltd",
+      customerPhone: formData.phone || "+44 1234 567890",
+      
+      // Address
+      address: {
+        country: formData.country || "Ireland",
+        address1: formData.address1 || "123 Tech Street",
+        address2: formData.address2 || "Suite 456",
+        city: formData.city || "Dublin",
+        state: formData.state || "Dublin",
+        postcode: formData.postcode || "D01 1AA",
+      },
+      
+      // Additional fields
+      vatNumber: formData.vatNumber || "IE1234567890",
+      poNumber: formData.poNumber || "PO-2025-TEST",
+      notes: formData.notes || "Test order from development environment",
+      
+      // Participants (use current form participants or mock data)
+      participants: participants.some(p => p.name && p.email) 
+        ? participants.filter(p => p.name && p.email)
+        : [
+            {
+              name: "John Developer",
+              email: "john@example.com",
+              jobPosition: "Senior Engineer",
+            },
+            {
+              name: "Jane Tester",
+              email: "jane@example.com",
+              jobPosition: "QA Lead",
+            },
+          ],
+      
+      // Timestamps
+      createdAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    };
+
+    try {
+      const response = await fetch("https://hkdk.events/dm3pw8amcsw1dt", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(mockOrderData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Test order webhook failed:", response.status, errorText);
+        alert(`Test order failed: ${response.status} ${errorText}`);
+        return;
+      }
+
+      const result = await response.json();
+      console.log("Test order webhook success:", result);
+      alert("Test order sent successfully! Check console for details.");
+    } catch (error) {
+      console.error("Test order webhook error:", error);
+      alert(`Test order error: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }
+
   const priceBreakdown = useMemo(() => {
     const order = orderQuery.data;
-    if (!order) return null;
+    if (!order?.startDate || !order?.endDate) return null;
     
     const qty = quantity ?? 1;
+    const currencySymbol = currency === "EUR" ? "€" : "$";
     
-    // Get base unit price for 1 participant (for display purposes)
-    const unitPrice =
-      currency === "EUR" ? (order.priceEUR ?? 0) : (order.priceUSD ?? 0);
+    // Get per-person price (no group discount) for subtotal calculation
+    const perPersonPrice = getPriceFromDates(order.startDate, order.endDate, currencySymbol);
+    const subtotal = perPersonPrice * qty;
     
-    // Calculate subtotal (full price * quantity) for display
-    const subtotal = unitPrice * qty;
-    
-    // Use pricing from API if available (includes early bird), otherwise calculate locally
-    let actualPrice = unitPrice;
-    let groupDiscount = 0;
+    // Get actual price with group discount from API or calculate locally
+    let basePrice = 0; // Price with group discount, before early bird
     let earlyBirdDiscount = 0;
+    let finalPrice = 0;
     
     if (pricingQuery.data) {
-      // Use pricing from API
-      const basePrice = pricingQuery.data.basePrice; // Price with group discount, without early bird
+      // Use pricing from API (already includes group discount calculation)
+      basePrice = pricingQuery.data.basePrice || 0;
       earlyBirdDiscount = pricingQuery.data.earlyBirdDiscount || 0;
-      actualPrice = pricingQuery.data.finalPrice; // basePrice - earlyBirdDiscount
-      
-      // Calculate group discount: difference between subtotal and base price
-      groupDiscount = Math.max(0, subtotal - basePrice);
-    } else if (order.startDate && order.endDate) {
-      // Fallback: calculate locally without early bird
-      // Calculate the maximum discount (achieved at 3 participants)
-      const priceFor3 = getPriceForQuantity(
-        order.startDate,
-        order.endDate,
-        3,
-      );
-      const subtotalFor3 = unitPrice * 3;
-      const maxDiscount = Math.max(0, subtotalFor3 - priceFor3);
-      
-      // Get price for current quantity
-      const priceForQty = getPriceForQuantity(
-        order.startDate,
-        order.endDate,
-        qty,
-      );
-      // Convert to USD if needed (assuming 1:1 conversion for now, adjust if needed)
-      actualPrice =
-        currency === "USD"
-          ? priceForQty
-          : priceForQty; // TODO: Add USD conversion if needed
-      
-      // Calculate discount for current quantity
-      const currentDiscount = Math.max(0, subtotal - actualPrice);
-      
-      // For 4+ participants, always use the maximum discount (from 3 participants)
-      if (qty >= 4) {
-        groupDiscount = maxDiscount;
-        // Recalculate actual price to ensure discount stays at maximum
-        actualPrice = subtotal - maxDiscount;
-      } else {
-        groupDiscount = currentDiscount;
-      }
+      finalPrice = pricingQuery.data.finalPrice || 0;
     } else {
-      // Fallback: if no dates, use old discount logic for backward compatibility
-      if (qty === 2) {
-        actualPrice = unitPrice * 2 - 500;
-        groupDiscount = 500;
-      } else if (qty === 3) {
-        actualPrice = unitPrice * 3 - 1500;
-        groupDiscount = 1500;
-      } else {
-        // For 4+, maintain the same discount as 3 participants
-        const maxDiscount = 1500; // Discount for 3 participants
-        groupDiscount = maxDiscount;
-        actualPrice = subtotal - maxDiscount;
-      }
+      // Fallback: calculate locally using pricing lib
+      basePrice = getPriceForQuantity(order.startDate, order.endDate, qty, { currency: currencySymbol });
+      finalPrice = basePrice;
     }
     
-    // Apply discount code on top of the actual price
+    // Group discount = difference between full price and discounted price
+    const groupDiscount = Math.max(0, subtotal - basePrice);
+    
+    // Apply discount code on top
     let discountCodeAmount = 0;
     if (discount) {
       if (discount.type === "percentage") {
-        discountCodeAmount = (actualPrice * discount.value) / 100;
+        discountCodeAmount = (finalPrice * discount.value) / 100;
       } else {
         discountCodeAmount = discount.value;
       }
     }
     
-    const finalTotal = Math.max(0, actualPrice - discountCodeAmount);
+    const finalTotal = Math.max(0, finalPrice - discountCodeAmount);
     
     return {
       subtotal,
@@ -710,6 +765,15 @@ export default function RegisterForm() {
         return;
       }
       setDiscount({ code: data.code, type: data.type, value: data.value });
+      // PostHog: Track successful discount code application
+      posthog.capture("discount_code_applied", {
+        discount_code: data.code,
+        discount_type: data.type,
+        discount_value: data.value,
+        event_title: orderQuery.data?.eventTitle || "",
+        event_slug: orderQuery.data?.eventSlug || "",
+        quantity: quantity,
+      });
     } catch (e) {
       setDiscountError("Failed to validate code");
     }
@@ -724,19 +788,19 @@ export default function RegisterForm() {
       const qty = quantity ?? order.quantity ?? 1;
 
       // Send generate_lead event to GTM
-      sendGTMEvent({
-        event: 'generate_lead',
-        form_name: 'event_registration_form',
-        form_location: typeof window !== 'undefined' ? window.location.pathname : '',
-        lead_type: 'event_registration',
-        event_id: String(order.id),
-        event_slug: order.eventSlug || '',
-        event_title: order.eventTitle || '',
-        quantity: qty,
-        company: formData.company,
-        email: formData.email,
-        payment_method: paymentMethod || 'card',
-      });
+      // sendGTMEvent({
+      //   event: 'generate_lead',
+      //   form_name: 'event_registration_form',
+      //   form_location: typeof window !== 'undefined' ? window.location.pathname : '',
+      //   lead_type: 'event_registration',
+      //   event_id: String(order.id),
+      //   event_slug: order.eventSlug || '',
+      //   event_title: order.eventTitle || '',
+      //   quantity: qty,
+      //   company: formData.company,
+      //   email: formData.email,
+      //   payment_method: paymentMethod || 'card',
+      // });
 
       // Track form submission to HubSpot
       const formLocation = typeof window !== 'undefined' ? window.location.pathname : ''
@@ -773,39 +837,36 @@ export default function RegisterForm() {
         })
       }
 
-      // Get the actual price for this quantity based on event dates
-      // Use pricing from API if available (includes early bird), otherwise calculate locally
-      let total = 0;
-      if (pricingQuery.data?.finalPrice !== undefined) {
-        // Use pricing from API which already includes early bird discount
-        total = pricingQuery.data.finalPrice;
-        // Convert to USD if needed (assuming 1:1 conversion for now, adjust if needed)
-        if (currency === "USD") {
-          total = total; // TODO: Add USD conversion if needed
-        }
-      } else if (order.startDate && order.endDate) {
-        // Fallback: calculate locally without early bird
-        total = getPriceForQuantity(order.startDate, order.endDate, qty);
-        // Convert to USD if needed (assuming 1:1 conversion for now, adjust if needed)
-        if (currency === "USD") {
-          total = total; // TODO: Add USD conversion if needed
-        }
-      } else {
-        // Fallback: if no dates, use base price * quantity
-        const unitPrice =
-          currency === "EUR" ? (order.priceEUR ?? 0) : (order.priceUSD ?? 0);
-        total = unitPrice * qty;
+      // PostHog: Identify user and track registration form submission
+      if (formData.email) {
+        posthog.identify(formData.email, {
+          email: formData.email,
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          company: formData.company,
+          phone: formData.phone,
+          country: formData.country,
+          city: formData.city,
+        });
       }
 
-      // Apply manual discount code on top (if any)
-      if (discount) {
-        if (discount.type === "percentage") {
-          total = Math.max(0, total - (total * discount.value) / 100);
-        } else {
-          total = Math.max(0, total - discount.value);
-        }
-      }
+      posthog.capture("registration_form_submitted", {
+        event_id: String(order.id),
+        event_slug: order.eventSlug || "",
+        event_title: order.eventTitle || "",
+        quantity: qty,
+        company: formData.company,
+        country: formData.country,
+        payment_method: paymentMethod || "card",
+        currency: currency,
+        total_amount: priceBreakdown?.finalTotal ?? 0,
+        has_discount: !!discount,
+        discount_code: discount?.code || null,
+        participant_count: participants.length,
+      });
 
+      // Use priceBreakdown which already has the correct calculation
+      const total = priceBreakdown?.finalTotal ?? 0;
       const effectiveUnit = total / qty;
       const priceInCents = Math.round(effectiveUnit * 100);
       const items = [
@@ -874,13 +935,20 @@ export default function RegisterForm() {
           className="space-y-6"
         >
           {process.env.NODE_ENV === "development" && (
-            <div className="mt-4 flex w-full items-center justify-center rounded-lg bg-secondary px-6 py-3 font-semibold text-white transition-colors duration-200 disabled:bg-yellow-400">
+            <div className="mt-4 flex w-full gap-2">
               <button
                 type="button"
                 onClick={populateTestData}
-                className="w-full"
+                className="flex-1 rounded-lg bg-secondary px-6 py-3 font-semibold text-white transition-colors duration-200 hover:bg-secondary/90"
               >
                 Test Data
+              </button>
+              <button
+                type="button"
+                onClick={testOrderCheckout}
+                className="flex-1 rounded-lg bg-green-600 px-6 py-3 font-semibold text-white transition-colors duration-200 hover:bg-green-700"
+              >
+                Test Order
               </button>
             </div>
           )}
@@ -1279,7 +1347,7 @@ export default function RegisterForm() {
       </div>
 
       <div className="col-span-2 mt-10 md:mt-0">
-        <div className="sticky top-24 rounded-lg bg-white p-6 shadow-lg">
+        <div className="rounded-lg bg-white p-6 shadow-lg">
           <div className="mb-6 flex items-center">
             <Building className="text-secondary mr-2 h-5 w-5" />
             <h2 className="text-xl font-semibold text-gray-900">Summary</h2>
@@ -1388,7 +1456,16 @@ export default function RegisterForm() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setEditingParticipant(idx)}
+                    onClick={() => {
+                      setEditingParticipant(idx);
+                      // PostHog: Track participant details editing
+                      posthog.capture("participant_details_edited", {
+                        participant_index: idx + 1,
+                        total_participants: participants.length,
+                        event_title: orderQuery.data?.eventTitle || "",
+                        event_slug: orderQuery.data?.eventSlug || "",
+                      });
+                    }}
                     className="rounded-md border px-3 py-1 text-sm hover:bg-gray-50"
                   >
                     Edit

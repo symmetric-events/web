@@ -63,7 +63,7 @@ export function trackHubSpotFormSubmission(
     ...formData
   };
 
-  trackHubSpotEvent('form_submission', properties);
+  trackHubSpotEvent(properties.form_name as string, properties);
 }
 
 /**

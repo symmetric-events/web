@@ -23,6 +23,21 @@ const config = {
       },
     ],
   },
+  // PostHog reverse proxy configuration
+  async rewrites() {
+    return [
+      {
+        source: "/ingest/static/:path*",
+        destination: "https://eu-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/ingest/:path*",
+        destination: "https://eu.i.posthog.com/:path*",
+      },
+    ];
+  },
+  // Required to support PostHog trailing slash API requests
+  skipTrailingSlashRedirect: true,
 };
 // @ts-ignore
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
