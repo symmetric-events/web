@@ -55,7 +55,7 @@ export default buildConfig({
         },
         region: env.S3_REGION!,
       },
-      clientUploads: true, // Enable client-side uploads for Vercel serverless compatibility
+      clientUploads: true, // Client-side uploads (no size limit, requires UploadHandlersProvider in layout)
     }),
 
   ],

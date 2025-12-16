@@ -4,6 +4,7 @@ import config from '@payload-config'
 import '@payloadcms/next/css'
 import type { ServerFunctionClient } from 'payload'
 import { handleServerFunctions, RootLayout } from '@payloadcms/next/layouts'
+import { UploadHandlersProvider } from '@payloadcms/ui'
 import React from 'react'
 
 import { importMap } from './admin/importMap.js'
@@ -22,10 +23,13 @@ const serverFunction: ServerFunctionClient = async function (args) {
   })
 }
 
+// Wrap with UploadHandlersProvider to fix S3 storage client uploads issue
 const Layout = ({ children }: Args) => (
-  <RootLayout config={config} importMap={importMap} serverFunction={serverFunction}>
-    {children}
-  </RootLayout>
+  <UploadHandlersProvider>
+    <RootLayout config={config} importMap={importMap} serverFunction={serverFunction}>
+      {children}
+    </RootLayout>
+  </UploadHandlersProvider>
 )
 
 export default Layout
