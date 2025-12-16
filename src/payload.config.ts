@@ -58,6 +58,7 @@ export default buildConfig({
             },
             region: env.S3_REGION || 'us-east-1',
           },
+          clientUploads: true, // Enable client-side uploads for Vercel serverless compatibility
         }),
       ]
       : []),
