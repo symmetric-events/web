@@ -1,4 +1,4 @@
-import { s3Storage } from '@payloadcms/storage-s3'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
@@ -43,20 +43,13 @@ export default buildConfig({
   sharp,
   plugins: [
     payloadCloudPlugin(),
-    s3Storage({
+    vercelBlobStorage({
+      enabled: true,
       collections: {
         media: true,
       },
-      bucket: env.S3_BUCKET!,
-      config: {
-        credentials: {
-          accessKeyId: env.S3_ACCESS_KEY_ID!,
-          secretAccessKey: env.S3_SECRET_ACCESS_KEY!,
-        },
-        region: env.S3_REGION!,
-      },
-      clientUploads: true, // Client-side uploads (no size limit, requires UploadHandlersProvider in layout)
+      token: env.BLOB_READ_WRITE_TOKEN || '',
+      clientUploads: true, // Direct client uploads to bypass Vercel's 4.5MB limit
     }),
-
   ],
 })

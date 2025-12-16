@@ -31,11 +31,8 @@ export const env = createEnv({
     GMAIL_CLIENT_ID: z.string().min(1).optional(),
     GMAIL_CLIENT_SECRET: z.string().min(1).optional(),
     GMAIL_REFRESH_TOKEN: z.string().min(1).optional(),
-    // S3 Storage Configuration (for media uploads on Vercel)
-    S3_BUCKET: z.string().min(1).optional(),
-    S3_ACCESS_KEY_ID: z.string().min(1).optional(),
-    S3_SECRET_ACCESS_KEY: z.string().min(1).optional(),
-    S3_REGION: z.string().min(1).optional()
+    // Vercel Blob Storage (for media uploads on Vercel)
+    BLOB_READ_WRITE_TOKEN: z.string().min(1).optional()
   },
 
   /**
@@ -76,10 +73,7 @@ export const env = createEnv({
     GMAIL_CLIENT_ID: process.env.GMAIL_CLIENT_ID,
     GMAIL_CLIENT_SECRET: process.env.GMAIL_CLIENT_SECRET,
     GMAIL_REFRESH_TOKEN: process.env.GMAIL_REFRESH_TOKEN,
-    S3_BUCKET: process.env.S3_BUCKET,
-    S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
-    S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,
-    S3_REGION: process.env.S3_REGION,
+    BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
