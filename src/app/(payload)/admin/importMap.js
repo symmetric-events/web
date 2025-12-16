@@ -23,7 +23,6 @@ import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997e
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { UploadHandlersProvider as UploadHandlersProvider_bcea06aa4395ec9d6eb8dc390e454331 } from '@payloadcms/ui/providers/UploadHandlers'
-import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from '@payloadcms/storage-vercel-blob/client'
 
 export const importMap = {
   "~/collections/Events/EventLinkField#EventLinkField": EventLinkField_0e523a6975bb42ef40d1a4434907461a,
@@ -50,6 +49,5 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
-  "@payloadcms/ui/providers/UploadHandlers#UploadHandlersProvider": UploadHandlersProvider_bcea06aa4395ec9d6eb8dc390e454331,
-  "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e
+  "@payloadcms/ui/providers/UploadHandlers#UploadHandlersProvider": UploadHandlersProvider_bcea06aa4395ec9d6eb8dc390e454331
 }
