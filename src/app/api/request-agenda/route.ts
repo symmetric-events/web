@@ -27,8 +27,6 @@ async function getGmailAccessToken(): Promise<string | null> {
   }
 
   try {
-
-    // Build form data using URLSearchParams (equivalent to PHP's http_build_query)
     const formData = new URLSearchParams()
     formData.append('client_id', clientId)
     formData.append('client_secret', clientSecret)
