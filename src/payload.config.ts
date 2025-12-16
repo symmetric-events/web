@@ -27,6 +27,11 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    components: {
+      // Required for any cloud storage plugin using clientUploads (S3 / Vercel Blob, etc.)
+      // This mounts the provider *inside* Payload's RootProvider (correct place in the tree).
+      providers: ['@payloadcms/ui/providers/UploadHandlers#UploadHandlersProvider'],
+    },
   },
   collections: [Users, Media, Events, Trainers, Testimonials, Categories, Orders, DiscountCodes, Blog],
   editor: lexicalEditor(),
