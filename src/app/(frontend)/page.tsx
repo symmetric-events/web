@@ -90,7 +90,7 @@ export default async function HomePage() {
   // Fetch hero background image (change ID to match your uploaded image)
   const heroImage = await payload.findByID({
     collection: "media",
-    id: 15,
+    id: 18,
   });
 
   return (
