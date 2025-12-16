@@ -87,6 +87,12 @@ export default async function HomePage() {
 
   const featuredTrainers = featuredTrainersRes.docs;
 
+  // Fetch hero background image (change ID to match your uploaded image)
+  const heroImage = await payload.findByID({
+    collection: "media",
+    id: 15,
+  });
+
   return (
     <div>
       {/* Hero Section */}
@@ -94,8 +100,8 @@ export default async function HomePage() {
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <Image
-            src="https://www.symmetric.events/wp-content/uploads/2020/12/bg.jpeg?id=2824"
-            alt="Hero background"
+            src={heroImage.url || ""}
+            alt={heroImage.alt || "Hero background"}
             fill
             className="object-cover"
             priority

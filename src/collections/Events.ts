@@ -343,6 +343,14 @@ export const Events: CollectionConfig = {
         },
       ],
     },
+    {
+      name: 'Agenda',
+      type: 'relationship',
+      relationTo: 'media',
+      admin: {
+        description: 'Upload a PDF file for the event agenda (PDF only)',
+      },
+    },
   ],
   timestamps: true,
 }

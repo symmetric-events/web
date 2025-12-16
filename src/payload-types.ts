@@ -160,7 +160,7 @@ export interface User {
  */
 export interface Media {
   id: number;
-  alt: string;
+  alt?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -265,6 +265,10 @@ export interface Event {
      */
     pdfLink?: string | null;
   };
+  /**
+   * Upload a PDF file for the event agenda (PDF only)
+   */
+  Agenda?: (number | null) | Media;
   updatedAt: string;
   createdAt: string;
 }
@@ -707,6 +711,7 @@ export interface EventsSelect<T extends boolean = true> {
         imageUrl?: T;
         pdfLink?: T;
       };
+  Agenda?: T;
   updatedAt?: T;
   createdAt?: T;
 }

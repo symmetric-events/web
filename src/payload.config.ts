@@ -43,6 +43,7 @@ export default buildConfig({
   sharp,
   plugins: [
     payloadCloudPlugin(),
+    // S3 storage temporarily disabled for debugging
     ...(env.S3_BUCKET && env.S3_ACCESS_KEY_ID && env.S3_SECRET_ACCESS_KEY
       ? [
         s3Storage({

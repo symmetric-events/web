@@ -27,6 +27,10 @@ export const env = createEnv({
     SMTP_PASS: z.string().min(1).optional(),
     SMTP_FROM_EMAIL: z.string().email().optional(),
     SMTP_FROM_NAME: z.string().min(1).optional(),
+    // Gmail API OAuth2 Configuration (for sending agenda emails)
+    GMAIL_CLIENT_ID: z.string().min(1).optional(),
+    GMAIL_CLIENT_SECRET: z.string().min(1).optional(),
+    GMAIL_REFRESH_TOKEN: z.string().min(1).optional(),
     // S3 Storage Configuration (for media uploads on Vercel)
     S3_BUCKET: z.string().min(1).optional(),
     S3_ACCESS_KEY_ID: z.string().min(1).optional(),
@@ -69,6 +73,9 @@ export const env = createEnv({
     SMTP_PASS: process.env.SMTP_PASS,
     SMTP_FROM_EMAIL: process.env.SMTP_FROM_EMAIL,
     SMTP_FROM_NAME: process.env.SMTP_FROM_NAME,
+    GMAIL_CLIENT_ID: process.env.GMAIL_CLIENT_ID,
+    GMAIL_CLIENT_SECRET: process.env.GMAIL_CLIENT_SECRET,
+    GMAIL_REFRESH_TOKEN: process.env.GMAIL_REFRESH_TOKEN,
     S3_BUCKET: process.env.S3_BUCKET,
     S3_ACCESS_KEY_ID: process.env.S3_ACCESS_KEY_ID,
     S3_SECRET_ACCESS_KEY: process.env.S3_SECRET_ACCESS_KEY,

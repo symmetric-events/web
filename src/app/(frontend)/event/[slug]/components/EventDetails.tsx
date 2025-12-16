@@ -7,6 +7,7 @@ import { AddToCalendar } from "~/app/(frontend)/components/AddToCalendar";
 import type { CalendarEvent } from "~/lib/calendar";
 import { getPriceFromDates, getPriceForQuantity } from "~/lib/pricing";
 import { useCurrency } from "~/app/(frontend)/context/CurrencyContext";
+import { RequestAgendaModal } from "./RequestAgendaModal";
 
 interface EventDetailsProps {
   event: any;
@@ -329,11 +330,11 @@ export function EventDetails({ event }: EventDetailsProps) {
               formattedDateRanges.map((dateRange, index) => (
                 <div
                   key={index}
-                  className="group relative overflow-hidden rounded-lg border-2 border-[#FBBB00]/20 bg-gradient-to-br from-[#FBBB00]/5 to-transparent px-4 py-2 transition-all duration-300"
+                  className="group relative overflow-hidden rounded-lg border-2 border-secondary/20 bg-linear-to-br from-secondary/5 to-transparent px-4 py-2 transition-all duration-300"
                 >
                   <div className="flex items-center justify-between gap-4">
                     {/* Calendar Icon Badge */}
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#FBBB00]">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary">
                       <Calendar className="h-4 w-4 text-white" />
                     </div>
 
@@ -359,7 +360,7 @@ export function EventDetails({ event }: EventDetailsProps) {
                   </div>
 
                   {/* Subtle accent line */}
-                  <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-[#FBBB00] via-[#FBBB00]/50 to-transparent opacity-0 transition-opacity duration-300" />
+                  <div className="absolute bottom-0 left-0 h-1 w-full bg-linear-to-r from-secondary via-secondary/50 to-transparent opacity-0 transition-opacity duration-300" />
                 </div>
               ))
             ) : (
@@ -389,7 +390,7 @@ export function EventDetails({ event }: EventDetailsProps) {
                     </span>
                     {hasEarlyBird && (
                       <div className="ml-2 flex items-center gap-2">
-                        <span className="rounded bg-[#FBBB00]/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#FBBB00] uppercase">
+                        <span className="rounded bg-secondary/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-secondary uppercase">
                           Early Bird
                         </span>
                         <span className="text-xs font-semibold text-gray-500 line-through">
@@ -412,7 +413,7 @@ export function EventDetails({ event }: EventDetailsProps) {
                   onClick={() => setCurrency("€")}
                   className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                     currency === "€"
-                      ? "bg-[#FBBB00] text-gray-900 shadow-sm"
+                      ? "bg-secondary text-gray-900 shadow-sm"
                       : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
@@ -422,7 +423,7 @@ export function EventDetails({ event }: EventDetailsProps) {
                   onClick={() => setCurrency("$")}
                   className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
                     currency === "$"
-                      ? "bg-[#FBBB00] text-gray-900 shadow-sm"
+                      ? "bg-secondary text-gray-900 shadow-sm"
                       : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
@@ -433,17 +434,24 @@ export function EventDetails({ event }: EventDetailsProps) {
 
             <button
               onClick={handleSeePricing}
-              className="hover:bg-primary hover:text-secondary w-full cursor-pointer rounded-full border-2 border-[#FBBB00] bg-[#FBBB00] py-2 text-lg font-semibold uppercase transition-colors duration-200"
+              className="hover:bg-primary hover:text-secondary w-full cursor-pointer rounded-full border-2 border-secondary bg-secondary py-2 text-lg font-semibold uppercase transition-colors duration-200"
             >
               See Pricing
             </button>
-            <button className="w-full cursor-pointer rounded-full border-2 border-[#FBBB00] py-2 text-lg font-semibold text-[#FBBB00] uppercase transition-colors duration-200 hover:bg-[#FBBB00] hover:text-gray-900">
-              Request Training Agenda
-            </button>
+            <RequestAgendaModal
+              eventSlug={slug || ""}
+              eventTitle={event?.Title || ""}
+              eventId={event?.id || ""}
+              trigger={
+                <button className="w-full cursor-pointer rounded-full border-2 border-secondary py-2 text-lg font-semibold text-secondary uppercase transition-colors duration-200 hover:bg-secondary hover:text-gray-900">
+                  Request Training Agenda
+                </button>
+              }
+            />
           </div>
         </div>
 
-        <div className="rounded-3xl border-2 border-[#FBBB00] px-4 py-4 shadow-sm md:py-10">
+        <div className="rounded-3xl border-2 border-secondary px-4 py-4 shadow-sm md:py-10">
           <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-center lg:justify-around">
             <div className="w-full tracking-wide lg:w-auto">
               {event["Training Type"] === "in-person" ? (
