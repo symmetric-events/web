@@ -34,9 +34,14 @@ export const Events: CollectionConfig = {
         if (!slug || typeof slug !== 'string') return doc
 
         try {
-          const baseUrl = env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+          const configured = (env.NEXT_PUBLIC_APP_URL || '').trim()
+          const baseUrl =
+            configured ||
+            (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '') ||
+            'http://localhost:3000'
+          const normalizedBaseUrl = baseUrl.replace(/\/+$/, '')
 
-          const res = await fetch(`${baseUrl}/api/revalidate`, {
+          const res = await fetch(`${normalizedBaseUrl}/api/revalidate`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
