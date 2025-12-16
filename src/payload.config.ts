@@ -1,4 +1,4 @@
-// import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
@@ -27,11 +27,6 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
-    components: {
-      // Required for any cloud storage plugin using clientUploads (S3 / Vercel Blob, etc.)
-      // This mounts the provider *inside* Payload's RootProvider (correct place in the tree).
-      providers: ['@payloadcms/ui/providers/UploadHandlers#UploadHandlersProvider'],
-    },
   },
   collections: [Users, Media, Events, Trainers, Testimonials, Categories, Orders, DiscountCodes, Blog],
   editor: lexicalEditor(),
@@ -48,13 +43,12 @@ export default buildConfig({
   sharp,
   plugins: [
     payloadCloudPlugin(),
-    // vercelBlobStorage({
-    //   enabled: true,
-    //   collections: {
-    //     media: true,
-    //   },
-    //   token: env.BLOB_READ_WRITE_TOKEN || '',
-    //   clientUploads: true, // Direct client uploads to bypass Vercel's 4.5MB limit
-    // }),
+    vercelBlobStorage({
+      enabled: true,
+      collections: {
+        media: true,
+      },
+      token: env.BLOB_READ_WRITE_TOKEN!
+    }),
   ],
 })
