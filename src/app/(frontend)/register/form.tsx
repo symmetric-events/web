@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { sendGTMEvent } from "@next/third-parties/google";
+import { trackHubSpotFormSubmission, identifyHubSpotUser } from "~/lib/hubspot";
 import {
   Building,
   CreditCard,
@@ -736,6 +737,41 @@ export default function RegisterForm() {
         email: formData.email,
         payment_method: paymentMethod || 'card',
       });
+
+      // Track form submission to HubSpot
+      const formLocation = typeof window !== 'undefined' ? window.location.pathname : ''
+      trackHubSpotFormSubmission(
+        {
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.company,
+          country: formData.country,
+          city: formData.city,
+          form_name: 'event_registration_form',
+          lead_type: 'event_registration',
+          event_id: String(order.id),
+          event_slug: order.eventSlug || '',
+          event_title: order.eventTitle || '',
+          quantity: qty,
+          payment_method: paymentMethod || 'card',
+        },
+        'event_registration_form',
+        formLocation
+      )
+      
+      // Identify user in HubSpot
+      if (formData.email) {
+        identifyHubSpotUser(formData.email, {
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          company: formData.company,
+          phone: formData.phone,
+          country: formData.country,
+          city: formData.city,
+        })
+      }
 
       // Get the actual price for this quantity based on event dates
       // Use pricing from API if available (includes early bird), otherwise calculate locally

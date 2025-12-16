@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { sendGTMEvent } from "@next/third-parties/google";
+import { trackHubSpotFormSubmission, identifyHubSpotUser } from "~/lib/hubspot";
 
 export const NewsletterForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,6 +31,31 @@ export const NewsletterForm: React.FC = () => {
       email: email,
       has_consent: consent,
     })
+    
+    // Track form submission to HubSpot
+    const formLocation = typeof window !== 'undefined' ? window.location.pathname : ''
+    trackHubSpotFormSubmission(
+      {
+        first_name: firstName,
+        last_name: lastName,
+        company: company || '',
+        email,
+        consent: consent ? 'yes' : 'no',
+        form_name: 'newsletter_signup',
+        lead_type: 'newsletter_subscription',
+      },
+      'newsletter_signup',
+      formLocation
+    )
+    
+    // Identify user in HubSpot
+    if (email) {
+      identifyHubSpotUser(email, {
+        first_name: firstName,
+        last_name: lastName,
+        company: company || '',
+      })
+    }
     
     // Reset form after a brief delay
     setTimeout(() => {

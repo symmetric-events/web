@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { sendGTMEvent } from '@next/third-parties/google'
+import { trackHubSpotFormSubmission, identifyHubSpotUser } from '~/lib/hubspot'
 import { Button } from './Button'
 
 interface ContactPageFormProps {
@@ -36,6 +37,31 @@ export function ContactPageForm({ onSubmit }: ContactPageFormProps) {
       phone: phone,
       has_message: !!message,
     })
+    
+    // Track form submission to HubSpot
+    const formLocation = typeof window !== 'undefined' ? window.location.pathname : ''
+    trackHubSpotFormSubmission(
+      {
+        name,
+        company,
+        email,
+        phone,
+        message: message || '',
+        form_name: 'contact_page_form',
+        lead_type: 'contact_inquiry',
+      },
+      'contact_page_form',
+      formLocation
+    )
+    
+    // Identify user in HubSpot
+    if (email) {
+      identifyHubSpotUser(email, {
+        name,
+        company,
+        phone,
+      })
+    }
     
     try {
       if (onSubmit) {

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { sendGTMEvent } from '@next/third-parties/google'
+import { trackHubSpotFormSubmission, identifyHubSpotUser } from '~/lib/hubspot'
 import { Button } from '../components/Button'
 import {
   Dialog,
@@ -63,6 +64,36 @@ export function InHouseTrainingForm({
       has_audience: !!audience,
       has_training_objective: !!training_objective,
     })
+
+    // Track form submission to HubSpot
+    const formLocation = typeof window !== 'undefined' ? window.location.pathname : ''
+    trackHubSpotFormSubmission(
+      {
+        name,
+        first_name: firstName,
+        last_name: lastName,
+        function: function_val,
+        company,
+        email,
+        audience: audience || '',
+        training_objective: training_objective || '',
+        form_name: 'in_house_training_form',
+        lead_type: 'in_house_training_request',
+      },
+      'in_house_training_form',
+      formLocation
+    )
+    
+    // Identify user in HubSpot
+    if (email) {
+      identifyHubSpotUser(email, {
+        name,
+        first_name: firstName,
+        last_name: lastName,
+        company,
+        function: function_val,
+      })
+    }
 
     // Prepare payload
     const payload = {

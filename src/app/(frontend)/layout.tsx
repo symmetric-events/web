@@ -3,6 +3,7 @@ import { GoogleTagManager } from "@next/third-parties/google";
 import "../../styles/globals.css";
 import { Footer } from "./components/footer/Footer";
 import { GTMPageView } from "./components/GTMPageView";
+import { HubSpotScript } from "./components/HubSpotScript";
 import { PrefetchTrainingCourses } from "./components/PrefetchTrainingCourses";
 import { ScrollNavigation } from "./components/ScrollNavigation";
 import Providers from "./providers";
@@ -16,10 +17,12 @@ export const metadata = {
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props;
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID;
+  const hubspotPortalId = process.env.NEXT_PUBLIC_HUBSPOT_PORTAL_ID;
 
   return (
     <html lang="en">
       {gtmId && <GoogleTagManager gtmId={gtmId} />}
+      {hubspotPortalId && <HubSpotScript portalId={hubspotPortalId} />}
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
