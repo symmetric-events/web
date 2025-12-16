@@ -11,7 +11,7 @@ export function EventTrainer({ trainer }: EventTrainerProps) {
   const slug = trainer.slug || trainer.id;
 
   return (
-    <Link href={`/trainer/${slug}`} className="group block h-full w-full">
+    <Link href={`/trainer/${slug}`} className="group block h-full md:w-[calc((100%_-_3rem)_/_3)]">
       <div className="flex h-full flex-col justify-around gap-2 rounded-lg border border-gray-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
         {/* Trainer Photo */}
         <div className="relative h-28 w-28 mx-auto overflow-hidden rounded-full border-2 border-gray-100">

@@ -155,6 +155,16 @@ export const Blog: CollectionConfig = {
       },
     },
     {
+      name: 'relatedEvents',
+      label: 'Related Events',
+      type: 'relationship',
+      relationTo: 'events',
+      hasMany: true,
+      admin: {
+        description: 'Events to display as "Where to go from here" section',
+      },
+    },
+    {
       name: 'sticky',
       type: 'checkbox',
       defaultValue: false,

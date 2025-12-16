@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import type { Blog, Category } from "~/payload-types";
 import type { Metadata } from "next";
 import { EditButton } from "~/app/(frontend)/components/EditButton";
+import { RelatedEvents } from "./RelatedEvents";
 
 // Simple Lexical content renderer
 function LexicalContent({ content }: { content: any }) {
@@ -270,6 +271,11 @@ export default async function BlogPage({ params }: BlogPageProps) {
           </Link>
         </div>
       </div>
+
+      {/* Related Events Section */}
+      {blog.relatedEvents && Array.isArray(blog.relatedEvents) && blog.relatedEvents.length > 0 && (
+        <RelatedEvents eventIds={blog.relatedEvents} />
+      )}
     </article>
   );
 }

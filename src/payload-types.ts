@@ -176,6 +176,7 @@ export interface Media {
  */
 export interface Event {
   id: number;
+  eventLink?: string | null;
   slug: string;
   Title: string;
   status?: ('draft' | 'published' | 'archived') | null;
@@ -454,6 +455,10 @@ export interface Blog {
       }[]
     | null;
   /**
+   * Events to display as "Where to go from here" section
+   */
+  relatedEvents?: (number | Event)[] | null;
+  /**
    * Pin this post to the top of blog listings
    */
   sticky?: boolean | null;
@@ -616,6 +621,7 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "events_select".
  */
 export interface EventsSelect<T extends boolean = true> {
+  eventLink?: T;
   slug?: T;
   Title?: T;
   status?: T;
@@ -810,6 +816,7 @@ export interface BlogSelect<T extends boolean = true> {
         name?: T;
         id?: T;
       };
+  relatedEvents?: T;
   sticky?: T;
   readingTime?: T;
   seo?:

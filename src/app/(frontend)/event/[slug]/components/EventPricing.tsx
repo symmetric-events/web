@@ -344,7 +344,7 @@ export function EventPricing({ event }: EventPricingProps) {
 
       {/* Early Bird Banner */}
       {earlyBirdInfo?.earlyBirdEligible && (
-        <div className="mx-auto mb-8 w-full max-w-2xl rounded-lg bg-[#FBBB00] px-6 py-3 text-center">
+        <div className="mx-auto mb-12 w-full max-w-2xl rounded-lg bg-[#FBBB00] px-6 py-3 text-center">
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-900">
             <span className="font-bold">EARLY BIRD PRICE</span>
             <span>|</span>
@@ -431,7 +431,7 @@ export function EventPricing({ event }: EventPricingProps) {
 
         {/* 2 Participants (Highlight) - TOP SELLER */}
         <div className="mb-2 text-center relative mt-6 md:mt-0">
-          <span className="text-2xl font-light tracking-widest absolute -top-10 left-1/2 -translate-x-1/2">
+          <span className="text-2xl w-full text-center font-light tracking-widest absolute -top-10 left-1/2 -translate-x-1/2">
             TOP SELLER
           </span>
           <div className="bg-secondary z-10 flex h-full flex-col overflow-hidden rounded-3xl border-2 border-[#FBBB00] text-gray-900 shadow-lg">

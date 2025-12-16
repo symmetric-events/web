@@ -69,6 +69,17 @@ export const Events: CollectionConfig = {
   },
   fields: [
     {
+      name: 'eventLink',
+      type: 'text',
+      admin: {
+        components: {
+          Field: '~/collections/Events/EventLinkField#EventLinkField',
+        },
+        readOnly: true,
+        hidden: false,
+      },
+    },
+    {
       name: 'slug',
       type: 'text',
       required: true,

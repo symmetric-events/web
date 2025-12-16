@@ -349,13 +349,13 @@ export function EventDetails({ event }: EventDetailsProps) {
                         const calendarEvent = getCalendarEvent(
                           eventDates[index],
                         );
-                      return calendarEvent ? (
-                        <AddToCalendar
-                          event={calendarEvent}
-                          className="shrink-0"
-                        />
-                      ) : null;
-                    })()}
+                        return calendarEvent ? (
+                          <AddToCalendar
+                            event={calendarEvent}
+                            className="shrink-0"
+                          />
+                        ) : null;
+                      })()}
                   </div>
 
                   {/* Subtle accent line */}
@@ -380,24 +380,24 @@ export function EventDetails({ event }: EventDetailsProps) {
             {/* Price and Currency Switcher */}
             <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-2 py-2">
               {/* Price Display */}
-              <div className="flex flex-col justify-center">
+              <div className="flex gap-4 justify-center">
                 {finalPrice > 0 ? (
                   <>
+                    <span className="ml-2 text-3xl font-bold text-gray-900">
+                      {finalPrice.toLocaleString("en-US")}
+                      {currency}
+                    </span>
                     {hasEarlyBird && (
-                      <div className="flex items-center gap-2 ml-2">
+                      <div className="ml-2 flex items-center gap-2">
+                        <span className="rounded bg-[#FBBB00]/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#FBBB00] uppercase">
+                          Early Bird
+                        </span>
                         <span className="text-xs font-semibold text-gray-500 line-through">
                           {basePriceForDisplay.toLocaleString("en-US")}
                           {currency}
                         </span>
-                        <span className="rounded bg-[#FBBB00]/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#FBBB00] uppercase">
-                          Early Bird
-                        </span>
                       </div>
                     )}
-                    <span className="text-3xl ml-2 font-bold text-gray-900">
-                      {finalPrice.toLocaleString("en-US")}
-                      {currency}
-                    </span>
                   </>
                 ) : (
                   <span className="text-sm font-medium text-gray-500">
@@ -443,9 +443,9 @@ export function EventDetails({ event }: EventDetailsProps) {
           </div>
         </div>
 
-        <div className="rounded-3xl border-2 border-[#FBBB00] py-4 md:py-10 px-4 shadow-sm">
-          <div className="flex flex-col items-center gap-6 lg:flex-row lg:justify-around lg:items-center">
-            <div className="tracking-wide w-full lg:w-auto">
+        <div className="rounded-3xl border-2 border-[#FBBB00] px-4 py-4 shadow-sm md:py-10">
+          <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-center lg:justify-around">
+            <div className="w-full tracking-wide lg:w-auto">
               {event["Training Type"] === "in-person" ? (
                 <>
                   <p className="mb-4 text-lg font-bold">TRAINING LOCATION</p>
@@ -464,8 +464,11 @@ export function EventDetails({ event }: EventDetailsProps) {
                   <p className="mb-4 text-lg font-bold">TRAINING TIMES</p>
                   <ul className="space-y-2">
                     {trainingTimes.map(({ time, city }) => (
-                      <li key={city} className="flex items-center justify-between gap-3 text-lg lg:justify-start">
-                        <span className="font-mono shrink-0">{time}</span>
+                      <li
+                        key={city}
+                        className="flex items-center justify-between gap-3 text-lg lg:justify-start"
+                      >
+                        <span className="shrink-0 font-mono">{time}</span>
                         <span className="text-right lg:text-left">{city}</span>
                       </li>
                     ))}

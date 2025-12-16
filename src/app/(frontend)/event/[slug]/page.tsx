@@ -81,16 +81,15 @@ export default async function EventPage({ params }: Props) {
                 )}
 
                 {/* Cards Row - 1/3 per item */}
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:items-stretch">
+                <div className="flex justify-center min-h-0 flex-wrap gap-6">
                   {/* Trainers - 1/3 each */}
-                  {event.Trainers && event.Trainers.length === 1 && <div></div>}
                   {event.Trainers?.map((trainer: any) => (
                     <EventTrainer key={trainer.id} trainer={trainer} />
                   ))}
 
                   {/* Video Card - 1/3 width */}
                   {hasVideo && event.video && (
-                    <div className="flex flex-col justify-around rounded-lg border border-gray-200 bg-white p-6 transition-all duration-300">
+                    <div className="flex md:w-[calc((100%_-_3rem)_/_3)] self-stretch flex-col justify-around rounded-lg border border-gray-200 bg-white p-6 transition-all duration-300">
                       <iframe
                         src={event.video}
                         className="h-[200px] w-full rounded-lg"
@@ -115,24 +114,22 @@ export default async function EventPage({ params }: Props) {
                           ? "noopener noreferrer"
                           : undefined
                       }
-                      className="group block w-full rounded-lg border border-gray-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                      className="group flex md:w-[calc((100%_-_3rem)_/_3)] flex-col justify-between rounded-lg border border-gray-200 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
                     >
-                      <div className="flex flex-col gap-2">
-                        <img
-                          src={event.sneekPeek.imageUrl}
-                          alt="Sneak peek"
-                          className="h-[200px] w-full rounded-lg object-cover"
-                        />
-                        <h3 className="mt-2 text-center text-lg font-semibold">
-                          Sneak Peek
-                        </h3>
-                        <p className="line-clamp-3 text-center text-sm leading-relaxed text-gray-600">
-                          Take a sneak peek at the trainer&apos;s presentation.
-                        </p>
-                        <p className="text-center text-sm font-medium text-blue-600 group-hover:underline">
-                          View PDF →
-                        </p>
-                      </div>
+                      <img
+                        src={event.sneekPeek.imageUrl}
+                        alt="Sneak peek"
+                        className="w-full max-h-[200px] rounded-lg object-contain"
+                      />
+                      <h3 className="text-center text-lg font-semibold">
+                        Sneak Peek
+                      </h3>
+                      <p className="line-clamp-3 text-center text-sm leading-relaxed text-gray-600">
+                        Take a sneak peek at the trainer&apos;s presentation.
+                      </p>
+                      <p className="text-center text-sm font-medium text-blue-600 group-hover:underline">
+                        View PDF →
+                      </p>
                     </a>
                   )}
                 </div>

@@ -45,7 +45,7 @@ export default async function HomePage() {
       const firstDateRange = eventDates[0];
       const startDate = firstDateRange?.["Start Date"];
       if (!startDate) return false;
-      
+
       const eventDate = new Date(startDate);
       eventDate.setHours(0, 0, 0, 0);
       return eventDate >= today;
@@ -123,6 +123,42 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* Featured Trainers */}
+      {featuredTrainers.length > 0 && (
+        <section className="bg-gray-50 py-10">
+          <div className="mx-auto max-w-6xl px-5">
+            <h3 className="mb-12 text-center text-2xl text-gray-800">
+              Featured Trainers
+            </h3>
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {featuredTrainers.map((trainer: any) => (
+                <TrainerCard
+                  key={trainer.id}
+                  slug={trainer.slug || trainer.id}
+                  name={trainer.name}
+                  position={trainer.position}
+                  excerpt={trainer.excerpt || trainer.biography}
+                  imageUrl={
+                    (typeof trainer.image === "object" && trainer.image?.url) ||
+                    trainer.image_url ||
+                    undefined
+                  }
+                  imageAlt={
+                    (typeof trainer.image === "object" && trainer.image?.alt) ||
+                    trainer.name
+                  }
+                />
+              ))}
+            </div>
+            <div className="mt-12 text-center">
+              <Link href="/trainers">
+                <Button variant="primary">View All Trainers</Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Upcoming Training Courses */}
       <section className="bg-gray-50 py-20">
         <div className="mx-auto max-w-6xl px-5">
@@ -138,14 +174,21 @@ export default async function HomePage() {
             <Button size="sm">Clinical Trials</Button>
             <Button size="sm">Combination Products</Button>
           </div>
-          <div className="grid mx-auto max-w-5xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {upcomingEvents.map((event: any) => {
               // Handle multiple date ranges - use first range when available
               const eventDates = event["Event Dates"] || [];
-              const firstDateRange = Array.isArray(eventDates) && eventDates.length > 0 ? eventDates[0] : undefined;
+              const firstDateRange =
+                Array.isArray(eventDates) && eventDates.length > 0
+                  ? eventDates[0]
+                  : undefined;
 
-              const startDate = firstDateRange?.["Start Date"] || event["Start Date"] || undefined;
-              const endDate = firstDateRange?.["End Date"] || event["End Date"] || undefined;
+              const startDate =
+                firstDateRange?.["Start Date"] ||
+                event["Start Date"] ||
+                undefined;
+              const endDate =
+                firstDateRange?.["End Date"] || event["End Date"] || undefined;
               const startTime = firstDateRange?.["Start Time"] || undefined;
               const endTime = firstDateRange?.["End Time"] || undefined;
 
@@ -165,8 +208,8 @@ export default async function HomePage() {
                   slug={event.slug}
                   status="Upcoming"
                   statusColor="green"
-                  trainingType={event['Training Type']}
-                  trainingLocation={event['Training Location']}
+                  trainingType={event["Training Type"]}
+                  trainingLocation={event["Training Location"]}
                   featuredImage={featuredImage}
                   startDate={startDate}
                   endDate={endDate}
@@ -210,42 +253,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Featured Trainers */}
-      {featuredTrainers.length > 0 && (
-        <section className="bg-gray-50 py-10">
-          <div className="mx-auto max-w-6xl px-5">
-            <h3 className="mb-12 text-center text-2xl text-gray-800">
-              Featured Trainers
-            </h3>
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {featuredTrainers.map((trainer: any) => (
-                <TrainerCard
-                  key={trainer.id}
-                  slug={trainer.slug || trainer.id}
-                  name={trainer.name}
-                  position={trainer.position}
-                  excerpt={trainer.excerpt || trainer.biography}
-                  imageUrl={
-                    (typeof trainer.image === "object" && trainer.image?.url) ||
-                    trainer.image_url ||
-                    undefined
-                  }
-                  imageAlt={
-                    (typeof trainer.image === "object" && trainer.image?.alt) ||
-                    trainer.name
-                  }
-                />
-              ))}
-            </div>
-            <div className="mt-12 text-center">
-              <Link href="/trainers">
-                <Button variant="primary">View All Trainers</Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
     </div>
   );
 }
