@@ -1,4 +1,4 @@
-// import { s3Storage } from '@payloadcms/storage-s3'
+import { s3Storage } from '@payloadcms/storage-s3'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
@@ -43,24 +43,20 @@ export default buildConfig({
   sharp,
   plugins: [
     payloadCloudPlugin(),
-    // S3 storage temporarily disabled for debugging
-    // ...(env.S3_BUCKET && env.S3_ACCESS_KEY_ID && env.S3_SECRET_ACCESS_KEY
-    //   ? [
-    //     s3Storage({
-    //       collections: {
-    //         media: true,
-    //       },
-    //       bucket: env.S3_BUCKET,
-    //       config: {
-    //         credentials: {
-    //           accessKeyId: env.S3_ACCESS_KEY_ID,
-    //           secretAccessKey: env.S3_SECRET_ACCESS_KEY,
-    //         },
-    //         region: env.S3_REGION || 'us-east-1',
-    //       },
-    //       clientUploads: true, // Enable client-side uploads for Vercel serverless compatibility
-    //     }),
-    //   ]
-    //   : []),
+    s3Storage({
+      collections: {
+        media: true,
+      },
+      bucket: env.S3_BUCKET!,
+      config: {
+        credentials: {
+          accessKeyId: env.S3_ACCESS_KEY_ID!,
+          secretAccessKey: env.S3_SECRET_ACCESS_KEY!,
+        },
+        region: env.S3_REGION!,
+      },
+      clientUploads: true, // Enable client-side uploads for Vercel serverless compatibility
+    }),
+
   ],
 })
