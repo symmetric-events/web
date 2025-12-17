@@ -33,7 +33,11 @@ import {
 } from "~/components/ui/dialog";
 import { CountryDropdown } from "react-country-region-selector";
 import ReactSelect from "react-select";
-import { getPriceForQuantity, getPriceFromDates, type Currency } from "~/lib/pricing";
+import {
+  getPriceForQuantity,
+  getPriceFromDates,
+  type Currency,
+} from "~/lib/pricing";
 
 type ReactSelectOption = {
   label: string;
@@ -44,6 +48,7 @@ type DraftOrder = {
   id: string;
   eventTitle?: string;
   eventSlug?: string;
+  eventDateId?: string;
   currency?: "EUR" | "USD";
   quantity?: number;
   totalAmount?: number;
@@ -53,16 +58,16 @@ type DraftOrder = {
 
 type FormErrors = Partial<
   Record<
-    | "email"
-    | "firstName"
-    | "lastName"
-    | "phone"
-    | "company"
-    | "country"
-    | "region"
-    | "address1"
-    | "city"
-    | "postcode"
+    | "customerEmail"
+    | "customerFirstName"
+    | "customerLastName"
+    | "customerPhone"
+    | "customerCompany"
+    | "address"
+    | "address_country"
+    | "address_address1"
+    | "address_city"
+    | "address_postcode"
     | "participants"
     | "eventDate",
     string
@@ -72,27 +77,28 @@ type FormErrors = Partial<
 export default function RegisterForm() {
   const searchParams = useSearchParams();
   const hasProcessedUrlQuantity = useRef(false);
-  
+
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    company: "",
+    customerFirstName: "",
+    customerLastName: "",
+    customerEmail: "",
+    customerPhone: "",
+    customerCompany: "",
     vatNumber: "",
     poNumber: "",
-    country: "",
-    region: "",
-    address1: "",
-    address2: "",
-    city: "",
-    state: "",
-    postcode: "",
+    address: {
+      country: "",
+      address1: "",
+      address2: "",
+      city: "",
+      state: "",
+      postcode: "",
+    },
     notes: "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+  const [orderId, setOrderId] = useState<string | undefined>(undefined);
   const [currency, setCurrency] = useState<"EUR" | "USD">("EUR");
   const [paymentMethod, setPaymentMethod] = useState<"card" | "invoice" | "">(
     "card",
@@ -114,6 +120,9 @@ export default function RegisterForm() {
   const [editingParticipant, setEditingParticipant] = useState<number | null>(
     null,
   );
+  const [participantFormError, setParticipantFormError] = useState<
+    string | null
+  >(null);
   const [discountCode, setDiscountCode] = useState<string>("");
   const [discount, setDiscount] = useState<
     { code: string; type: "percentage" | "flat"; value: number } | undefined
@@ -301,22 +310,21 @@ export default function RegisterForm() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const existing = window.localStorage.getItem("sessionId");
-    if (existing) {
-      setSessionId(existing);
-    } else {
-      const sid = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      window.localStorage.setItem("sessionId", sid);
-      setSessionId(sid);
+    const fromUrl = searchParams.get("orderId") || undefined;
+    const fromStorage = window.localStorage.getItem("orderId") || undefined;
+    const next = fromUrl ?? fromStorage;
+    if (next) {
+      window.localStorage.setItem("orderId", next);
+      setOrderId(next);
     }
   }, []);
 
   const orderQuery = useQuery({
-    queryKey: ["order", sessionId],
-    enabled: !!sessionId,
+    queryKey: ["order", orderId],
+    enabled: !!orderId,
     queryFn: async () => {
       const res = await fetch(
-        `/api/orders?sessionId=${encodeURIComponent(sessionId!)}`,
+        `/api/order?orderId=${encodeURIComponent(orderId!)}`,
         { cache: "no-store" },
       );
       if (!res.ok) throw new Error("Failed to load order");
@@ -332,6 +340,7 @@ export default function RegisterForm() {
       orderQuery.data?.startDate,
       orderQuery.data?.endDate,
       quantity,
+      currency,
     ],
     enabled: !!(
       orderQuery.data?.eventSlug &&
@@ -342,16 +351,16 @@ export default function RegisterForm() {
     queryFn: async () => {
       const order = orderQuery.data;
       if (!order?.eventSlug || !order.startDate || !order.endDate) return null;
-      
+
+      const currencySymbol = currency === "EUR" ? "€" : "$";
       const res = await fetch(
-        `/api/events/${order.eventSlug}/pricing?startDate=${encodeURIComponent(order.startDate)}&endDate=${encodeURIComponent(order.endDate)}&quantity=${quantity ?? 1}`,
+        `/api/events/${order.eventSlug}/pricing?startDate=${encodeURIComponent(order.startDate)}&endDate=${encodeURIComponent(order.endDate)}&quantity=${quantity ?? 1}&currency=${encodeURIComponent(currencySymbol)}`,
         { cache: "no-store" },
       );
       if (!res.ok) return null;
       return await res.json();
     },
   });
-
 
   // Keep local quantity in sync with order when it changes (but only if we haven't processed URL param)
   useEffect(() => {
@@ -406,14 +415,10 @@ export default function RegisterForm() {
     void loadDates();
   }, [orderQuery.data?.eventSlug]);
 
-  const saveDraft = useMutation({
-    mutationKey: ["mutateOrder"],
-    mutationFn: async (params: {
-      sessionId?: string;
-      field: string;
-      value: unknown;
-    }) => {
-      const res = await fetch("/api/orders", {
+  const updateOrder = useMutation({
+    mutationKey: ["updateOrder"],
+    mutationFn: async (params: Record<string, unknown> & { orderId: string }) => {
+      const res = await fetch("/api/order/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(params),
@@ -421,12 +426,36 @@ export default function RegisterForm() {
       });
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(text || "Failed to save draft field");
+        throw new Error(text || "Failed to update order");
       }
-      return (await res.json()) as { orderId?: string };
+      return (await res.json()) as { orderId?: string; success?: boolean };
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["order", sessionId] });
+      void queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+    },
+  });
+
+  const upsertParticipant = useMutation({
+    mutationKey: ["upsertParticipant"],
+    mutationFn: async (params: {
+      orderId: string | number;
+      participantNumber: number;
+      participant: { name: string; email: string; jobPosition: string };
+    }) => {
+      const res = await fetch("/api/participants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Failed to save participant");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["order", orderId] });
     },
   });
 
@@ -437,7 +466,11 @@ export default function RegisterForm() {
     const quantityParam = searchParams.get("quantity");
     if (quantityParam) {
       const parsedQuantity = parseInt(quantityParam, 10);
-      if (!isNaN(parsedQuantity) && parsedQuantity >= 1 && parsedQuantity <= 1000) {
+      if (
+        !isNaN(parsedQuantity) &&
+        parsedQuantity >= 1 &&
+        parsedQuantity <= 1000
+      ) {
         hasProcessedUrlQuantity.current = true;
         setQuantity(parsedQuantity);
         // Don't save here - EventPricing already saved it before navigation
@@ -458,19 +491,26 @@ export default function RegisterForm() {
     const next: FormErrors = {};
 
     // Basic required fields
-    if (!formData.email) next.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      next.email = "Please enter a valid email address";
+    if (!formData.customerEmail) next.customerEmail = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.customerEmail)) {
+      next.customerEmail = "Please enter a valid email address";
     }
 
-    if (!formData.firstName) next.firstName = "First name is required";
-    if (!formData.lastName) next.lastName = "Last name is required";
-    if (!formData.phone) next.phone = "Phone is required";
-    if (!formData.company) next.company = "Company is required";
-    if (!formData.country) next.country = "Country is required";
-    if (!formData.address1) next.address1 = "Address is required";
-    if (!formData.city) next.city = "City is required";
-    if (!formData.postcode) next.postcode = "Postcode is required";
+    if (!formData.customerFirstName) next.customerFirstName = "First name is required";
+    if (!formData.customerLastName) next.customerLastName = "Last name is required";
+    if (!formData.customerPhone) next.customerPhone = "Phone is required";
+    if (!formData.customerCompany) next.customerCompany = "Company is required";
+    
+    // Address validation - set specific errors for each field
+    if (!formData.address.country) next.address_country = "Country is required";
+    if (!formData.address.address1) next.address_address1 = "Street address is required";
+    if (!formData.address.city) next.address_city = "City is required";
+    if (!formData.address.postcode) next.address_postcode = "Postcode is required";
+    
+    // Also set general address error if any address field is missing (for display purposes)
+    if (!formData.address.country || !formData.address.address1 || !formData.address.city || !formData.address.postcode) {
+      next.address = "Please complete all required address fields";
+    }
 
     // Event date validation
     if (!orderQuery.data?.startDate || !orderQuery.data?.endDate) {
@@ -501,28 +541,58 @@ export default function RegisterForm() {
   }
 
   function handleInputChange(field: keyof typeof formData, value: string) {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      // Handle nested address fields
+      if (field === "address") {
+        return prev; // address is updated via handleAddressChange
+      }
+      return { ...prev, [field]: value };
+    });
+  }
+
+  function handleAddressChange(field: keyof typeof formData["address"], value: string) {
+    setFormData((prev) => ({
+      ...prev,
+      address: { ...prev.address, [field]: value },
+    }));
+    
+    // Clear error for this specific field when user starts typing
+    const errorKey = `address_${field}` as keyof FormErrors;
+    if (errors[errorKey]) {
+      setErrors((prev) => ({ ...prev, [errorKey]: undefined, address: undefined }));
+    }
   }
 
   function handleInputBlur(field: keyof typeof formData) {
-    if (!sessionId) return;
-    if (formData[field] === "") return;
-    saveDraft.mutate({ sessionId, field, value: formData[field] });
+    if (!orderId) return;
+    
+    // Handle nested address fields
+    if (field === "address") {
+      if (Object.values(formData.address).some(v => v !== "")) {
+        updateOrder.mutate({ orderId, address: formData.address });
+      }
+      return;
+    }
+    
+    // Handle top-level fields
+    const value = formData[field];
+    if (value === "" || (typeof value === "object" && value !== null)) return;
+    
+    updateOrder.mutate({ orderId, [field]: value });
   }
 
   function handleCurrencyChange(next: "EUR" | "USD") {
     setCurrency(next);
-    if (sessionId) {
-      saveDraft.mutate({ sessionId, field: "currency", value: next });
-    }
+    if (orderId) updateOrder.mutate({ orderId, currency: next });
   }
 
   function handleQuantityChange(nextQty: number) {
-    if (!sessionId) return;
+    if (!orderId) return;
     const safe = Math.max(1, Math.min(1000, Math.floor(nextQty || 1)));
     const previousQuantity = quantity;
+
     setQuantity(safe); // optimistic local update for instant UI feedback
-    saveDraft.mutate({ sessionId, field: "quantity", value: safe });
+    updateOrder.mutate({ orderId, quantity: safe });
 
     // PostHog: Track quantity change
     posthog.capture("quantity_changed", {
@@ -554,42 +624,41 @@ export default function RegisterForm() {
     startDate: string;
     endDate: string;
   }) {
-    if (!sessionId || !range) return;
-    saveDraft.mutate({ sessionId, field: "startDate", value: range.startDate });
-    saveDraft.mutate({ sessionId, field: "endDate", value: range.endDate });
+    if (!orderId || !range) return;
+    updateOrder.mutate({
+      orderId,
+      eventDateId: (range as any)?.id ? String((range as any).id) : undefined,
+      startDate: range.startDate,
+      endDate: range.endDate,
+    });
   }
 
   // Dev function to populate test data
   function populateTestData() {
     const testData = {
-      firstName: "John",
-      lastName: "Developer",
-      email: "dev@test.com",
-      phone: "+44 1234 567890",
-      company: "Test Company Ltd",
+      customerFirstName: "John",
+      customerLastName: "Developer",
+      customerEmail: "dev@test.com",
+      customerPhone: "+44 1234 567890",
+      customerCompany: "Test Company Ltd",
       vatNumber: "IE1234567890",
       poNumber: "PO-2025-0001",
-      country: "Ireland",
-      region: "Dublin",
-      address1: "123 Tech Street",
-      address2: "Suite 456",
-      city: "Dublin",
-      state: "Dublin",
-      postcode: "D01 1AA",
+      address: {
+        country: "Ireland",
+        state: "Dublin",
+        address1: "123 Tech Street",
+        address2: "Suite 456",
+        city: "Dublin",
+        postcode: "D01 1AA",
+      },
       notes: "This is a test registration from development.",
     };
 
     setFormData(testData);
 
-    // Save each field to draft if sessionId exists
-    if (sessionId) {
-      Object.entries(testData).forEach(([field, value]) => {
-        saveDraft.mutate({
-          sessionId,
-          field,
-          value,
-        });
-      });
+    // Save each field to order if orderId exists
+    if (orderId) {
+      updateOrder.mutate({ orderId, ...testData });
     }
 
     // Clear errors
@@ -602,50 +671,55 @@ export default function RegisterForm() {
     const mockOrderData = {
       // Order details
       orderId: `test-${Date.now()}`,
-      sessionId: sessionId || `test-session-${Date.now()}`,
+      sessionId: `test-session-${Date.now()}`,
       status: "paid",
       paymentMethod: "card",
-      
+
       // Event details
       eventId: order?.eventSlug || "test-event",
       eventTitle: order?.eventTitle || "Test Training Course",
       eventSlug: order?.eventSlug || "test-training-course",
       startDate: order?.startDate || new Date().toISOString(),
-      endDate: order?.endDate || new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-      
+      endDate:
+        order?.endDate ||
+        new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+
       // Pricing
       quantity: quantity || 2,
       currency: currency || "EUR",
 
-      discountAmount: (priceBreakdown?.groupDiscount || 0) + (priceBreakdown?.earlyBirdDiscount || 0) + (priceBreakdown?.discountCodeAmount || 0),
+      discountAmount:
+        (priceBreakdown?.groupDiscount || 0) +
+        (priceBreakdown?.earlyBirdDiscount || 0) +
+        (priceBreakdown?.discountCodeAmount || 0),
       taxAmount: 0,
       totalAmount: priceBreakdown?.finalTotal || order?.totalAmount || 2400,
-      
+
       // Customer details
-      customerEmail: formData.email || "test@example.com",
-      customerFirstName: formData.firstName || "John",
-      customerLastName: formData.lastName || "Developer",
-      customerCompany: formData.company || "Test Company Ltd",
-      customerPhone: formData.phone || "+44 1234 567890",
-      
+      customerEmail: formData.customerEmail || "test@example.com",
+      customerFirstName: formData.customerFirstName || "John",
+      customerLastName: formData.customerLastName || "Developer",
+      customerCompany: formData.customerCompany || "Test Company Ltd",
+      customerPhone: formData.customerPhone || "+44 1234 567890",
+
       // Address
       address: {
-        country: formData.country || "Ireland",
-        address1: formData.address1 || "123 Tech Street",
-        address2: formData.address2 || "Suite 456",
-        city: formData.city || "Dublin",
-        state: formData.state || "Dublin",
-        postcode: formData.postcode || "D01 1AA",
+        country: formData.address.country || "Ireland",
+        address1: formData.address.address1 || "123 Tech Street",
+        address2: formData.address.address2 || "Suite 456",
+        city: formData.address.city || "Dublin",
+        state: formData.address.state || "Dublin",
+        postcode: formData.address.postcode || "D01 1AA",
       },
-      
+
       // Additional fields
       vatNumber: formData.vatNumber || "IE1234567890",
       poNumber: formData.poNumber || "PO-2025-TEST",
       notes: formData.notes || "Test order from development environment",
-      
+
       // Participants (use current form participants or mock data)
-      participants: participants.some(p => p.name && p.email) 
-        ? participants.filter(p => p.name && p.email)
+      participants: participants.some((p) => p.name && p.email)
+        ? participants.filter((p) => p.name && p.email)
         : [
             {
               name: "John Developer",
@@ -658,7 +732,7 @@ export default function RegisterForm() {
               jobPosition: "QA Lead",
             },
           ],
-      
+
       // Timestamps
       createdAt: new Date().toISOString(),
       completedAt: new Date().toISOString(),
@@ -685,26 +759,32 @@ export default function RegisterForm() {
       alert("Test order sent successfully! Check console for details.");
     } catch (error) {
       console.error("Test order webhook error:", error);
-      alert(`Test order error: ${error instanceof Error ? error.message : "Unknown error"}`);
+      alert(
+        `Test order error: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
   const priceBreakdown = useMemo(() => {
     const order = orderQuery.data;
     if (!order?.startDate || !order?.endDate) return null;
-    
+
     const qty = quantity ?? 1;
     const currencySymbol = currency === "EUR" ? "€" : "$";
-    
+
     // Get per-person price (no group discount) for subtotal calculation
-    const perPersonPrice = getPriceFromDates(order.startDate, order.endDate, currencySymbol);
+    const perPersonPrice = getPriceFromDates(
+      order.startDate,
+      order.endDate,
+      currencySymbol,
+    );
     const subtotal = perPersonPrice * qty;
-    
+
     // Get actual price with group discount from API or calculate locally
     let basePrice = 0; // Price with group discount, before early bird
     let earlyBirdDiscount = 0;
     let finalPrice = 0;
-    
+
     if (pricingQuery.data) {
       // Use pricing from API (already includes group discount calculation)
       basePrice = pricingQuery.data.basePrice || 0;
@@ -712,13 +792,16 @@ export default function RegisterForm() {
       finalPrice = pricingQuery.data.finalPrice || 0;
     } else {
       // Fallback: calculate locally using pricing lib
-      basePrice = getPriceForQuantity(order.startDate, order.endDate, qty, { currency: currencySymbol });
+      basePrice = getPriceForQuantity(order.startDate, order.endDate, qty, {
+        currency: currencySymbol,
+      });
       finalPrice = basePrice;
     }
-    
+
     // Group discount = difference between full price and discounted price
-    const groupDiscount = Math.max(0, subtotal - basePrice);
-    
+    // Only applies when quantity >= 2 (no group discount for single participant)
+    const groupDiscount = qty >= 2 ? Math.max(0, subtotal - basePrice) : 0;
+
     // Apply discount code on top
     let discountCodeAmount = 0;
     if (discount) {
@@ -728,9 +811,9 @@ export default function RegisterForm() {
         discountCodeAmount = discount.value;
       }
     }
-    
+
     const finalTotal = Math.max(0, finalPrice - discountCodeAmount);
-    
+
     return {
       subtotal,
       groupDiscount,
@@ -780,7 +863,14 @@ export default function RegisterForm() {
   }
 
   async function handleSubmit() {
-    if (!validate()) return;
+    if (!validate()) {
+      // Scroll to first error field
+      const firstErrorField = document.querySelector('[class*="border-red-500"]');
+      if (firstErrorField) {
+        firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
     if (!orderQuery.data) return;
     setIsProcessing(true);
     try {
@@ -803,50 +893,51 @@ export default function RegisterForm() {
       // });
 
       // Track form submission to HubSpot
-      const formLocation = typeof window !== 'undefined' ? window.location.pathname : ''
+      const formLocation =
+        typeof window !== "undefined" ? window.location.pathname : "";
       trackHubSpotFormSubmission(
         {
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          company: formData.company,
-          country: formData.country,
-          city: formData.city,
-          form_name: 'event_registration_form',
-          lead_type: 'event_registration',
+          first_name: formData.customerFirstName,
+          last_name: formData.customerLastName,
+          email: formData.customerEmail,
+          phone: formData.customerPhone,
+          company: formData.customerCompany,
+          country: formData.address.country,
+          city: formData.address.city,
+          form_name: "event_registration_form",
+          lead_type: "event_registration",
           event_id: String(order.id),
-          event_slug: order.eventSlug || '',
-          event_title: order.eventTitle || '',
+          event_slug: order.eventSlug || "",
+          event_title: order.eventTitle || "",
           quantity: qty,
-          payment_method: paymentMethod || 'card',
+          payment_method: paymentMethod || "card",
         },
-        'event_registration_form',
-        formLocation
-      )
-      
+        "event_registration_form",
+        formLocation,
+      );
+
       // Identify user in HubSpot
-      if (formData.email) {
-        identifyHubSpotUser(formData.email, {
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          company: formData.company,
-          phone: formData.phone,
-          country: formData.country,
-          city: formData.city,
-        })
+      if (formData.customerEmail) {
+        identifyHubSpotUser(formData.customerEmail, {
+          first_name: formData.customerFirstName,
+          last_name: formData.customerLastName,
+          company: formData.customerCompany,
+          phone: formData.customerPhone,
+          country: formData.address.country,
+          city: formData.address.city,
+        });
       }
 
       // PostHog: Identify user and track registration form submission
-      if (formData.email) {
-        posthog.identify(formData.email, {
-          email: formData.email,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          company: formData.company,
-          phone: formData.phone,
-          country: formData.country,
-          city: formData.city,
+      if (formData.customerEmail) {
+        posthog.identify(formData.customerEmail, {
+          email: formData.customerEmail,
+          first_name: formData.customerFirstName,
+          last_name: formData.customerLastName,
+          company: formData.customerCompany,
+          phone: formData.customerPhone,
+          country: formData.address.country,
+          city: formData.address.city,
         });
       }
 
@@ -855,8 +946,8 @@ export default function RegisterForm() {
         event_slug: order.eventSlug || "",
         event_title: order.eventTitle || "",
         quantity: qty,
-        company: formData.company,
-        country: formData.country,
+        company: formData.customerCompany,
+        country: formData.address.country,
         payment_method: paymentMethod || "card",
         currency: currency,
         total_amount: priceBreakdown?.finalTotal ?? 0,
@@ -865,15 +956,42 @@ export default function RegisterForm() {
         participant_count: participants.length,
       });
 
-      // Use priceBreakdown which already has the correct calculation
-      const total = priceBreakdown?.finalTotal ?? 0;
+      // Calculate total using pricing API/lib. Avoid sending 0-priced items to checkout.
+      if (!order.startDate || !order.endDate) {
+        throw new Error("Event dates are required to calculate price");
+      }
+      const currencySymbol = currency === "EUR" ? "€" : "$";
+
+      // Prefer priceBreakdown (which uses pricing API when available), fallback to pricing lib.
+      let total =
+        priceBreakdown?.finalTotal ??
+        pricingQuery.data?.finalPrice ??
+        getPriceForQuantity(order.startDate, order.endDate, qty, {
+          currency: currencySymbol,
+        });
+
+      // Apply discount code if priceBreakdown was not used (priceBreakdown already includes it).
+      if (!priceBreakdown?.finalTotal && discount) {
+        if (discount.type === "percentage") {
+          total = Math.max(0, total - (total * discount.value) / 100);
+        } else {
+          total = Math.max(0, total - discount.value);
+        }
+      }
+
+      if (!Number.isFinite(total) || total <= 0) {
+        throw new Error(
+          "Invalid price calculation. Please ensure event dates are valid.",
+        );
+      }
+
       const effectiveUnit = total / qty;
       const priceInCents = Math.round(effectiveUnit * 100);
       const items = [
         {
-          eventId: order.id,
+          eventId: (order as any).eventId ?? order.id,
           eventTitle: order.eventTitle || "Event",
-          eventSlug: "",
+          eventSlug: order.eventSlug || "",
           price: priceInCents,
           currency,
           quantity: quantity ?? order.quantity ?? 1,
@@ -889,10 +1007,10 @@ export default function RegisterForm() {
           items,
           paymentMethod: paymentMethod || "card",
           ...formData,
-          customerEmail: formData.email,
-          customerName: `${formData.firstName} ${formData.lastName}`.trim(),
-          customerCompany: formData.company,
-          customerPhone: formData.phone,
+          customerEmail: formData.customerEmail,
+          customerName: `${formData.customerFirstName} ${formData.customerLastName}`.trim(),
+          customerCompany: formData.customerCompany,
+          customerPhone: formData.customerPhone,
           participants,
         }),
       });
@@ -939,7 +1057,7 @@ export default function RegisterForm() {
               <button
                 type="button"
                 onClick={populateTestData}
-                className="flex-1 rounded-lg bg-secondary px-6 py-3 font-semibold text-white transition-colors duration-200 hover:bg-secondary/90"
+                className="bg-secondary hover:bg-secondary/90 flex-1 rounded-lg px-6 py-3 font-semibold text-white transition-colors duration-200"
               >
                 Test Data
               </button>
@@ -963,18 +1081,18 @@ export default function RegisterForm() {
               <div className="relative">
                 <Mail className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
-                  id="email"
+                  id="customerEmail"
                   type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
-                  onBlur={() => handleInputBlur("email")}
+                  value={formData.customerEmail}
+                  onChange={(e) => handleInputChange("customerEmail", e.target.value)}
+                  onBlur={() => handleInputBlur("customerEmail")}
                   placeholder="Enter your email address"
-                  className={`pl-10 ${errors.email ? "border-red-500" : ""}`}
+                  className={`pl-10 ${errors.customerEmail ? "border-red-500" : ""}`}
                   autoComplete="email"
                 />
               </div>
-              {errors.email && (
-                <p className="text-sm text-red-600">{errors.email}</p>
+              {errors.customerEmail && (
+                <p className="text-sm text-red-600">{errors.customerEmail}</p>
               )}
             </div>
 
@@ -989,20 +1107,20 @@ export default function RegisterForm() {
                 <div className="relative">
                   <User className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                   <Input
-                    id="firstName"
+                    id="customerFirstName"
                     type="text"
-                    value={formData.firstName}
+                    value={formData.customerFirstName}
                     onChange={(e) =>
-                      handleInputChange("firstName", e.target.value)
+                      handleInputChange("customerFirstName", e.target.value)
                     }
-                    onBlur={() => handleInputBlur("firstName")}
+                    onBlur={() => handleInputBlur("customerFirstName")}
                     placeholder="Enter your first name"
-                    className={`pl-10 ${errors.firstName ? "border-red-500" : ""}`}
+                    className={`pl-10 ${errors.customerFirstName ? "border-red-500" : ""}`}
                     autoComplete="given-name"
                   />
                 </div>
-                {errors.firstName && (
-                  <p className="text-sm text-red-600">{errors.firstName}</p>
+                {errors.customerFirstName && (
+                  <p className="text-sm text-red-600">{errors.customerFirstName}</p>
                 )}
               </div>
 
@@ -1014,19 +1132,19 @@ export default function RegisterForm() {
                   Last Name <span className="text-red-500">*</span>
                 </label>
                 <Input
-                  id="lastName"
+                  id="customerLastName"
                   type="text"
-                  value={formData.lastName}
+                  value={formData.customerLastName}
                   onChange={(e) =>
-                    handleInputChange("lastName", e.target.value)
+                    handleInputChange("customerLastName", e.target.value)
                   }
-                  onBlur={() => handleInputBlur("lastName")}
+                  onBlur={() => handleInputBlur("customerLastName")}
                   placeholder="Enter your last name"
-                  className={errors.lastName ? "border-red-500" : ""}
+                  className={errors.customerLastName ? "border-red-500" : ""}
                   autoComplete="family-name"
                 />
-                {errors.lastName && (
-                  <p className="text-sm text-red-600">{errors.lastName}</p>
+                {errors.customerLastName && (
+                  <p className="text-sm text-red-600">{errors.customerLastName}</p>
                 )}
               </div>
             </div>
@@ -1041,18 +1159,18 @@ export default function RegisterForm() {
               <div className="relative">
                 <Phone className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
-                  id="phone"
+                  id="customerPhone"
                   type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
-                  onBlur={() => handleInputBlur("phone")}
+                  value={formData.customerPhone}
+                  onChange={(e) => handleInputChange("customerPhone", e.target.value)}
+                  onBlur={() => handleInputBlur("customerPhone")}
                   placeholder="Enter your phone number"
-                  className={`pl-10 ${errors.phone ? "border-red-500" : ""}`}
+                  className={`pl-10 ${errors.customerPhone ? "border-red-500" : ""}`}
                   autoComplete="tel"
                 />
               </div>
-              {errors.phone && (
-                <p className="text-sm text-red-600">{errors.phone}</p>
+              {errors.customerPhone && (
+                <p className="text-sm text-red-600">{errors.customerPhone}</p>
               )}
             </div>
           </div>
@@ -1072,18 +1190,18 @@ export default function RegisterForm() {
               <div className="relative">
                 <Building className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
-                  id="company"
+                  id="customerCompany"
                   type="text"
-                  value={formData.company}
-                  onChange={(e) => handleInputChange("company", e.target.value)}
-                  onBlur={() => handleInputBlur("company")}
+                  value={formData.customerCompany}
+                  onChange={(e) => handleInputChange("customerCompany", e.target.value)}
+                  onBlur={() => handleInputBlur("customerCompany")}
                   placeholder="Enter your company name"
-                  className={`pl-10 ${errors.company ? "border-red-500" : ""}`}
+                  className={`pl-10 ${errors.customerCompany ? "border-red-500" : ""}`}
                   autoComplete="organization"
                 />
               </div>
-              {errors.company && (
-                <p className="text-sm text-red-600">{errors.company}</p>
+              {errors.customerCompany && (
+                <p className="text-sm text-red-600">{errors.customerCompany}</p>
               )}
             </div>
 
@@ -1093,15 +1211,19 @@ export default function RegisterForm() {
                 className="flex items-center gap-2 text-sm font-medium text-gray-900"
               >
                 <span>
-                  VAT Number <span className="text-gray-500">(EU Companie only)</span>
+                  VAT Number{" "}
+                  <span className="text-gray-500">(EU Companie only)</span>
                 </span>
                 <div className="group relative">
                   <Info className="h-4 w-4 cursor-help text-gray-400 transition-colors hover:text-gray-600" />
                   <div className="invisible absolute bottom-full left-1/2 z-50 mb-2 w-64 -translate-x-1/2 rounded-lg bg-gray-900 px-3 py-2 text-xs text-white opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100">
                     <p className="text-left">
-                      If your company is registered in the EU, please provide your valid EU VAT number. Without a VAT number, a 23% VAT charge will apply for European union entities. Companies outside EU are exempt from VAT.
+                      If your company is registered in the EU, please provide
+                      your valid EU VAT number. Without a VAT number, a 23% VAT
+                      charge will apply for European union entities. Companies
+                      outside EU are exempt from VAT.
                     </p>
-                    <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                   </div>
                 </div>
               </label>
@@ -1150,63 +1272,72 @@ export default function RegisterForm() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <CountryDropdown
-                    value={formData.country}
+                    value={formData.address.country}
                     onChange={(val) => {
                       setFormData((prev) => ({
                         ...prev,
-                        country: val,
-                        region: val ? prev.region : "",
+                        address: {
+                          ...prev.address,
+                          country: val,
+                          state: val ? prev.address.state : "",
+                        },
                       }));
-                      if (errors.country) {
-                        setErrors((prev) => ({ ...prev, country: undefined }));
+                      if (errors.address_country || errors.address) {
+                        setErrors((prev) => ({ 
+                          ...prev, 
+                          address_country: undefined,
+                          address: undefined 
+                        }));
                       }
                     }}
                     onBlur={() => {
-                      handleInputBlur("country");
+                      handleInputBlur("address");
                       return null;
                     }}
                     customRender={customRender}
                     customProps={{
                       reactSelectValue: countryOption,
                       classNamePrefix: "country-",
-                      hasError: !!errors.country,
+                      hasError: !!errors.address,
                       onChange: (value: ReactSelectOption | null) => {
                         const countryValue = value ? value.value : "";
                         setCountryOption(value ? value : undefined);
                         setRegionOption(undefined);
                         setFormData((prev) => ({
                           ...prev,
-                          country: countryValue,
-                          region: countryValue ? prev.region : "",
+                          address: {
+                            ...prev.address,
+                            country: countryValue,
+                            state: countryValue ? prev.address.state : "",
+                          },
                         }));
                         // Persist change immediately so selection is saved without requiring blur
-                        if (sessionId) {
-                          saveDraft.mutate({
-                            sessionId,
-                            field: "country",
-                            value: countryValue,
+                        if (orderId) {
+                          updateOrder.mutate({
+                            orderId,
+                            address: { country: countryValue },
                           });
                           if (!countryValue) {
-                            // If country cleared, also clear region on server
-                            saveDraft.mutate({
-                              sessionId,
-                              field: "region",
-                              value: "",
+                            // If country cleared, also clear region/state on server
+                            updateOrder.mutate({
+                              orderId,
+                              address: { state: "" },
                             });
                           }
                         }
-                        if (errors.country) {
+                        if (errors.address_country) {
                           setErrors((prev) => ({
                             ...prev,
-                            country: undefined,
+                            address_country: undefined,
+                            address: undefined,
                           }));
                         }
                       },
                     }}
                   />
-                  {errors.country && (
+                  {errors.address_country && (
                     <p className="mt-1 text-sm text-red-600">
-                      {errors.country}
+                      {errors.address_country}
                     </p>
                   )}
                 </div>
@@ -1223,15 +1354,15 @@ export default function RegisterForm() {
               <Input
                 id="address1"
                 type="text"
-                value={formData.address1}
-                onChange={(e) => handleInputChange("address1", e.target.value)}
-                onBlur={() => handleInputBlur("address1")}
+                value={formData.address.address1}
+                onChange={(e) => handleAddressChange("address1", e.target.value)}
+                onBlur={() => handleInputBlur("address")}
                 placeholder="House number and street name"
-                className={errors.address1 ? "border-red-500" : ""}
+                className={errors.address_address1 ? "border-red-500" : ""}
                 autoComplete="address-line1"
               />
-              {errors.address1 && (
-                <p className="text-sm text-red-600">{errors.address1}</p>
+              {errors.address_address1 && (
+                <p className="text-sm text-red-600">{errors.address_address1}</p>
               )}
             </div>
 
@@ -1246,9 +1377,9 @@ export default function RegisterForm() {
               <Input
                 id="address2"
                 type="text"
-                value={formData.address2}
-                onChange={(e) => handleInputChange("address2", e.target.value)}
-                onBlur={() => handleInputBlur("address2")}
+                value={formData.address.address2}
+                onChange={(e) => handleAddressChange("address2", e.target.value)}
+                onBlur={() => handleInputBlur("address")}
                 placeholder="Apartment, suite, unit, etc. (optional)"
                 autoComplete="address-line2"
               />
@@ -1265,15 +1396,15 @@ export default function RegisterForm() {
                 <Input
                   id="city"
                   type="text"
-                  value={formData.city}
-                  onChange={(e) => handleInputChange("city", e.target.value)}
-                  onBlur={() => handleInputBlur("city")}
+                  value={formData.address.city}
+                  onChange={(e) => handleAddressChange("city", e.target.value)}
+                  onBlur={() => handleInputBlur("address")}
                   placeholder="Enter your city"
-                  className={errors.city ? "border-red-500" : ""}
+                  className={errors.address_city ? "border-red-500" : ""}
                   autoComplete="address-level2"
                 />
-                {errors.city && (
-                  <p className="text-sm text-red-600">{errors.city}</p>
+                {errors.address_city && (
+                  <p className="text-sm text-red-600">{errors.address_city}</p>
                 )}
               </div>
 
@@ -1287,17 +1418,17 @@ export default function RegisterForm() {
                 <Input
                   id="postcode"
                   type="text"
-                  value={formData.postcode}
+                  value={formData.address.postcode}
                   onChange={(e) =>
-                    handleInputChange("postcode", e.target.value)
+                    handleAddressChange("postcode", e.target.value)
                   }
-                  onBlur={() => handleInputBlur("postcode")}
+                  onBlur={() => handleInputBlur("address")}
                   placeholder="Enter your postcode"
-                  className={errors.postcode ? "border-red-500" : ""}
+                  className={errors.address_postcode ? "border-red-500" : ""}
                   autoComplete="postal-code"
                 />
-                {errors.postcode && (
-                  <p className="text-sm text-red-600">{errors.postcode}</p>
+                {errors.address_postcode && (
+                  <p className="text-sm text-red-600">{errors.address_postcode}</p>
                 )}
               </div>
             </div>
@@ -1312,9 +1443,9 @@ export default function RegisterForm() {
               <Input
                 id="state"
                 type="text"
-                value={formData.state}
-                onChange={(e) => handleInputChange("state", e.target.value)}
-                onBlur={() => handleInputBlur("state")}
+                value={formData.address.state}
+                onChange={(e) => handleAddressChange("state", e.target.value)}
+                onBlur={() => handleInputBlur("address")}
                 placeholder="Enter your state or county"
                 autoComplete="address-level1"
               />
@@ -1355,7 +1486,7 @@ export default function RegisterForm() {
 
           <div className="mb-6 space-y-4">
             {orderQuery.data ? (
-              <div className="border-b border-gray-200 ">
+              <div className="border-b border-gray-200">
                 <div className="mb-1 text-sm text-gray-600">Event</div>
                 <div className="text-lg font-medium text-gray-900">
                   {orderQuery.data.eventTitle || "Event"}
@@ -1458,6 +1589,7 @@ export default function RegisterForm() {
                     type="button"
                     onClick={() => {
                       setEditingParticipant(idx);
+                      setParticipantFormError(null); // Clear any previous errors
                       // PostHog: Track participant details editing
                       posthog.capture("participant_details_edited", {
                         participant_index: idx + 1,
@@ -1481,7 +1613,12 @@ export default function RegisterForm() {
           {/* Participant editor modal */}
           <Dialog
             open={editingParticipant !== null}
-            onOpenChange={(open) => !open && setEditingParticipant(null)}
+            onOpenChange={(open) => {
+              if (!open) {
+                setEditingParticipant(null);
+                setParticipantFormError(null);
+              }
+            }}
           >
             <DialogContent>
               <DialogHeader>
@@ -1497,14 +1634,23 @@ export default function RegisterForm() {
                       <Input
                         type="text"
                         value={participants[editingParticipant].name}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           handleParticipantChange(
                             editingParticipant,
                             "name",
                             e.target.value,
-                          )
-                        }
+                          );
+                          // Clear error when user starts typing
+                          if (participantFormError)
+                            setParticipantFormError(null);
+                        }}
                         placeholder="Full name"
+                        className={
+                          participantFormError &&
+                          !participants[editingParticipant].name.trim()
+                            ? "border-red-500"
+                            : ""
+                        }
                       />
                     </div>
                     <div>
@@ -1514,14 +1660,26 @@ export default function RegisterForm() {
                       <Input
                         type="email"
                         value={participants[editingParticipant].email}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           handleParticipantChange(
                             editingParticipant,
                             "email",
                             e.target.value,
-                          )
-                        }
+                          );
+                          // Clear error when user starts typing
+                          if (participantFormError)
+                            setParticipantFormError(null);
+                        }}
                         placeholder="Email address"
+                        className={
+                          participantFormError &&
+                          (!participants[editingParticipant].email.trim() ||
+                            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+                              participants[editingParticipant].email.trim(),
+                            ))
+                            ? "border-red-500"
+                            : ""
+                        }
                       />
                     </div>
                     <div>
@@ -1531,22 +1689,89 @@ export default function RegisterForm() {
                       <Input
                         type="text"
                         value={participants[editingParticipant].jobPosition}
-                        onChange={(e) =>
+                        onChange={(e) => {
                           handleParticipantChange(
                             editingParticipant,
                             "jobPosition",
                             e.target.value,
-                          )
-                        }
+                          );
+                          // Clear error when user starts typing
+                          if (participantFormError)
+                            setParticipantFormError(null);
+                        }}
                         placeholder="e.g. Senior QA Engineer"
+                        className={
+                          participantFormError &&
+                          !participants[editingParticipant].jobPosition.trim()
+                            ? "border-red-500"
+                            : ""
+                        }
                       />
                     </div>
+                    {participantFormError && (
+                      <p className="text-sm text-red-600">
+                        {participantFormError}
+                      </p>
+                    )}
                   </div>
                 )}
               <DialogFooter>
                 <button
                   type="button"
-                  onClick={() => setEditingParticipant(null)}
+                  onClick={() => {
+                    const orderId = orderQuery.data?.id;
+                    const idx =
+                      typeof editingParticipant === "number"
+                        ? editingParticipant
+                        : null;
+                    if (!orderId || idx === null) {
+                      setEditingParticipant(null);
+                      setParticipantFormError(null);
+                      return;
+                    }
+
+                    const p = participants[idx];
+                    const name = (p?.name || "").trim();
+                    const email = (p?.email || "").trim();
+                    const jobPosition = (p?.jobPosition || "").trim();
+
+                    // Clear previous error
+                    setParticipantFormError(null);
+
+                    if (!name || !email || !jobPosition) {
+                      setParticipantFormError(
+                        "Participant name, email and job position are required",
+                      );
+                      return;
+                    }
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                      setParticipantFormError(
+                        "Please enter a valid email address for the participant",
+                      );
+                      return;
+                    }
+
+                    upsertParticipant.mutate(
+                      {
+                        orderId,
+                        participantNumber: idx + 1,
+                        participant: { name, email, jobPosition },
+                      },
+                      {
+                        onSuccess: () => {
+                          setEditingParticipant(null);
+                          setParticipantFormError(null);
+                        },
+                        onError: (error) => {
+                          setParticipantFormError(
+                            error instanceof Error
+                              ? error.message
+                              : "Failed to save participant",
+                          );
+                        },
+                      },
+                    );
+                  }}
                   className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                 >
                   Done
@@ -1611,9 +1836,12 @@ export default function RegisterForm() {
                       <span>Group Discount:</span>
                       <span>
                         -{currency === "EUR" ? "€" : "$"}{" "}
-                        {priceBreakdown.groupDiscount.toLocaleString(undefined, {
-                          minimumFractionDigits: 0,
-                        })}
+                        {priceBreakdown.groupDiscount.toLocaleString(
+                          undefined,
+                          {
+                            minimumFractionDigits: 0,
+                          },
+                        )}
                       </span>
                     </div>
                   )}
@@ -1622,9 +1850,12 @@ export default function RegisterForm() {
                       <span>Early Bird Discount:</span>
                       <span>
                         -{currency === "EUR" ? "€" : "$"}{" "}
-                        {priceBreakdown.earlyBirdDiscount.toLocaleString(undefined, {
-                          minimumFractionDigits: 0,
-                        })}
+                        {priceBreakdown.earlyBirdDiscount.toLocaleString(
+                          undefined,
+                          {
+                            minimumFractionDigits: 0,
+                          },
+                        )}
                       </span>
                     </div>
                   )}
@@ -1644,7 +1875,23 @@ export default function RegisterForm() {
               )}
               <div className="flex items-center gap-4 text-lg font-semibold text-gray-900">
                 <p>Total:</p>
-                <span className="flex items-center gap-2">{formattedTotal}</span>
+                <span className="flex items-center gap-2">
+                  {priceBreakdown ? (
+                    <>
+                      {currency === "EUR" ? "€" : "$"}{" "}
+                      {priceBreakdown.finalTotal.toLocaleString(undefined, {
+                        minimumFractionDigits: 0,
+                      })}
+                    </>
+                  ) : (
+                    <>
+                      {orderQuery.data?.totalAmount?.toLocaleString(undefined, {
+                        minimumFractionDigits: 0,
+                      })}{" "}
+                      {currency === "EUR" ? "€" : "$"}
+                    </>
+                  )}
+                </span>
                 {(quantity ?? 1) >= 4 && (
                   <p className="text-sm font-normal text-gray-600">
                     For 4+ participants, contact us for group pricing.
@@ -1688,14 +1935,19 @@ export default function RegisterForm() {
 
             <Select
               value={paymentMethod}
-              onValueChange={(v) => setPaymentMethod(v as any)}
+              onValueChange={(v) => {
+                setPaymentMethod(v as any);
+                if (orderId) {
+                  updateOrder.mutate({ orderId, paymentMethod: v as "card" | "invoice" });
+                }
+              }}
             >
               <SelectTrigger className="w-full justify-between">
                 <SelectValue placeholder="Select a payment method" />
               </SelectTrigger>
               <SelectContent
                 align="start"
-                className="w-[var(--radix-select-trigger-width)]"
+                className="w-(--radix-select-trigger-width)"
               >
                 <SelectItem value="card">
                   <span className="flex items-center gap-2">

@@ -56,6 +56,7 @@ export const Orders: CollectionConfig = {
     { name: 'eventId', type: 'text' },
     { name: 'eventTitle', type: 'text' },
     { name: 'eventSlug', type: 'text' },
+    { name: 'eventDateId', type: 'text' },
     { name: 'quantity', type: 'number', min: 1, defaultValue: 1 },
     { name: 'startDate', type: 'date' },
     { name: 'endDate', type: 'date' },
@@ -153,6 +154,16 @@ export const Orders: CollectionConfig = {
         description: 'List of participants for this order',
       },
       fields: [
+        {
+          name: 'participantId',
+          type: 'text',
+          required: true,
+          label: 'Participant ID',
+          admin: {
+            description: 'Computed as {orderId}-{participantNumber}',
+            readOnly: true,
+          },
+        },
         {
           name: 'name',
           type: 'text',

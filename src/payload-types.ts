@@ -338,6 +338,7 @@ export interface Order {
   eventId?: string | null;
   eventTitle?: string | null;
   eventSlug?: string | null;
+  eventDateId?: string | null;
   quantity?: number | null;
   startDate?: string | null;
   endDate?: string | null;
@@ -375,6 +376,10 @@ export interface Order {
    */
   participants?:
     | {
+        /**
+         * Computed as {orderId}-{participantNumber}
+         */
+        participantId: string;
         name: string;
         email: string;
         jobPosition: string;
@@ -789,6 +794,7 @@ export interface OrdersSelect<T extends boolean = true> {
   eventId?: T;
   eventTitle?: T;
   eventSlug?: T;
+  eventDateId?: T;
   quantity?: T;
   startDate?: T;
   endDate?: T;
@@ -823,6 +829,7 @@ export interface OrdersSelect<T extends boolean = true> {
   participants?:
     | T
     | {
+        participantId?: T;
         name?: T;
         email?: T;
         jobPosition?: T;

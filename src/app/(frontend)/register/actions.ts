@@ -75,24 +75,22 @@ export async function submitCheckoutAction(params: {
 }
 
 export async function mutateOrder(params: {
-  orderId?: string;
-  sessionId?: string;
-  field: string;
-  value: unknown;
+  orderId: string;
+  data: Record<string, unknown>;
 }) {
   const origin = (await headers()).get("origin");
   if (!origin) throw new Error("Missing origin header");
 
-  const res = await fetch(`${origin}/api/orders`, {
+  const res = await fetch(`${origin}/api/order/update`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(params),
+    body: JSON.stringify({ orderId: params.orderId, ...params.data }),
     cache: "no-store",
   });
 
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || "Failed to save draft field");
+    throw new Error(text || "Failed to update order");
   }
   return res.json();
 }

@@ -2,7 +2,7 @@ import React from "react";
 import { PageHeader } from "../components/PageHeader";
 import { ClientLogosCarousel } from "../components/ClientLogosCarousel";
 import { CtaButton } from "./CtaButton";
-import { ContactForm } from "./ContactForm";
+import { RequestConsultingForm } from "./RequestConsultingForm";
 import { CaseStudiesSection } from "./CaseStudiesSection";
 import { ServicesCarousel } from "./ServicesCarousel";
 import { BenefitsList, type Benefit } from "./BenefitsList";
@@ -82,7 +82,7 @@ export default function InHouseTrainingPage() {
         description="Besides online and in-house training, our team of experts is also providing consulting sessions that help clients overcome challenges of pharmaceutical development in order to launch their innovative treatment solutions. Get in touch using the form below today and our team will answer your questions in any area of your product lifecycle."
       >
         <div className="flex justify-center">
-          <ContactForm />
+          <RequestConsultingForm />
         </div>
       </PageHeader>
 

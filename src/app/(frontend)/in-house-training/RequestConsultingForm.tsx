@@ -14,17 +14,17 @@ import {
   DialogTrigger,
 } from '~/components/ui/dialog'
 
-interface ContactFormProps {
+interface RequestConsultingFormProps {
   title?: string
   buttonText?: string
   onSubmit?: (data: FormData) => void
 }
 
-export function ContactForm({ 
+export function RequestConsultingForm({ 
   title = "Request a Consulting Session", 
   buttonText = "Request a Consulting Session",
   onSubmit 
-}: ContactFormProps) {
+}: RequestConsultingFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
@@ -41,6 +41,25 @@ export function ContactForm({
     const email = (formData.get('email') as string) || ''
     const phone = (formData.get('phone') as string) || ''
     const message = (formData.get('message') as string) || ''
+    
+    // Send POST request to external endpoint
+    try {
+      await fetch('https://events.hookdeck.com/e/src_spgmM6KHIsUY', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          'your-name': name,
+          'your-company': company,
+          'your-email': email,
+          'your-phone': phone,
+          'your-message': message,
+        }),
+      })
+    } catch (error) {
+      console.error('Failed to submit consulting form:', error)
+    }
     
     // Send generate_lead event to GTM
     // sendGTMEvent({

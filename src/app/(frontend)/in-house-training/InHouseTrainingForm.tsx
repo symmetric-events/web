@@ -53,6 +53,30 @@ export function InHouseTrainingForm({
 
     // Capture current URL
     const currentUrl = typeof window !== 'undefined' ? window.location.href : ''
+    
+    // Send POST request to external endpoint
+    try {
+      const messageParts = []
+      if (audience) messageParts.push(`Audience: ${audience}`)
+      if (training_objective) messageParts.push(`Training Objective: ${training_objective}`)
+      const combinedMessage = messageParts.join('\n\n')
+      
+      await fetch('https://events.hookdeck.com/e/src_38OYrxGJzwby', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          'your-name': name,
+          'your-company': company,
+          'your-email': email,
+          'your-phone': '',
+          'your-message': combinedMessage,
+        }),
+      })
+    } catch (error) {
+      console.error('Failed to submit in-house training form:', error)
+    }
 
     // Send generate_lead event to GTM
     // sendGTMEvent({

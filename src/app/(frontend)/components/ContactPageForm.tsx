@@ -27,6 +27,31 @@ export function ContactPageForm({ onSubmit }: ContactPageFormProps) {
     const phone = (formData.get('phone') as string) || ''
     const message = (formData.get('message') as string) || ''
     
+    // Split name into first and last name
+    const nameParts = name.trim().split(/\s+/)
+    const firstName = nameParts[0] || ''
+    const lastName = nameParts.slice(1).join(' ') || ''
+    
+    // Send POST request to external endpoint
+    try {
+      await fetch('https://events.hookdeck.com/e/src_JJVXqsXYdOrT', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          'your-company': company,
+          'your-first-name': firstName,
+          'your-last-name': lastName,
+          'your-email': email,
+          'your-phone': phone,
+          'your-message': message,
+        }),
+      })
+    } catch (error) {
+      console.error('Failed to submit contact form:', error)
+    }
+    
     // Send generate_lead event to GTM
     // sendGTMEvent({
     //   event: 'generate_lead',

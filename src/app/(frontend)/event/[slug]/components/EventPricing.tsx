@@ -26,7 +26,6 @@ interface PricingInfo {
 export function EventPricing({ event }: EventPricingProps) {
   const router = useRouter();
   const { currency } = useCurrency();
-  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [loadingQuantity, setLoadingQuantity] = useState<number | null>(null);
   const eventDates = event?.["Event Dates"] || [];
 
@@ -173,28 +172,15 @@ export function EventPricing({ event }: EventPricingProps) {
   // Get early bird info (use pricing1Query as reference for eligibility)
   const earlyBirdInfo = pricing1Query.data;
 
-  // Ensure we have a persistent session id on client for draft orders
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const existing = window.localStorage.getItem("sessionId");
-    if (existing) {
-      setSessionId(existing);
-    } else {
-      const sid = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      window.localStorage.setItem("sessionId", sid);
-      setSessionId(sid);
-    }
-  }, []);
-
-  const mutateOrder = useMutation({
-    mutationKey: ["mutateOrder"],
+  const createOrder = useMutation({
+    mutationKey: ["createOrder"],
     mutationFn: async (params: {
-      orderId?: string;
-      sessionId?: string;
-      field: string;
-      value: unknown;
+      eventId: string | number;
+      eventDateId: string;
+      quantity: number;
+      email?: string;
     }) => {
-      const res = await fetch("/api/orders", {
+      const res = await fetch("/api/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(params),
@@ -202,15 +188,14 @@ export function EventPricing({ event }: EventPricingProps) {
       });
       if (!res.ok) {
         const text = await res.text();
-        throw new Error(text || "Failed to update order");
+        throw new Error(text || "Failed to create order");
       }
-      return res.json() as Promise<{ orderId?: string }>;
+      return (await res.json()) as { success: boolean; orderId: string };
     },
   });
 
   const handleRegister = async (quantity: number) => {
     if (!event) return;
-    if (!sessionId) return;
     if (!startDate || !endDate) return;
     if (loadingQuantity !== null) return; // Prevent multiple clicks
 
@@ -284,38 +269,24 @@ export function EventPricing({ event }: EventPricingProps) {
     });
 
     try {
-      // Initialize order with event slug
-      await mutateOrder.mutateAsync({
-        sessionId,
-        field: "event_slug",
-        value: slug,
+      const selected = selectedDateRange as any;
+      const eventDateId = String(selected?.id ?? selectedDateIndex);
+      const created = await createOrder.mutateAsync({
+        eventId: event.id,
+        eventDateId,
+        quantity,
       });
 
-      // Set the quantity for the order
-      await mutateOrder.mutateAsync({
-        sessionId,
-        field: "quantity",
-        value: quantity,
-      });
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("orderId", created.orderId);
+      }
 
-      // Set the selected dates
-      await mutateOrder.mutateAsync({
-        sessionId,
-        field: "startDate",
-        value: startDate,
-      });
-      await mutateOrder.mutateAsync({
-        sessionId,
-        field: "endDate",
-        value: endDate,
-      });
+      router.push(`/register?orderId=${encodeURIComponent(created.orderId)}`);
     } catch (e) {
       console.error("Failed to initialize draft order", e);
       setLoadingQuantity(null);
       return;
     }
-
-    router.push(`/register?quantity=${quantity}`);
   };
 
   if (!price1 || !price2 || !price3) return null;
@@ -347,7 +318,7 @@ export function EventPricing({ event }: EventPricingProps) {
                     onClick={() => setSelectedDateIndex(index)}
                     className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                       selectedDateIndex === index
-                        ? "bg-[#FBBB00] text-gray-900"
+                        ? "bg-secondary text-gray-900"
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                   >
@@ -362,7 +333,7 @@ export function EventPricing({ event }: EventPricingProps) {
 
       {/* Early Bird Banner */}
       {earlyBirdInfo?.earlyBirdEligible && (
-        <div className="mx-auto mb-12 w-full max-w-2xl rounded-lg bg-[#FBBB00] px-6 py-3 text-center">
+        <div className="mx-auto mb-12 w-full max-w-2xl rounded-lg bg-secondary px-6 py-3 text-center">
           <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-gray-900">
             <span className="font-bold">EARLY BIRD PRICE</span>
             <span>|</span>
@@ -389,9 +360,9 @@ export function EventPricing({ event }: EventPricingProps) {
 
       <div className="grid items-start gap-8 md:grid-cols-3">
         {/* 1 Participant */}
-        <div className="flex h-full flex-col overflow-hidden rounded-3xl border-2 border-[#FBBB00] shadow-lg">
+        <div className="flex h-full flex-col overflow-hidden rounded-3xl border-2 border-secondary shadow-lg">
           {/* Dark grey top section */}
-          <div className="mx-5 border-b-2 border-[#FBBB00] px-6 py-4 text-center">
+          <div className="mx-5 border-b-2 border-secondary px-6 py-4 text-center">
             <h3 className="text-2xl font-bold tracking-widest uppercase">
               1 Participant
             </h3>
@@ -452,7 +423,7 @@ export function EventPricing({ event }: EventPricingProps) {
           <span className="text-2xl w-full text-center font-light tracking-widest absolute -top-10 left-1/2 -translate-x-1/2">
             TOP SELLER
           </span>
-          <div className="bg-secondary z-10 flex h-full flex-col overflow-hidden rounded-3xl border-2 border-[#FBBB00] text-gray-900 shadow-lg">
+          <div className="bg-secondary z-10 flex h-full flex-col overflow-hidden rounded-3xl border-2 border-secondary text-gray-900 shadow-lg">
             {/* TOP SELLER label */}
             {/* Dark grey top section */}
             <div className="mx-5 border-b-2 border-gray-900 py-4 text-center">
@@ -518,9 +489,9 @@ export function EventPricing({ event }: EventPricingProps) {
         </div>
 
         {/* 3 FOR 2 */}
-        <div className="flex h-full flex-col overflow-hidden rounded-3xl border-2 border-[#FBBB00] shadow-lg">
+        <div className="flex h-full flex-col overflow-hidden rounded-3xl border-2 border-secondary shadow-lg">
           {/* Dark grey top section */}
-          <div className="mx-5 border-b-2 border-[#FBBB00] px-6 py-4 text-center">
+          <div className="mx-5 border-b-2 border-secondary px-6 py-4 text-center">
             <h3 className="text-2xl font-bold tracking-widest uppercase">
               3 For 2
             </h3>

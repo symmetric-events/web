@@ -22,6 +22,25 @@ export const NewsletterForm: React.FC = () => {
     const email = (formData.get('email') as string) || ''
     const consent = formData.get('consent') === 'on'
     
+    // Send POST request to external endpoint
+    try {
+      await fetch('https://hkdk.events/AUb8zjvFIDTD', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          'your-company': company,
+          'your-first-name': firstName,
+          'your-last-name': lastName,
+          'your-email': email,
+          'your-consent': consent,
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to submit newsletter form:', error);
+    }
+    
     // Send generate_lead event to GTM
     //  sendGTMEvent({
     //   event: 'generate_lead',
@@ -109,7 +128,7 @@ export const NewsletterForm: React.FC = () => {
         className="w-full rounded border border-gray-300 bg-gray-100 px-4 py-3 text-gray-800 placeholder-gray-600 focus:border-blue-500 focus:outline-none"
       />
       <div className="flex items-center">
-        <input type="checkbox" id="consent" name="consent" className="mr-3 h-4 w-4" />
+        <input type="checkbox" id="consent" name="consent" required className="mr-3 h-4 w-4" />
         <label htmlFor="consent" className="text-gray-800">
           I agree with the{" "}
           <Link
