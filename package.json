@@ -24,7 +24,6 @@
     "@next/third-parties": "^16.0.8",
     "@payloadcms/db-postgres": "3.68.5",
     "@payloadcms/next": "3.68.5",
-    "@payloadcms/payload-cloud": "3.68.5",
     "@payloadcms/richtext-lexical": "3.68.5",
     "@payloadcms/storage-vercel-blob": "3.68.5",
     "@radix-ui/react-dialog": "^1.1.15",
