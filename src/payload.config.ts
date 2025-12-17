@@ -16,6 +16,7 @@ import { Categories } from './collections/Categories'
 import { Orders } from './collections/Orders'
 import { DiscountCodes } from './collections/DiscountCodes'
 import { Blog } from './collections/Blog'
+import { UploadProvider } from './app/(payload)/admin/UploadProvider'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -25,6 +26,9 @@ export default buildConfig({
     user: Users.slug,
     importMap: {
       baseDir: path.resolve(dirname),
+    },
+    components: {
+      providers: [UploadProvider as any],
     },
   },
   collections: [Users, Media, Events, Trainers, Testimonials, Categories, Orders, DiscountCodes, Blog],
@@ -42,7 +46,7 @@ export default buildConfig({
   sharp,
   plugins: [
     vercelBlobStorage({
-      enabled: false,
+      enabled: true,
       collections: {
         media: true,
       },
