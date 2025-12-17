@@ -24,7 +24,7 @@ export default function ContactPage() {
             {/* Existing Symmetric Customer */}
             <div className="space-y-6">
               <div className="flex gap-6">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <div className="relative h-24 w-24 overflow-hidden rounded-full">
                     <Image
                       src="https://www.symmetric.events/wp-content/uploads/2025/10/generated-image-300x300.jpg"
@@ -54,7 +54,7 @@ export default function ContactPage() {
             {/* New Symmetric Customer */}
             <div className="space-y-6">
               <div className="flex gap-6">
-                <div className="flex-shrink-0">
+                <div className="shrink-0">
                   <div className="relative h-24 w-24 overflow-hidden rounded-full">
                     <Image
                       src="https://www.symmetric.events/wp-content/uploads/2025/07/lk-300x300.jpg"
