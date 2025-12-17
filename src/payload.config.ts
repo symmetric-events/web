@@ -1,6 +1,6 @@
 import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { postgresAdapter } from '@payloadcms/db-postgres'
-import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
+// import { payloadCloudPlugin } from '@payloadcms/payload-cloud'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
 import { buildConfig } from 'payload'
@@ -42,13 +42,14 @@ export default buildConfig({
   }),
   sharp,
   plugins: [
-    payloadCloudPlugin(),
+    // payloadCloudPlugin(),
     vercelBlobStorage({
       enabled: true,
       collections: {
         media: true,
       },
-      token: env.BLOB_READ_WRITE_TOKEN!
+      token: env.BLOB_READ_WRITE_TOKEN!,
+      clientUploads: true,
     }),
   ],
 })
