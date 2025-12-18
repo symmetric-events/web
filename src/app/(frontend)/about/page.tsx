@@ -22,7 +22,6 @@ const bea = await payload.findByID({
 
 export default function AboutUsPage() {
   const teamMembers = [
-
     {
       name: "Attila Molnar",
       position: "Strategy & Management",
@@ -41,7 +40,7 @@ export default function AboutUsPage() {
       name: "Bea Zalubel",
       position: "",
       imageUrl:
-        bea.url,
+        "https://www.symmetric.events/wp-content/uploads/2025/11/shared-image-e1762371596445.jpeg",
       linkedinUrl: "",
     },
     {

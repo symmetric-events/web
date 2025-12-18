@@ -98,8 +98,10 @@ export default async function HomePage() {
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           <Image
-            src={heroImage.url || ""}
-            alt={heroImage.alt || "Hero background"}
+            src={
+              "https://www.symmetric.events/wp-content/uploads/2020/12/bg.jpeg"
+            }
+            alt={"Hero background"}
             fill
             className="object-cover"
             priority

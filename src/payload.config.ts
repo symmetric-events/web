@@ -1,4 +1,4 @@
-// import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
+import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import path from 'path'
@@ -41,13 +41,13 @@ export default buildConfig({
   }),
   sharp,
   plugins: [
-    // vercelBlobStorage({
-    //   enabled: true,
-    //   collections: {
-    //     media: true,
-    //   },
-    //   token: env.BLOB_READ_WRITE_TOKEN!,
-    //   clientUploads: true,
-    // }),
+    vercelBlobStorage({
+      enabled: true,
+      collections: {
+        media: true,
+      },
+      token: env.BLOB_READ_WRITE_TOKEN!,
+      clientUploads: false,
+    }),
   ],
 })
