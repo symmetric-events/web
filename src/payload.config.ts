@@ -26,6 +26,11 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    components: {
+      providers: [
+        '@payloadcms/next/client#UploadHandlersProvider',
+      ],
+    },
   },
   collections: [Users, Media, Events, Trainers, Testimonials, Categories, Orders, DiscountCodes, Blog],
   editor: lexicalEditor(),
@@ -47,7 +52,7 @@ export default buildConfig({
         media: true,
       },
       token: env.BLOB_READ_WRITE_TOKEN!,
-      clientUploads: false,
+      clientUploads: true,
     }),
   ],
 })

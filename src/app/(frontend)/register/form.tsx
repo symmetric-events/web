@@ -528,22 +528,28 @@ export default function RegisterForm() {
     }
 
     // Participant validation
-    const invalidParticipants = participants.some(
-      (p) => !p.name.trim() || !p.email.trim(),
+    const filledParticipants = participants.filter(
+      (p) => p.name.trim() || p.email.trim() || p.jobPosition.trim(),
     );
-    if (invalidParticipants) {
-      next.participants =
-        "All participants must have  name  email and job position";
-    }
 
-    // Validate participant emails
-    const invalidParticipantEmails = participants.some(
-      (p) =>
-        p.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email.trim()),
-    );
-    if (invalidParticipantEmails) {
-      next.participants =
-        "Please enter valid email addresses for all participants";
+    if (filledParticipants.length === 0) {
+      next.participants = "At least one participant must be registered";
+    } else {
+      const incomplete = filledParticipants.some(
+        (p) => !p.name.trim() || !p.email.trim() || !p.jobPosition.trim(),
+      );
+      if (incomplete) {
+        next.participants =
+          "Please complete all fields for each participant you have started filling out";
+      } else {
+        const invalidEmails = filledParticipants.some(
+          (p) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(p.email.trim()),
+        );
+        if (invalidEmails) {
+          next.participants =
+            "Please enter valid email addresses for all participants";
+        }
+      }
     }
 
     setErrors(next);
@@ -727,8 +733,8 @@ export default function RegisterForm() {
       notes: formData.notes || "Test order from development environment",
 
       // Participants (use current form participants or mock data)
-      participants: participants.some((p) => p.name && p.email)
-        ? participants.filter((p) => p.name && p.email)
+      participants: participants.some((p) => p.name && p.email && p.jobPosition)
+        ? participants.filter((p) => p.name && p.email && p.jobPosition)
         : [
             {
               name: "John Developer",
@@ -987,7 +993,9 @@ export default function RegisterForm() {
             `${formData.customerFirstName} ${formData.customerLastName}`.trim(),
           customerCompany: formData.customerCompany,
           customerPhone: formData.customerPhone,
-          participants,
+          participants: participants.filter(
+            (p) => p.name.trim() && p.email.trim() && p.jobPosition.trim(),
+          ),
         }),
       });
       if (!res.ok) {
@@ -1198,7 +1206,7 @@ export default function RegisterForm() {
               >
                 <span>
                   VAT Number{" "}
-                  <span className="text-gray-500">(EU Companie only)</span>
+                  <span className="text-gray-500">(EU companies only)</span>
                 </span>
                 <div className="group relative">
                   <Info className="h-4 w-4 cursor-help text-gray-400 transition-colors hover:text-gray-600" />
@@ -1232,7 +1240,7 @@ export default function RegisterForm() {
                 htmlFor="poNumber"
                 className="block text-sm font-medium text-gray-900"
               >
-                Purchase Order Number{" "}
+                Your Purchase Order Number{" "}
                 <span className="text-gray-500">(optional)</span>
               </label>
               <Input
