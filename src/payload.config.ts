@@ -26,11 +26,6 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
-    components: {
-      providers: [
-        '@payloadcms/ui#UploadHandlersProvider',
-      ],
-    },
   },
   collections: [Users, Media, Events, Trainers, Testimonials, Categories, Orders, DiscountCodes, Blog],
   editor: lexicalEditor(),

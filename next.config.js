@@ -22,7 +22,8 @@ const config = {
         hostname: "www.symmetric.events",
       },
     ],
-  }
+  },
+  productionBrowserSourceMaps: true,
 };
 // @ts-ignore
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
