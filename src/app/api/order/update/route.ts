@@ -32,18 +32,43 @@ const ALLOWED_UPDATE_FIELDS = new Set([
 
   // participants array
   'participants',
+  'sessionId',
 ])
 
 export async function POST(request: NextRequest) {
   try {
-    const body = (await request.json()) as Record<string, unknown> & { orderId?: string | number }
+    const body = (await request.json()) as Record<string, unknown> & {
+      orderId?: string | number
+      sessionId?: string
+    }
     const orderId = body.orderId
-    if (orderId === undefined || orderId === null || orderId === '') {
-      return NextResponse.json({ error: 'Missing orderId' }, { status: 400 })
+    const sessionId = body.sessionId
+
+    if (
+      (orderId === undefined || orderId === null || orderId === '') &&
+      (sessionId === undefined || sessionId === null || sessionId === '')
+    ) {
+      return NextResponse.json({ error: 'Missing orderId or sessionId' }, { status: 400 })
     }
 
     const payload = await getPayload({ config })
-    const order = await payload.findByID({ collection: 'orders', id: String(orderId) })
+
+    let order
+    if (orderId) {
+      order = await payload.findByID({ collection: 'orders', id: String(orderId) })
+    } else if (sessionId) {
+      const result = await payload.find({
+        collection: 'orders',
+        where: {
+          sessionId: {
+            equals: sessionId,
+          },
+        },
+        limit: 1,
+      })
+      order = result.docs[0]
+    }
+
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
 
     // Build update payload with allowlist
@@ -85,11 +110,15 @@ export async function POST(request: NextRequest) {
 
     const updated = await payload.update({
       collection: 'orders',
-      id: String((order as any).id ?? orderId),
+      id: String((order as any).id),
       data: data as any,
     })
 
-    return NextResponse.json({ success: true, orderId: (updated as any).id })
+    return NextResponse.json({
+      success: true,
+      orderId: (updated as any).id,
+      sessionId: (updated as any).sessionId,
+    })
   } catch (error) {
     console.error('Failed to update order', error)
     return NextResponse.json({ error: 'Failed to update order' }, { status: 500 })

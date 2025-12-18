@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { sendGTMEvent } from '@next/third-parties/google'
 import { trackHubSpotFormSubmission, identifyHubSpotUser } from '~/lib/hubspot'
-import { Button } from './Button'
+import { Button } from '../components/Button'
 
 interface ContactPageFormProps {
   onSubmit?: (data: FormData) => void

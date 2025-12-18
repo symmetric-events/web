@@ -28,7 +28,7 @@ export default buildConfig({
     },
     components: {
       providers: [
-        '@payloadcms/next/client#UploadHandlersProvider',
+        '@payloadcms/ui#UploadHandlersProvider',
       ],
     },
   },

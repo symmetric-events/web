@@ -37,6 +37,7 @@ import {
   getPriceFromDates,
   type Currency,
 } from "~/lib/pricing";
+import Link from "next/link";
 
 type ReactSelectOption = {
   label: string;
@@ -53,6 +54,25 @@ type DraftOrder = {
   totalAmount?: number;
   startDate?: string;
   endDate?: string;
+  status?: string;
+  customerFirstName?: string;
+  customerLastName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  customerCompany?: string;
+  address?: {
+    country?: string;
+    address1?: string;
+    address2?: string;
+    city?: string;
+    state?: string;
+    postcode?: string;
+  };
+  participants?: {
+    name: string;
+    email: string;
+    jobPosition: string;
+  }[];
 };
 
 type FormErrors = Partial<
@@ -98,6 +118,7 @@ export default function RegisterForm() {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [orderId, setOrderId] = useState<string | undefined>(undefined);
+  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [currency, setCurrency] = useState<"EUR" | "USD">("EUR");
   const [paymentMethod, setPaymentMethod] = useState<"card" | "invoice" | "">(
     "card",
@@ -309,25 +330,39 @@ export default function RegisterForm() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const fromUrl = searchParams.get("orderId") || undefined;
-    const fromStorage = window.localStorage.getItem("orderId") || undefined;
-    const next = fromUrl ?? fromStorage;
-    if (next) {
-      window.localStorage.setItem("orderId", next);
-      setOrderId(next);
+
+    // Get sessionId from URL or localStorage
+    const fromUrl = searchParams.get("sessionId") || undefined;
+    let fromStorage = window.localStorage.getItem("sessionId") || undefined;
+
+    // If no sessionId anywhere, generate one (goal: assign sessionId to user)
+    if (!fromUrl && !fromStorage) {
+      fromStorage = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     }
-  }, []);
+
+    const next = fromUrl ?? fromStorage;
+
+    if (next) {
+      window.localStorage.setItem("sessionId", next);
+      setSessionId(next);
+    }
+
+    // Migration/Cleanup: remove legacy orderId from localStorage
+    window.localStorage.removeItem("orderId");
+  }, [searchParams]);
 
   const orderQuery = useQuery({
-    queryKey: ["order", orderId],
-    enabled: !!orderId,
+    queryKey: ["order", sessionId],
+    enabled: !!sessionId,
     queryFn: async () => {
       const res = await fetch(
-        `/api/order?orderId=${encodeURIComponent(orderId!)}`,
+        `/api/order?sessionId=${encodeURIComponent(sessionId!)}`,
         { cache: "no-store" },
       );
       if (!res.ok) throw new Error("Failed to load order");
-      return res.json() as Promise<DraftOrder | null>;
+      const data = (await res.json()) as DraftOrder | null;
+      if (data?.id) setOrderId(data.id);
+      return data;
     },
   });
 
@@ -374,18 +409,67 @@ export default function RegisterForm() {
   useEffect(() => {
     const target = Math.max(1, quantity || 1);
     setParticipants((prev) => {
-      if (prev.length === target) return prev;
+      // If we have data from the order, use it
+      const orderParticipants = orderQuery.data?.participants || [];
+
+      if (prev.length === target) {
+        // If we're just loading for the first time and have order data
+        if (
+          orderParticipants.length > 0 &&
+          prev.every((p) => !p.name && !p.email && !p.jobPosition)
+        ) {
+          return Array.from({ length: target }, (_, i) => ({
+            name: orderParticipants[i]?.name || "",
+            email: orderParticipants[i]?.email || "",
+            jobPosition: orderParticipants[i]?.jobPosition || "",
+          }));
+        }
+        return prev;
+      }
+
       if (prev.length < target) {
-        const toAdd = Array.from({ length: target - prev.length }, () => ({
-          name: "",
-          email: "",
-          jobPosition: "",
-        }));
-        return [...prev, ...toAdd];
+        const next = [...prev];
+        for (let i = prev.length; i < target; i++) {
+          next.push({
+            name: orderParticipants[i]?.name || "",
+            email: orderParticipants[i]?.email || "",
+            jobPosition: orderParticipants[i]?.jobPosition || "",
+          });
+        }
+        return next;
       }
       return prev.slice(0, target);
     });
-  }, [quantity]);
+  }, [quantity, orderQuery.data?.participants]);
+
+  // Prepopulate form data from existing order
+  useEffect(() => {
+    const data = orderQuery.data;
+    if (!data) return;
+
+    setFormData((prev) => {
+      // Only prepopulate if the field is currently empty to avoid overwriting user input
+      return {
+        customerFirstName:
+          prev.customerFirstName || data.customerFirstName || "",
+        customerLastName: prev.customerLastName || data.customerLastName || "",
+        customerEmail: prev.customerEmail || data.customerEmail || "",
+        customerPhone: prev.customerPhone || data.customerPhone || "",
+        customerCompany: prev.customerCompany || data.customerCompany || "",
+        vatNumber: prev.vatNumber || (data as any).vatNumber || "",
+        poNumber: prev.poNumber || (data as any).poNumber || "",
+        address: {
+          country: prev.address.country || data.address?.country || "",
+          address1: prev.address.address1 || data.address?.address1 || "",
+          address2: prev.address.address2 || data.address?.address2 || "",
+          city: prev.address.city || data.address?.city || "",
+          state: prev.address.state || data.address?.state || "",
+          postcode: prev.address.postcode || data.address?.postcode || "",
+        },
+        notes: prev.notes || (data as any).notes || "",
+      };
+    });
+  }, [orderQuery.data]);
 
   // Fetch event date ranges for this draft order (if slug exists)
   useEffect(() => {
@@ -417,7 +501,7 @@ export default function RegisterForm() {
   const updateOrder = useMutation({
     mutationKey: ["updateOrder"],
     mutationFn: async (
-      params: Record<string, unknown> & { orderId: string },
+      params: Record<string, unknown> & { orderId?: string; sessionId?: string },
     ) => {
       const res = await fetch("/api/order/update", {
         method: "POST",
@@ -429,17 +513,22 @@ export default function RegisterForm() {
         const text = await res.text();
         throw new Error(text || "Failed to update order");
       }
-      return (await res.json()) as { orderId?: string; success?: boolean };
+      return (await res.json()) as {
+        orderId?: string;
+        sessionId?: string;
+        success?: boolean;
+      };
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      void queryClient.invalidateQueries({ queryKey: ["order", sessionId] });
     },
   });
 
   const upsertParticipant = useMutation({
     mutationKey: ["upsertParticipant"],
     mutationFn: async (params: {
-      orderId: string | number;
+      orderId?: string | number;
+      sessionId?: string;
       participantNumber: number;
       participant: { name: string; email: string; jobPosition: string };
     }) => {
@@ -456,7 +545,7 @@ export default function RegisterForm() {
       return res.json();
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["order", orderId] });
+      void queryClient.invalidateQueries({ queryKey: ["order", sessionId] });
     },
   });
 
@@ -587,12 +676,12 @@ export default function RegisterForm() {
   }
 
   function handleInputBlur(field: keyof typeof formData) {
-    if (!orderId) return;
+    if (!sessionId) return;
 
     // Handle nested address fields
     if (field === "address") {
       if (Object.values(formData.address).some((v) => v !== "")) {
-        updateOrder.mutate({ orderId, address: formData.address });
+        updateOrder.mutate({ sessionId, address: formData.address });
       }
       return;
     }
@@ -601,21 +690,20 @@ export default function RegisterForm() {
     const value = formData[field];
     if (value === "" || (typeof value === "object" && value !== null)) return;
 
-    updateOrder.mutate({ orderId, [field]: value });
+    updateOrder.mutate({ sessionId, [field]: value });
   }
 
   function handleCurrencyChange(next: "EUR" | "USD") {
     setCurrency(next);
-    if (orderId) updateOrder.mutate({ orderId, currency: next });
+    if (sessionId) updateOrder.mutate({ sessionId, currency: next });
   }
 
   function handleQuantityChange(nextQty: number) {
-    if (!orderId) return;
+    if (!sessionId) return;
     const safe = Math.max(1, Math.min(1000, Math.floor(nextQty || 1)));
-    const previousQuantity = quantity;
 
     setQuantity(safe); // optimistic local update for instant UI feedback
-    updateOrder.mutate({ orderId, quantity: safe });
+    updateOrder.mutate({ sessionId, quantity: safe });
   }
 
   function handleParticipantChange(
@@ -639,9 +727,9 @@ export default function RegisterForm() {
     startDate: string;
     endDate: string;
   }) {
-    if (!orderId || !range) return;
+    if (!sessionId || !range) return;
     updateOrder.mutate({
-      orderId,
+      sessionId,
       eventDateId: (range as any)?.id ? String((range as any).id) : undefined,
       startDate: range.startDate,
       endDate: range.endDate,
@@ -671,9 +759,9 @@ export default function RegisterForm() {
 
     setFormData(testData);
 
-    // Save each field to order if orderId exists
-    if (orderId) {
-      updateOrder.mutate({ orderId, ...testData });
+    // Save each field to order if sessionId exists
+    if (sessionId) {
+      updateOrder.mutate({ sessionId, ...testData });
     }
 
     // Clear errors
@@ -686,7 +774,7 @@ export default function RegisterForm() {
     const mockOrderData = {
       // Order details
       orderId: `test-${Date.now()}`,
-      sessionId: `test-session-${Date.now()}`,
+      sessionId: sessionId || `test-session-${Date.now()}`,
       status: "paid",
       paymentMethod: "card",
 
@@ -887,18 +975,19 @@ export default function RegisterForm() {
 
       // Send generate_lead event to GTM
       sendGTMEvent({
-        event: 'generate_lead',
-        form_name: 'event_registration_form',
-        form_location: typeof window !== 'undefined' ? window.location.pathname : '',
-        lead_type: 'event_registration',
+        event: "generate_lead",
+        form_name: "event_registration_form",
+        form_location:
+          typeof window !== "undefined" ? window.location.pathname : "",
+        lead_type: "event_registration",
         event_id: String(order.id),
-        event_slug: order.eventSlug || '',
-        event_title: order.eventTitle || '',
+        event_slug: order.eventSlug || "",
+        event_title: order.eventTitle || "",
         quantity: qty,
         company: formData.customerCompany,
         email: formData.customerEmail,
         phone: formData.customerPhone,
-        payment_method: paymentMethod || 'card',
+        payment_method: paymentMethod || "card",
       });
 
       // Track form submission to HubSpot
@@ -1306,15 +1395,15 @@ export default function RegisterForm() {
                           },
                         }));
                         // Persist change immediately so selection is saved without requiring blur
-                        if (orderId) {
+                        if (sessionId) {
                           updateOrder.mutate({
-                            orderId,
+                            sessionId,
                             address: { country: countryValue },
                           });
                           if (!countryValue) {
                             // If country cleared, also clear region/state on server
                             updateOrder.mutate({
-                              orderId,
+                              sessionId,
                               address: { state: "" },
                             });
                           }
@@ -1585,7 +1674,9 @@ export default function RegisterForm() {
                     <span className="font-medium text-gray-900">
                       Participant {idx + 1}:
                     </span>
-                    <span className="text-gray-600">{p.name || "not set"}</span>
+                    <span className="text-gray-600">
+                      {p.name || `${idx > 0 ? "Optional" : "Required"}`}
+                    </span>
                   </div>
                   <button
                     type="button"
@@ -1714,12 +1805,11 @@ export default function RegisterForm() {
                 <button
                   type="button"
                   onClick={() => {
-                    const orderId = orderQuery.data?.id;
                     const idx =
                       typeof editingParticipant === "number"
                         ? editingParticipant
                         : null;
-                    if (!orderId || idx === null) {
+                    if (!sessionId || idx === null) {
                       setEditingParticipant(null);
                       setParticipantFormError(null);
                       return;
@@ -1748,7 +1838,7 @@ export default function RegisterForm() {
 
                     upsertParticipant.mutate(
                       {
-                        orderId,
+                        sessionId,
                         participantNumber: idx + 1,
                         participant: { name, email, jobPosition },
                       },
@@ -1870,7 +1960,7 @@ export default function RegisterForm() {
               )}
               <div className="flex items-center gap-4 text-lg font-semibold text-gray-900">
                 <p>Total:</p>
-                <span className="flex items-center gap-2">
+                <span className="flex min-w-20 items-center gap-2">
                   {priceBreakdown ? (
                     <>
                       {currency === "EUR" ? "€" : "$"}{" "}
@@ -1888,8 +1978,8 @@ export default function RegisterForm() {
                   )}
                 </span>
                 {(quantity ?? 1) >= 4 && (
-                  <p className="text-sm font-normal text-gray-600">
-                    For 4+ participants, contact us for group pricing.
+                  <p className="text-sm inline-block max-w-[250px] font-normal text-gray-600">
+                    For 4+ participants, <Link className="underline" href="/contact#contact-page-form">contact us</Link> for group pricing.
                   </p>
                 )}
               </div>
@@ -1932,9 +2022,9 @@ export default function RegisterForm() {
               value={paymentMethod}
               onValueChange={(v) => {
                 setPaymentMethod(v as any);
-                if (orderId) {
+                if (sessionId) {
                   updateOrder.mutate({
-                    orderId,
+                    sessionId,
                     paymentMethod: v as "card" | "invoice",
                   });
                 }

@@ -20,10 +20,30 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const orderId = searchParams.get('orderId')
-    if (!orderId) return NextResponse.json({ error: 'Missing orderId' }, { status: 400 })
+    const sessionId = searchParams.get('sessionId')
+
+    if (!orderId && !sessionId) {
+      return NextResponse.json({ error: 'Missing orderId or sessionId' }, { status: 400 })
+    }
 
     const payload = await getPayload({ config })
-    const order = await payload.findByID({ collection: 'orders', id: String(orderId) })
+
+    let order
+    if (orderId) {
+      order = await payload.findByID({ collection: 'orders', id: String(orderId) })
+    } else if (sessionId) {
+      const result = await payload.find({
+        collection: 'orders',
+        where: {
+          sessionId: {
+            equals: sessionId,
+          },
+        },
+        limit: 1,
+      })
+      order = result.docs[0]
+    }
+
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     return NextResponse.json(order)
   } catch (error) {
@@ -48,17 +68,35 @@ export async function POST(request: NextRequest) {
       eventDateId?: string
       quantity?: number
       eventId?: string
+      sessionId?: string
     }
 
     const eventId = String(body.eventId ?? '').trim()
     const eventDateId = String(body.eventDateId ?? '').trim()
     const quantity = toPositiveInt(body.quantity, 1)
     const email = body.email ? String(body.email).trim() : undefined
+    const sessionId = body.sessionId ? String(body.sessionId).trim() : undefined
 
     if (!eventId) return NextResponse.json({ error: 'Missing eventId' }, { status: 400 })
     if (!eventDateId) return NextResponse.json({ error: 'Missing eventDateId' }, { status: 400 })
 
     const payload = await getPayload({ config })
+
+    // Check if order with this sessionId already exists
+    let existingOrder = null
+    if (sessionId) {
+      const result = await payload.find({
+        collection: 'orders',
+        where: {
+          sessionId: {
+            equals: sessionId,
+          },
+        },
+        limit: 1,
+      })
+      existingOrder = result.docs[0]
+    }
+
     const eventDoc = await payload.findByID({ collection: 'events', id: eventId })
     if (!eventDoc) return NextResponse.json({ error: 'Event not found' }, { status: 404 })
 
@@ -86,26 +124,41 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const created = await payload.create({
-      collection: 'orders',
-      data: {
-        sessionId: newSessionId(),
-        status: 'draft',
-        eventId: String((eventDoc as any).id ?? eventId),
-        eventTitle: String((eventDoc as any)['Title'] ?? (eventDoc as any).title ?? 'Event'),
-        eventSlug: String((eventDoc as any).slug ?? ''),
-        eventDateId,
-        startDate: startISO,
-        endDate: endISO,
-        quantity,
-        currency: currencyCode,
-        totalAmount,
-        customerEmail: email,
-        lastActivityAt: new Date().toISOString(),
-      } as any,
-    })
+    const orderData = {
+      sessionId: sessionId || newSessionId(),
+      status: 'draft',
+      eventId: String((eventDoc as any).id ?? eventId),
+      eventTitle: String((eventDoc as any)['Title'] ?? (eventDoc as any).title ?? 'Event'),
+      eventSlug: String((eventDoc as any).slug ?? ''),
+      eventDateId,
+      startDate: startISO,
+      endDate: endISO,
+      quantity,
+      currency: currencyCode,
+      totalAmount,
+      customerEmail: email,
+      lastActivityAt: new Date().toISOString(),
+    } as any
 
-    return NextResponse.json({ success: true, orderId: (created as any).id })
+    let order
+    if (existingOrder) {
+      order = await payload.update({
+        collection: 'orders',
+        id: existingOrder.id,
+        data: orderData,
+      })
+    } else {
+      order = await payload.create({
+        collection: 'orders',
+        data: orderData,
+      })
+    }
+
+    return NextResponse.json({
+      success: true,
+      orderId: (order as any).id,
+      sessionId: (order as any).sessionId,
+    })
   } catch (error) {
     console.error('Failed to create order', error)
     return NextResponse.json({ error: 'Failed to create order' }, { status: 500 })

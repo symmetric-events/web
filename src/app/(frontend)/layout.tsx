@@ -6,6 +6,7 @@ import { GTMPageView } from "./components/GTMPageView";
 import { HubSpotScript } from "./components/HubSpotScript";
 import { PrefetchTrainingCourses } from "./components/PrefetchTrainingCourses";
 import { ScrollNavigation } from "./components/ScrollNavigation";
+import { ResumeRegistration } from "./components/ResumeRegistration";
 import Providers from "./providers";
 
 export const metadata = {
@@ -43,6 +44,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
           {gtmId && <GTMPageView />}
           <PrefetchTrainingCourses />
           <ScrollNavigation />
+          <ResumeRegistration />
           <main>
             {children}
           </main>

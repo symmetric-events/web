@@ -178,6 +178,7 @@ export function EventPricing({ event }: EventPricingProps) {
       eventDateId: string;
       quantity: number;
       email?: string;
+      sessionId?: string;
     }) => {
       const res = await fetch("/api/order", {
         method: "POST",
@@ -189,7 +190,11 @@ export function EventPricing({ event }: EventPricingProps) {
         const text = await res.text();
         throw new Error(text || "Failed to create order");
       }
-      return (await res.json()) as { success: boolean; orderId: string };
+      return (await res.json()) as {
+        success: boolean;
+        orderId: string;
+        sessionId: string;
+      };
     },
   });
 
@@ -200,6 +205,18 @@ export function EventPricing({ event }: EventPricingProps) {
 
     setLoadingQuantity(quantity);
     const slug = String(event.slug ?? "");
+
+    // Get or create sessionId
+    let sessionId =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("sessionId")
+        : null;
+    if (!sessionId) {
+      sessionId = `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem("sessionId", sessionId);
+      }
+    }
 
     // Get pricing info for the selected quantity
     const pricingInfo =
@@ -257,13 +274,17 @@ export function EventPricing({ event }: EventPricingProps) {
         eventId: event.id,
         eventDateId,
         quantity,
+        sessionId,
       });
 
+      // Remove legacy orderId from localStorage if it exists
       if (typeof window !== "undefined") {
-        window.localStorage.setItem("orderId", created.orderId);
+        window.localStorage.removeItem("orderId");
       }
 
-      router.push(`/register?orderId=${encodeURIComponent(created.orderId)}`);
+      router.push(
+        `/register?sessionId=${encodeURIComponent(created.sessionId)}`,
+      );
     } catch (e) {
       console.error("Failed to initialize draft order", e);
       setLoadingQuantity(null);

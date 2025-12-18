@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useRef } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { CheckCircle, ArrowRight } from 'lucide-react'
@@ -8,6 +8,12 @@ import { CheckCircle, ArrowRight } from 'lucide-react'
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams()
   const paymentMethod = searchParams.get('payment_method')
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('sessionId')
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-100 pt-22">

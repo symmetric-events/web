@@ -28,16 +28,21 @@ export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as {
       orderId?: string | number
+      sessionId?: string
       participantNumber?: number
       participant?: Partial<ParticipantInput>
     }
 
     const orderId = body.orderId
+    const sessionId = body.sessionId
     const participantNumber = body.participantNumber
     const participant = body.participant
 
-    if (orderId === undefined || orderId === null || orderId === '') {
-      return NextResponse.json({ error: 'Missing orderId' }, { status: 400 })
+    if (
+      (orderId === undefined || orderId === null || orderId === '') &&
+      (sessionId === undefined || sessionId === null || sessionId === '')
+    ) {
+      return NextResponse.json({ error: 'Missing orderId or sessionId' }, { status: 400 })
     }
     if (!participantNumber || !Number.isFinite(participantNumber) || participantNumber <= 0) {
       return NextResponse.json({ error: 'Missing/invalid participantNumber' }, { status: 400 })
@@ -57,14 +62,28 @@ export async function POST(request: NextRequest) {
     if (!jobPosition) return NextResponse.json({ error: 'Participant jobPosition is required' }, { status: 400 })
 
     const payload = await getPayload({ config })
-    const order = await payload.findByID({
-      collection: 'orders',
-      id: String(orderId),
-    })
+
+    let order
+    if (orderId) {
+      order = await payload.findByID({ collection: 'orders', id: String(orderId) })
+    } else if (sessionId) {
+      const result = await payload.find({
+        collection: 'orders',
+        where: {
+          sessionId: {
+            equals: sessionId,
+          },
+        },
+        limit: 1,
+      })
+      order = result.docs[0]
+    }
 
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
+
+    const effectiveOrderId = (order as any).id
     const status = String((order as any).status ?? '')
     if (!['draft', 'pending', 'pending_invoice'].includes(status)) {
       return NextResponse.json(
@@ -73,7 +92,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const participantId = `${String(orderId)}-${participantNumber}`
+    const participantId = `${String(effectiveOrderId)}-${participantNumber}`
     const existingParticipants = Array.isArray((order as any).participants) ? (order as any).participants : []
 
     const nextParticipants = [...existingParticipants]
@@ -85,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     const updated = await payload.update({
       collection: 'orders',
-      id: (order as any).id,
+      id: effectiveOrderId,
       data: {
         participants: nextParticipants,
         lastActivityAt: new Date().toISOString(),

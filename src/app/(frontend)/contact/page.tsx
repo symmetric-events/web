@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import { ContactPageForm } from "../components/ContactPageForm";
+import { ContactPageForm } from "./ContactPageForm";
 import { PageHeader } from "../components/PageHeader";
 
 export const metadata = {
@@ -92,7 +92,7 @@ export default function ContactPage() {
       </div>
 
       {/* Contact Form and Company Details */}
-      <section className="py-20">
+      <section id="contact-page-form" className="py-20">
         <div className="mx-auto max-w-5xl px-5">
           <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
             {/* Contact Form */}
