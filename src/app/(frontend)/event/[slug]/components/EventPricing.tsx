@@ -1,13 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-// import { sendGTMEvent } from "@next/third-parties/google";
+import { sendGTMEvent } from "@next/third-parties/google";
 import { getPriceForQuantity, getPriceFromDates } from "~/lib/pricing";
 import { useCurrency } from "~/app/(frontend)/context/CurrencyContext";
 import { BuyTicketButton } from "./BuyTicketButton";
-import posthog from "posthog-js";
 
 interface EventPricingProps {
   event: any;
@@ -232,36 +231,19 @@ export function EventPricing({ event }: EventPricingProps) {
       : [];
 
     // Send begin_checkout event to GTM
-    // sendGTMEvent({
-    //   event: "begin_checkout",
-    //   event_id: String(event.id),
-    //   event_slug: slug,
-    //   event_title: event.Title,
-    //   event_category:
-    //     categoryNames.length > 0 ? categoryNames.join(", ") : undefined,
-    //   quantity: quantity,
-    //   value: finalPrice,
-    //   currency: currency,
-    //   price: finalPrice,
-    //   base_price: basePrice,
-    //   discount: pricingInfo?.earlyBirdDiscount ?? 0,
-    //   training_type: event["Training Type"],
-    //   training_location: event["Training Location"],
-    //   start_date: startDate,
-    //   end_date: endDate,
-    // });
-
-    // PostHog: Track checkout started
-    posthog.capture("checkout_started", {
+    sendGTMEvent({
+      event: "begin_checkout",
       event_id: String(event.id),
       event_slug: slug,
       event_title: event.Title,
-      event_category: categoryNames.length > 0 ? categoryNames.join(", ") : null,
+      event_category:
+        categoryNames.length > 0 ? categoryNames.join(", ") : undefined,
       quantity: quantity,
       value: finalPrice,
       currency: currency,
+      price: finalPrice,
       base_price: basePrice,
-      early_bird_discount: pricingInfo?.earlyBirdDiscount ?? 0,
+      discount: pricingInfo?.earlyBirdDiscount ?? 0,
       training_type: event["Training Type"],
       training_location: event["Training Location"],
       start_date: startDate,

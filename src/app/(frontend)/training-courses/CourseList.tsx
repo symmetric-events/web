@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Button } from '../components/Button'
 import { CourseCard } from '../components/CourseCard'
 import type { Event, Category } from '~/payload-types'
@@ -8,10 +8,16 @@ import type { Event, Category } from '~/payload-types'
 interface CourseListProps {
   events: Event[]
   categories: Category[]
+  initialCategory?: string
 }
 
-export function CourseList({ events, categories }: CourseListProps) {
-  const [activeCategory, setActiveCategory] = useState<string>('all')
+export function CourseList({ events, categories, initialCategory = 'all' }: CourseListProps) {
+  const [activeCategory, setActiveCategory] = useState<string>(initialCategory)
+  
+  // Update active category when initialCategory prop changes (e.g., from URL)
+  useEffect(() => {
+    setActiveCategory(initialCategory)
+  }, [initialCategory])
 
   // Memoize filtered events
   const filteredEvents = useMemo(() => {

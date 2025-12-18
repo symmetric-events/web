@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { CourseList } from './CourseList'
 import { PageHeader } from '../components/PageHeader'
 import type { Event, Category } from '~/payload-types'
@@ -24,10 +25,14 @@ export function updateTrainingCoursesCache(data: { events: Event[]; categories: 
 }
 
 export function TrainingCoursesContent() {
+  const searchParams = useSearchParams()
   const [events, setEvents] = useState<Event[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  
+  // Get category from URL search params
+  const categoryFromUrl = searchParams.get('category') || 'all'
 
   // Memoize the courses data
   const memoizedCourses = useMemo(() => {
@@ -174,7 +179,7 @@ export function TrainingCoursesContent() {
               </div>
             </>
           ) : (
-            <CourseList events={events} categories={categories} />
+            <CourseList events={events} categories={categories} initialCategory={categoryFromUrl} />
           )}
         </div>
       </section>

@@ -13,7 +13,6 @@ import {
 } from "~/components/ui/dialog";
 import { Button } from "~/app/(frontend)/components/Button";
 import type { Event } from "~/payload-types";
-import posthog from "posthog-js";
 import { trackHubSpotFormSubmission, identifyHubSpotUser } from "~/lib/hubspot";
 
 interface RequestAgendaModalProps {
@@ -94,25 +93,6 @@ export function RequestAgendaModal({
 
       setIsSubmitted(true);
       // e.currentTarget.reset();
-
-      // PostHog: Identify user and track agenda request
-      if (email) {
-        posthog.identify(email, {
-          email: email,
-          name: name,
-          first_name: firstName,
-          last_name: lastName,
-          company: company,
-          phone: phone,
-        });
-      }
-
-      posthog.capture("agenda_requested", {
-        event_id: String(eventId),
-        event_slug: eventSlug,
-        event_title: eventTitle,
-        company: company,
-      });
 
       // Track form submission to HubSpot
       const formLocation = typeof window !== 'undefined' ? window.location.pathname : ''

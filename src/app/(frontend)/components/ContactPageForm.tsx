@@ -1,10 +1,9 @@
 'use client'
 
 import React, { useState } from 'react'
-// import { sendGTMEvent } from '@next/third-parties/google'
+import { sendGTMEvent } from '@next/third-parties/google'
 import { trackHubSpotFormSubmission, identifyHubSpotUser } from '~/lib/hubspot'
 import { Button } from './Button'
-import posthog from 'posthog-js'
 
 interface ContactPageFormProps {
   onSubmit?: (data: FormData) => void
@@ -53,16 +52,16 @@ export function ContactPageForm({ onSubmit }: ContactPageFormProps) {
     }
     
     // Send generate_lead event to GTM
-    // sendGTMEvent({
-    //   event: 'generate_lead',
-    //   form_name: 'contact_page_form',
-    //   form_location: typeof window !== 'undefined' ? window.location.pathname : '',
-    //   lead_type: 'contact_inquiry',
-    //   company: company,
-    //   email: email,
-    //   phone: phone,
-    //   has_message: !!message,
-    // })
+    sendGTMEvent({
+      event: 'generate_lead',
+      form_name: 'contact_page_form',
+      form_location: typeof window !== 'undefined' ? window.location.pathname : '',
+      lead_type: 'contact_inquiry',
+      company: company,
+      email: email,
+      phone: phone,
+      has_message: !!message,
+    })
     
     // Track form submission to HubSpot
     const formLocation = typeof window !== 'undefined' ? window.location.pathname : ''
@@ -88,22 +87,6 @@ export function ContactPageForm({ onSubmit }: ContactPageFormProps) {
         phone,
       })
     }
-
-    // PostHog: Identify user and track contact form submission
-    if (email) {
-      posthog.identify(email, {
-        email: email,
-        name: name,
-        company: company,
-        phone: phone,
-      })
-    }
-
-    posthog.capture('contact_form_submitted', {
-      company: company,
-      has_message: !!message,
-      form_location: typeof window !== 'undefined' ? window.location.pathname : '',
-    })
 
     try {
       if (onSubmit) {

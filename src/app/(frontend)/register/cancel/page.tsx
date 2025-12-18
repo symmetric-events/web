@@ -1,21 +1,7 @@
-'use client'
-
-import { useRef } from 'react'
 import Link from 'next/link'
 import { XCircle, ArrowLeft, ShoppingCart } from 'lucide-react'
-import posthog from 'posthog-js'
 
 export default function CheckoutCancelPage() {
-  const hasTrackedRef = useRef(false)
-
-  // Track checkout cancellation once on mount via ref to avoid duplicate tracking
-  if (!hasTrackedRef.current) {
-    hasTrackedRef.current = true
-    posthog.capture('checkout_cancelled', {
-      cancellation_source: 'stripe_redirect',
-    })
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-2xl mx-auto px-4">

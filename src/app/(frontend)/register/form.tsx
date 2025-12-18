@@ -3,9 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-// import { sendGTMEvent } from "@next/third-parties/google";
+import { sendGTMEvent } from "@next/third-parties/google";
 import { trackHubSpotFormSubmission, identifyHubSpotUser } from "~/lib/hubspot";
-import posthog from "posthog-js";
 import {
   Building,
   CreditCard,
@@ -417,7 +416,9 @@ export default function RegisterForm() {
 
   const updateOrder = useMutation({
     mutationKey: ["updateOrder"],
-    mutationFn: async (params: Record<string, unknown> & { orderId: string }) => {
+    mutationFn: async (
+      params: Record<string, unknown> & { orderId: string },
+    ) => {
       const res = await fetch("/api/order/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -496,19 +497,28 @@ export default function RegisterForm() {
       next.customerEmail = "Please enter a valid email address";
     }
 
-    if (!formData.customerFirstName) next.customerFirstName = "First name is required";
-    if (!formData.customerLastName) next.customerLastName = "Last name is required";
+    if (!formData.customerFirstName)
+      next.customerFirstName = "First name is required";
+    if (!formData.customerLastName)
+      next.customerLastName = "Last name is required";
     if (!formData.customerPhone) next.customerPhone = "Phone is required";
     if (!formData.customerCompany) next.customerCompany = "Company is required";
-    
+
     // Address validation - set specific errors for each field
     if (!formData.address.country) next.address_country = "Country is required";
-    if (!formData.address.address1) next.address_address1 = "Street address is required";
+    if (!formData.address.address1)
+      next.address_address1 = "Street address is required";
     if (!formData.address.city) next.address_city = "City is required";
-    if (!formData.address.postcode) next.address_postcode = "Postcode is required";
-    
+    if (!formData.address.postcode)
+      next.address_postcode = "Postcode is required";
+
     // Also set general address error if any address field is missing (for display purposes)
-    if (!formData.address.country || !formData.address.address1 || !formData.address.city || !formData.address.postcode) {
+    if (
+      !formData.address.country ||
+      !formData.address.address1 ||
+      !formData.address.city ||
+      !formData.address.postcode
+    ) {
       next.address = "Please complete all required address fields";
     }
 
@@ -550,34 +560,41 @@ export default function RegisterForm() {
     });
   }
 
-  function handleAddressChange(field: keyof typeof formData["address"], value: string) {
+  function handleAddressChange(
+    field: keyof (typeof formData)["address"],
+    value: string,
+  ) {
     setFormData((prev) => ({
       ...prev,
       address: { ...prev.address, [field]: value },
     }));
-    
+
     // Clear error for this specific field when user starts typing
     const errorKey = `address_${field}` as keyof FormErrors;
     if (errors[errorKey]) {
-      setErrors((prev) => ({ ...prev, [errorKey]: undefined, address: undefined }));
+      setErrors((prev) => ({
+        ...prev,
+        [errorKey]: undefined,
+        address: undefined,
+      }));
     }
   }
 
   function handleInputBlur(field: keyof typeof formData) {
     if (!orderId) return;
-    
+
     // Handle nested address fields
     if (field === "address") {
-      if (Object.values(formData.address).some(v => v !== "")) {
+      if (Object.values(formData.address).some((v) => v !== "")) {
         updateOrder.mutate({ orderId, address: formData.address });
       }
       return;
     }
-    
+
     // Handle top-level fields
     const value = formData[field];
     if (value === "" || (typeof value === "object" && value !== null)) return;
-    
+
     updateOrder.mutate({ orderId, [field]: value });
   }
 
@@ -593,14 +610,6 @@ export default function RegisterForm() {
 
     setQuantity(safe); // optimistic local update for instant UI feedback
     updateOrder.mutate({ orderId, quantity: safe });
-
-    // PostHog: Track quantity change
-    posthog.capture("quantity_changed", {
-      previous_quantity: previousQuantity,
-      new_quantity: safe,
-      event_title: orderQuery.data?.eventTitle || "",
-      event_slug: orderQuery.data?.eventSlug || "",
-    });
   }
 
   function handleParticipantChange(
@@ -848,15 +857,6 @@ export default function RegisterForm() {
         return;
       }
       setDiscount({ code: data.code, type: data.type, value: data.value });
-      // PostHog: Track successful discount code application
-      posthog.capture("discount_code_applied", {
-        discount_code: data.code,
-        discount_type: data.type,
-        discount_value: data.value,
-        event_title: orderQuery.data?.eventTitle || "",
-        event_slug: orderQuery.data?.eventSlug || "",
-        quantity: quantity,
-      });
     } catch (e) {
       setDiscountError("Failed to validate code");
     }
@@ -865,9 +865,11 @@ export default function RegisterForm() {
   async function handleSubmit() {
     if (!validate()) {
       // Scroll to first error field
-      const firstErrorField = document.querySelector('[class*="border-red-500"]');
+      const firstErrorField = document.querySelector(
+        '[class*="border-red-500"]',
+      );
       if (firstErrorField) {
-        firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstErrorField.scrollIntoView({ behavior: "smooth", block: "center" });
       }
       return;
     }
@@ -878,19 +880,20 @@ export default function RegisterForm() {
       const qty = quantity ?? order.quantity ?? 1;
 
       // Send generate_lead event to GTM
-      // sendGTMEvent({
-      //   event: 'generate_lead',
-      //   form_name: 'event_registration_form',
-      //   form_location: typeof window !== 'undefined' ? window.location.pathname : '',
-      //   lead_type: 'event_registration',
-      //   event_id: String(order.id),
-      //   event_slug: order.eventSlug || '',
-      //   event_title: order.eventTitle || '',
-      //   quantity: qty,
-      //   company: formData.company,
-      //   email: formData.email,
-      //   payment_method: paymentMethod || 'card',
-      // });
+      sendGTMEvent({
+        event: 'generate_lead',
+        form_name: 'event_registration_form',
+        form_location: typeof window !== 'undefined' ? window.location.pathname : '',
+        lead_type: 'event_registration',
+        event_id: String(order.id),
+        event_slug: order.eventSlug || '',
+        event_title: order.eventTitle || '',
+        quantity: qty,
+        company: formData.customerCompany,
+        email: formData.customerEmail,
+        phone: formData.customerPhone,
+        payment_method: paymentMethod || 'card',
+      });
 
       // Track form submission to HubSpot
       const formLocation =
@@ -927,34 +930,6 @@ export default function RegisterForm() {
           city: formData.address.city,
         });
       }
-
-      // PostHog: Identify user and track registration form submission
-      if (formData.customerEmail) {
-        posthog.identify(formData.customerEmail, {
-          email: formData.customerEmail,
-          first_name: formData.customerFirstName,
-          last_name: formData.customerLastName,
-          company: formData.customerCompany,
-          phone: formData.customerPhone,
-          country: formData.address.country,
-          city: formData.address.city,
-        });
-      }
-
-      posthog.capture("registration_form_submitted", {
-        event_id: String(order.id),
-        event_slug: order.eventSlug || "",
-        event_title: order.eventTitle || "",
-        quantity: qty,
-        company: formData.customerCompany,
-        country: formData.address.country,
-        payment_method: paymentMethod || "card",
-        currency: currency,
-        total_amount: priceBreakdown?.finalTotal ?? 0,
-        has_discount: !!discount,
-        discount_code: discount?.code || null,
-        participant_count: participants.length,
-      });
 
       // Calculate total using pricing API/lib. Avoid sending 0-priced items to checkout.
       if (!order.startDate || !order.endDate) {
@@ -1008,7 +983,8 @@ export default function RegisterForm() {
           paymentMethod: paymentMethod || "card",
           ...formData,
           customerEmail: formData.customerEmail,
-          customerName: `${formData.customerFirstName} ${formData.customerLastName}`.trim(),
+          customerName:
+            `${formData.customerFirstName} ${formData.customerLastName}`.trim(),
           customerCompany: formData.customerCompany,
           customerPhone: formData.customerPhone,
           participants,
@@ -1084,7 +1060,9 @@ export default function RegisterForm() {
                   id="customerEmail"
                   type="email"
                   value={formData.customerEmail}
-                  onChange={(e) => handleInputChange("customerEmail", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("customerEmail", e.target.value)
+                  }
                   onBlur={() => handleInputBlur("customerEmail")}
                   placeholder="Enter your email address"
                   className={`pl-10 ${errors.customerEmail ? "border-red-500" : ""}`}
@@ -1120,7 +1098,9 @@ export default function RegisterForm() {
                   />
                 </div>
                 {errors.customerFirstName && (
-                  <p className="text-sm text-red-600">{errors.customerFirstName}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.customerFirstName}
+                  </p>
                 )}
               </div>
 
@@ -1144,7 +1124,9 @@ export default function RegisterForm() {
                   autoComplete="family-name"
                 />
                 {errors.customerLastName && (
-                  <p className="text-sm text-red-600">{errors.customerLastName}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.customerLastName}
+                  </p>
                 )}
               </div>
             </div>
@@ -1162,7 +1144,9 @@ export default function RegisterForm() {
                   id="customerPhone"
                   type="tel"
                   value={formData.customerPhone}
-                  onChange={(e) => handleInputChange("customerPhone", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("customerPhone", e.target.value)
+                  }
                   onBlur={() => handleInputBlur("customerPhone")}
                   placeholder="Enter your phone number"
                   className={`pl-10 ${errors.customerPhone ? "border-red-500" : ""}`}
@@ -1193,7 +1177,9 @@ export default function RegisterForm() {
                   id="customerCompany"
                   type="text"
                   value={formData.customerCompany}
-                  onChange={(e) => handleInputChange("customerCompany", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("customerCompany", e.target.value)
+                  }
                   onBlur={() => handleInputBlur("customerCompany")}
                   placeholder="Enter your company name"
                   className={`pl-10 ${errors.customerCompany ? "border-red-500" : ""}`}
@@ -1283,10 +1269,10 @@ export default function RegisterForm() {
                         },
                       }));
                       if (errors.address_country || errors.address) {
-                        setErrors((prev) => ({ 
-                          ...prev, 
+                        setErrors((prev) => ({
+                          ...prev,
                           address_country: undefined,
-                          address: undefined 
+                          address: undefined,
                         }));
                       }
                     }}
@@ -1355,14 +1341,18 @@ export default function RegisterForm() {
                 id="address1"
                 type="text"
                 value={formData.address.address1}
-                onChange={(e) => handleAddressChange("address1", e.target.value)}
+                onChange={(e) =>
+                  handleAddressChange("address1", e.target.value)
+                }
                 onBlur={() => handleInputBlur("address")}
                 placeholder="House number and street name"
                 className={errors.address_address1 ? "border-red-500" : ""}
                 autoComplete="address-line1"
               />
               {errors.address_address1 && (
-                <p className="text-sm text-red-600">{errors.address_address1}</p>
+                <p className="text-sm text-red-600">
+                  {errors.address_address1}
+                </p>
               )}
             </div>
 
@@ -1378,7 +1368,9 @@ export default function RegisterForm() {
                 id="address2"
                 type="text"
                 value={formData.address.address2}
-                onChange={(e) => handleAddressChange("address2", e.target.value)}
+                onChange={(e) =>
+                  handleAddressChange("address2", e.target.value)
+                }
                 onBlur={() => handleInputBlur("address")}
                 placeholder="Apartment, suite, unit, etc. (optional)"
                 autoComplete="address-line2"
@@ -1428,7 +1420,9 @@ export default function RegisterForm() {
                   autoComplete="postal-code"
                 />
                 {errors.address_postcode && (
-                  <p className="text-sm text-red-600">{errors.address_postcode}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.address_postcode}
+                  </p>
                 )}
               </div>
             </div>
@@ -1590,13 +1584,6 @@ export default function RegisterForm() {
                     onClick={() => {
                       setEditingParticipant(idx);
                       setParticipantFormError(null); // Clear any previous errors
-                      // PostHog: Track participant details editing
-                      posthog.capture("participant_details_edited", {
-                        participant_index: idx + 1,
-                        total_participants: participants.length,
-                        event_title: orderQuery.data?.eventTitle || "",
-                        event_slug: orderQuery.data?.eventSlug || "",
-                      });
                     }}
                     className="rounded-md border px-3 py-1 text-sm hover:bg-gray-50"
                   >
@@ -1938,7 +1925,10 @@ export default function RegisterForm() {
               onValueChange={(v) => {
                 setPaymentMethod(v as any);
                 if (orderId) {
-                  updateOrder.mutate({ orderId, paymentMethod: v as "card" | "invoice" });
+                  updateOrder.mutate({
+                    orderId,
+                    paymentMethod: v as "card" | "invoice",
+                  });
                 }
               }}
             >

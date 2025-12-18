@@ -1,4 +1,3 @@
-import { headers as getHeaders } from "next/headers.js";
 import Image from "next/image";
 import Link from "next/link";
 import { getPayload } from "payload";
@@ -9,10 +8,9 @@ import { Button } from "./components/Button";
 import { CourseCard } from "./components/CourseCard";
 import { TestimonialCard } from "./components/TestimonialCard";
 import { ClientLogosCarousel } from "./components/ClientLogosCarousel";
-import { TrainerCard } from "./trainers/TrainerCard";
+import { TrainerCardSmall } from "./trainers/TrainerCardSmall";
 
 export default async function HomePage() {
-  const headers = await getHeaders();
   const payloadConfig = await config;
   const payload = await getPayload({ config: payloadConfig });
 
@@ -133,17 +131,15 @@ export default async function HomePage() {
       {featuredTrainers.length > 0 && (
         <section className="bg-gray-50 py-10">
           <div className="mx-auto max-w-6xl px-5">
-            <h3 className="mb-12 text-center text-2xl text-gray-800">
+            <h3 className="mb-10 text-center text-2xl text-gray-800">
               Featured Trainers
             </h3>
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {featuredTrainers.map((trainer: any) => (
-                <TrainerCard
+                <TrainerCardSmall
                   key={trainer.id}
                   slug={trainer.slug || trainer.id}
                   name={trainer.name}
-                  position={trainer.position}
-                  excerpt={trainer.excerpt || trainer.biography}
                   imageUrl={
                     (typeof trainer.image === "object" && trainer.image?.url) ||
                     trainer.image_url ||
@@ -156,29 +152,38 @@ export default async function HomePage() {
                 />
               ))}
             </div>
-            <div className="mt-12 text-center">
-              <Link href="/trainers">
-                <Button variant="primary">View All Trainers</Button>
-              </Link>
-            </div>
           </div>
         </section>
       )}
 
       {/* Upcoming Training Courses */}
-      <section className="bg-gray-50 py-20">
+      <section className="bg-gray-50 py-10">
         <div className="mx-auto max-w-6xl px-5">
           <h3 className="mb-10 text-center text-2xl text-gray-800">
             Upcoming Training Courses
           </h3>
           <div className="mb-12 flex flex-wrap justify-center gap-2.5">
-            <Button size="sm">All</Button>
-            <Button size="sm">Pharma & Biotech</Button>
-            <Button size="sm">CMC</Button>
-            <Button size="sm">Medical Devices</Button>
-            <Button size="sm">Scale up</Button>
-            <Button size="sm">Clinical Trials</Button>
-            <Button size="sm">Combination Products</Button>
+            <Link href="/training-courses">
+              <Button size="sm">All</Button>
+            </Link>
+            <Link href="/training-courses?category=pharma-&-biotech">
+              <Button size="sm">Pharma & Biotech</Button>
+            </Link>
+            <Link href="/training-courses?category=cmc">
+              <Button size="sm">CMC</Button>
+            </Link>
+            <Link href="/training-courses?category=medical-devices">
+              <Button size="sm">Medical Devices</Button>
+            </Link>
+            <Link href="/training-courses?category=scale-up">
+              <Button size="sm">Scale up</Button>
+            </Link>
+            <Link href="/training-courses?category=clinical-trials">
+              <Button size="sm">Clinical Trials</Button>
+            </Link>
+            <Link href="/training-courses?category=combination-products">
+              <Button size="sm">Combination Products</Button>
+            </Link>
           </div>
           <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {upcomingEvents.map((event: any) => {
@@ -228,9 +233,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Client Logos */}
-      <ClientLogosCarousel />
-
       {/* Testimonials */}
       <section className="bg-white py-10">
         <div className="mx-auto max-w-6xl px-5">
@@ -259,6 +261,9 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Client Logos */}
+      <ClientLogosCarousel />
     </div>
   );
 }

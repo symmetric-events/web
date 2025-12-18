@@ -4,24 +4,10 @@ import { Suspense, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { CheckCircle, ArrowRight } from 'lucide-react'
-import posthog from 'posthog-js'
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams()
-  const sessionId = searchParams.get('session_id')
   const paymentMethod = searchParams.get('payment_method')
-  const orderId = searchParams.get('order_id')
-  const hasTrackedRef = useRef(false)
-
-  // Track checkout completion once on mount via ref to avoid duplicate tracking
-  if (!hasTrackedRef.current) {
-    hasTrackedRef.current = true
-    posthog.capture('checkout_completed', {
-      session_id: sessionId || null,
-      order_id: orderId || null,
-      payment_method: paymentMethod || 'card',
-    })
-  }
 
   return (
     <div className="min-h-screen bg-gray-100 pt-22">

@@ -2,7 +2,6 @@
 
 import { CalendarPlus } from "lucide-react";
 import { generateICS, downloadICS, type CalendarEvent } from "~/lib/calendar";
-import posthog from "posthog-js";
 
 interface AddToCalendarProps {
   event: CalendarEvent;
@@ -16,14 +15,6 @@ export function AddToCalendar({ event, className = "" }: AddToCalendarProps) {
     const icsContent = generateICS(event);
     const filename = `${event.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.ics`;
     downloadICS(icsContent, filename);
-
-    // PostHog: Track calendar download
-    posthog.capture("event_added_to_calendar", {
-      event_title: event.title,
-      event_start: event.startDate?.toISOString() || null,
-      event_end: event.endDate?.toISOString() || null,
-      event_location: event.location || null,
-    });
   };
 
   return (

@@ -26,10 +26,10 @@ export function TeamMemberCard({
         />
       </div>
       <div className="px-2">
-        <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-1 leading-tight">
+        <h3 className="text-sm sm:text-base font-semibold text-gray-800 mb-1">
           {name}
         </h3>
-        <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+        <p className="text-sm text-gray-600">
           {position}
         </p>
       </div>

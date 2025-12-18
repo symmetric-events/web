@@ -1,10 +1,9 @@
 'use client'
 
 import React, { useState } from 'react'
-// import { sendGTMEvent } from '@next/third-parties/google'
+import { sendGTMEvent } from '@next/third-parties/google'
 import { trackHubSpotFormSubmission, identifyHubSpotUser } from '~/lib/hubspot'
 import { Button } from '../components/Button'
-import posthog from 'posthog-js'
 import {
   Dialog,
   DialogContent,
@@ -79,16 +78,16 @@ export function InHouseTrainingForm({
     }
 
     // Send generate_lead event to GTM
-    // sendGTMEvent({
-    //   event: 'generate_lead',
-    //   form_name: 'in_house_training_form',
-    //   form_location: typeof window !== 'undefined' ? window.location.pathname : '',
-    //   lead_type: 'in_house_training_request',
-    //   company: company,
-    //   email: email,
-    //   has_audience: !!audience,
-    //   has_training_objective: !!training_objective,
-    // })
+    sendGTMEvent({
+      event: 'generate_lead',
+      form_name: 'in_house_training_form',
+      form_location: typeof window !== 'undefined' ? window.location.pathname : '',
+      lead_type: 'in_house_training_request',
+      company: company,
+      email: email,
+      has_audience: !!audience,
+      has_training_objective: !!training_objective,
+    })
 
     // Track form submission to HubSpot
     const formLocation = typeof window !== 'undefined' ? window.location.pathname : ''
@@ -119,25 +118,6 @@ export function InHouseTrainingForm({
         function: function_val,
       })
     }
-
-    // PostHog: Identify user and track in-house training request
-    if (email) {
-      posthog.identify(email, {
-        email: email,
-        name: name,
-        first_name: firstName,
-        last_name: lastName,
-        company: company,
-        function: function_val,
-      })
-    }
-
-    posthog.capture('in_house_training_requested', {
-      company: company,
-      has_audience: !!audience,
-      has_training_objective: !!training_objective,
-      form_location: typeof window !== 'undefined' ? window.location.pathname : '',
-    })
 
     // Prepare payload
     const payload = {

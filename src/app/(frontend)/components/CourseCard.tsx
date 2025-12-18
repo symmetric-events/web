@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Calendar, MapPin, Globe, Clock, Euro, DollarSign } from "lucide-react";
-// import { sendGTMEvent } from "@next/third-parties/google";
+import { sendGTMEvent } from "@next/third-parties/google";
 
 interface CourseCardProps {
   title: string;
@@ -33,15 +33,12 @@ export function CourseCard({
   startDate,
   endDate,
   slug,
-  status = "Upcoming",
-  statusColor = "green",
   trainingType,
   trainingLocation,
   featuredImage,
   description,
   priceEUR,
   priceUSD,
-  currency = "EUR",
   startTime,
   endTime,
   duration,
@@ -180,30 +177,30 @@ export function CourseCard({
     });
   }
 
-  // const handleClick = () => {
-  //   sendGTMEvent({
-  //     event: "view_item",
-  //     event_slug: slug,
-  //     event_title: title,
-  //     event_category: category,
-  //     event_status: status,
-  //     event_price_eur: priceEUR,
-  //     event_price_usd: priceUSD,
-  //     training_type: trainingType,
-  //     training_location: trainingLocation,
-  //     click_location: "course_card",
-  //   });
-  // };
+  const handleClick = () => {
+    sendGTMEvent({
+      event: "view_item",
+      event_slug: slug,
+      event_title: title,
+      event_category: category,
+      event_status: status,
+      event_price_eur: priceEUR,
+      event_price_usd: priceUSD,
+      training_type: trainingType,
+      training_location: trainingLocation,
+      click_location: "course_card",
+    });
+  };
 
   return (
     <Link
       href={`/event/${slug}`}
       className="group block h-full"
-      // onClick={handleClick}
+      onClick={handleClick}
     >
       <div className="flex h-full flex-col overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
         {/* Image Section */}
-        <div className="relative h-32 w-full flex-shrink-0 overflow-hidden">
+        <div className="relative h-32 w-full shrink-0 overflow-hidden">
           {featuredImage ? (
             <Image
               src={featuredImage}
@@ -212,38 +209,31 @@ export function CourseCard({
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+            <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100">
               <div className="text-2xl opacity-20">📚</div>
-            </div>
-          )}
-
-          {/* Status Badge */}
-          {status && (
-            <div
-              className={`absolute top-3 right-3 ${statusColorClasses[statusColor]} rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm`}
-            >
-              {status}
             </div>
           )}
 
           {/* Category Badge */}
           {category && (
-            <div className="absolute top-3 left-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-700 shadow-sm backdrop-blur-md">
+            <div className="absolute top-3 left-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold tracking-wider text-gray-700 uppercase shadow-sm backdrop-blur-md">
               {category}
             </div>
           )}
         </div>
 
         {/* Content Section */}
-        <div className="flex flex-grow flex-col p-5">
+        <div className="flex grow flex-col p-5">
           {/* Title */}
-          <h3 className="group-hover:text-secondary mb-2 text-lg font-bold leading-tight text-gray-900 transition-colors line-clamp-2">
+          <h3 className="group-hover:text-secondary mb-2 line-clamp-2 text-lg leading-tight font-bold text-gray-900 transition-colors">
             {title}
           </h3>
 
           {/* Description */}
           {description && (
-            <p className="mb-4 text-sm text-gray-600 line-clamp-2 leading-relaxed">{description}</p>
+            <p className="mb-4 line-clamp-2 text-sm leading-relaxed text-gray-600">
+              {description}
+            </p>
           )}
 
           {/* Date and Time */}
@@ -251,13 +241,15 @@ export function CourseCard({
             <div className="mb-4 rounded-lg bg-gray-50 p-2.5">
               {formattedDate && (
                 <div className="flex items-center gap-2">
-                  <Calendar className="text-secondary h-4 w-4 flex-shrink-0" />
-                  <span className="text-sm font-medium text-gray-700">{formattedDate}</span>
+                  <Calendar className="text-secondary h-4 w-4 shrink-0" />
+                  <span className="text-sm font-medium text-gray-700">
+                    {formattedDate}
+                  </span>
                 </div>
               )}
               {timeDisplay && (
                 <div className="mt-1.5 flex items-center gap-2 text-gray-500">
-                  <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                  <Clock className="h-3.5 w-3.5 shrink-0" />
                   <span className="text-xs font-medium">{timeDisplay}</span>
                 </div>
               )}
@@ -268,13 +260,15 @@ export function CourseCard({
           <div className="mt-auto flex items-center gap-3 border-t border-gray-100 pt-3">
             {trainingType === "online" ? (
               <div className="text-secondary flex items-center gap-1.5">
-                <Globe className="h-4 w-4 flex-shrink-0" />
-                <span className="text-xs font-semibold uppercase tracking-wide">Online</span>
+                <Globe className="h-4 w-4 shrink-0" />
+                <span className="text-xs font-semibold tracking-wide uppercase">
+                  Online
+                </span>
               </div>
             ) : (
               <div className="flex items-center gap-1.5 text-gray-600">
-                <MapPin className="text-secondary h-4 w-4 flex-shrink-0" />
-                <span className="text-xs font-semibold uppercase tracking-wide">
+                <MapPin className="text-secondary h-4 w-4 shrink-0" />
+                <span className="text-xs font-semibold tracking-wide uppercase">
                   {trainingLocation || "In-Person"}
                 </span>
               </div>

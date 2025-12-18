@@ -2,9 +2,8 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-// import { sendGTMEvent } from "@next/third-parties/google";
+import { sendGTMEvent } from "@next/third-parties/google";
 import { trackHubSpotFormSubmission, identifyHubSpotUser } from "~/lib/hubspot";
-import posthog from "posthog-js";
 
 export const NewsletterForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,15 +41,15 @@ export const NewsletterForm: React.FC = () => {
     }
     
     // Send generate_lead event to GTM
-    //  sendGTMEvent({
-    //   event: 'generate_lead',
-    //   form_name: 'newsletter_signup',
-    //   form_location: typeof window !== 'undefined' ? window.location.pathname : '',
-    //   lead_type: 'newsletter_subscription',
-    //   company: company,
-    //   email: email,
-    //   has_consent: consent,
-    // })
+     sendGTMEvent({
+      event: 'generate_lead',
+      form_name: 'newsletter_signup',
+      form_location: typeof window !== 'undefined' ? window.location.pathname : '',
+      lead_type: 'newsletter_subscription',
+      company: company,
+      email: email,
+      has_consent: consent,
+    })
     
     // Track form submission to HubSpot
     const formLocation = typeof window !== 'undefined' ? window.location.pathname : ''
@@ -77,21 +76,6 @@ export const NewsletterForm: React.FC = () => {
       })
     }
 
-    // PostHog: Identify user and track newsletter signup
-    if (email) {
-      posthog.identify(email, {
-        email: email,
-        first_name: firstName,
-        last_name: lastName,
-        company: company || '',
-      })
-    }
-
-    posthog.capture('newsletter_signup', {
-      company: company || null,
-      has_consent: consent,
-      form_location: typeof window !== 'undefined' ? window.location.pathname : '',
-    })
 
     // Reset form after a brief delay
     setTimeout(() => {

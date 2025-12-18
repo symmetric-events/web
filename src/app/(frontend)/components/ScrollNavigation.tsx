@@ -134,12 +134,19 @@ export const ScrollNavigation: React.FC = () => {
           )}
 
           {/* Fixed Black Navigation (Homepage - When Scrolled) */}
-          {isScrolled && (
+          <div
+            className={`fixed top-0 right-0 left-0 z-50 transition-all duration-300 ease-in-out ${
+              isScrolled
+                ? "translate-y-0"
+                : "-translate-y-full pointer-events-none"
+            }`}
+          >
             <StaticNavigation 
               isMobileMenuOpen={isMobileMenuOpen} 
-              setIsMobileMenuOpen={setIsMobileMenuOpen} 
+              setIsMobileMenuOpen={setIsMobileMenuOpen}
+              isFixed={false}
             />
-          )}
+          </div>
         </>
       ) : (
         /* Fixed Black Navigation (All Other Pages) */
@@ -163,11 +170,12 @@ export const ScrollNavigation: React.FC = () => {
 interface StaticNavigationProps {
   isMobileMenuOpen: boolean;
   setIsMobileMenuOpen: (open: boolean) => void;
+  isFixed?: boolean;
 }
 
-const StaticNavigation: React.FC<StaticNavigationProps> = ({ isMobileMenuOpen, setIsMobileMenuOpen }) => {
+const StaticNavigation: React.FC<StaticNavigationProps> = ({ isMobileMenuOpen, setIsMobileMenuOpen, isFixed = true }) => {
   return (
-    <header className="fixed top-0 right-0 left-0 z-50 bg-black">
+    <header className={`${isFixed ? 'fixed top-0 right-0 left-0' : 'w-full'} z-50 bg-black`}>
       <div className="mx-auto max-w-7xl px-5">
         <div className="flex items-center justify-between lg:justify-around py-4">
           <div className="logo">

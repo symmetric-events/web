@@ -6,6 +6,7 @@ import { RequestConsultingForm } from "./RequestConsultingForm";
 import { CaseStudiesSection } from "./CaseStudiesSection";
 import { ServicesCarousel } from "./ServicesCarousel";
 import { BenefitsList, type Benefit } from "./BenefitsList";
+import { TestimonialCard } from "../components/TestimonialCard";
 
 export const metadata = {
   title: "In-House Training - Symmetric",
@@ -91,6 +92,35 @@ export default function InHouseTrainingPage() {
 
       {/* Case Studies */}
       <CaseStudiesSection caseStudies={caseStudies} />
+
+      {/* Testimonials */}
+      <section className="bg-white py-10">
+        <div className="mx-auto max-w-6xl px-5">
+          <h3 className="mb-12 text-center text-2xl text-gray-800">
+            Testimonials
+          </h3>
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3">
+            <TestimonialCard
+              quote="A great overview of state-of-the art PM in generic business. The discussions on topics from real experience with Dr. Ross were especially interesting given his broad area of expertise because it's all related!"
+              author="Jiří Václavík"
+              position="Project Manager"
+              company="Zentiva"
+            />
+            <TestimonialCard
+              quote="It was a good overview on Project Management tools and skills. A good starting point for PM implementation."
+              author="Catarina Estevens"
+              position="Project Manager Pharmaceutical"
+              company="Development Tecnimede"
+            />
+            <TestimonialCard
+              quote="Very rich content with real world examples. Trainer is very strong in rich information/right content. Worth to take this training if your routes cross VAM development."
+              author="Araksya Topchyan"
+              position="Global Marketing Manager Pharma"
+              company="DSM"
+            />
+          </div>
+        </div>
+      </section>
 
       {/* Client Logos Section */}
       <ClientLogosCarousel />
