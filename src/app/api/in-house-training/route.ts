@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
-import { env } from '~/env'
+import { env } from '@/env'
 
 // Email recipients from the PHP code
 const RECIPIENTS = [

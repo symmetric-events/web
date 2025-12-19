@@ -3,10 +3,10 @@ import Image from "next/image";
 import * as moment from "moment-timezone";
 import { Calendar, Clock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { AddToCalendar } from "~/app/(frontend)/components/AddToCalendar";
-import type { CalendarEvent } from "~/lib/calendar";
-import { getPriceFromDates, getPriceForQuantity } from "~/lib/pricing";
-import { useCurrency } from "~/app/(frontend)/context/CurrencyContext";
+import { AddToCalendar } from "@/app/(frontend)/components/AddToCalendar";
+import type { CalendarEvent } from "@/lib/calendar";
+import { getPriceFromDates, getPriceForQuantity } from "@/lib/pricing";
+import { useCurrency } from "@/app/(frontend)/context/CurrencyContext";
 import { RequestAgendaModal } from "./RequestAgendaModal";
 
 interface EventDetailsProps {

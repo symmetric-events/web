@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as cheerio from 'cheerio'
 import { getPayload } from 'payload'
 import payloadConfig from '@payload-config'
-import { getPriceFromDates } from '~/lib/pricing'
+import { getPriceFromDates } from '@/lib/pricing'
 
 type ParsedEvent = {
   title: string

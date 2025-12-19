@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { stripe, formatAmountForStripe } from '~/lib/stripe'
-import { getPayload } from 'payload'
-import config from '~/payload.config'
-import { env } from '~/env'
+import { stripe } from '@/lib/stripe'
+import { env } from '@/env'
 
 type CheckoutItem = {
   eventId: string

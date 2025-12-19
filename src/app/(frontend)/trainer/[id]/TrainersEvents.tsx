@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CourseCard } from '~/app/(frontend)/components/CourseCard'
-import type { Event, Category } from '~/payload-types'
+import { CourseCard } from '@/app/(frontend)/components/CourseCard'
+import type { Event, Category } from '@/payload-types'
 import { getTrainerEvents } from './actions'
 
 interface TrainersEventsProps {

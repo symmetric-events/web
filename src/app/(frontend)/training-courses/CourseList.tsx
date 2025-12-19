@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { Button } from '../components/Button'
 import { CourseCard } from '../components/CourseCard'
-import type { Event, Category } from '~/payload-types'
+import type { Event, Category } from '@/payload-types'
 
 interface CourseListProps {
   events: Event[]

@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "~/app/(frontend)/components/Button";
+import { Button } from "@/app/(frontend)/components/Button";
 
 interface BuyTicketButtonProps {
   quantity: number;

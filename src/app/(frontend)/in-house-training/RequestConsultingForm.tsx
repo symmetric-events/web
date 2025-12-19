@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { sendGTMEvent } from '@next/third-parties/google'
-import { trackHubSpotFormSubmission, identifyHubSpotUser } from '~/lib/hubspot'
+import { trackHubSpotFormSubmission, identifyHubSpotUser } from '@/lib/hubspot'
 import { Button } from '../components/Button'
 import {
   Dialog,
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '~/components/ui/dialog'
+} from '@/components/ui/dialog'
 
 interface RequestConsultingFormProps {
   title?: string

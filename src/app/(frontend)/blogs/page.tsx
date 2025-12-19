@@ -1,9 +1,9 @@
 import React from 'react'
 import { getPayload } from 'payload'
-import config from '~/payload.config'
+import config from '@/payload.config'
 import { PageHeader } from '../components/PageHeader'
 import { BlogCard } from './BlogCard'
-import type { Blog, Category } from '~/payload-types'
+import type { Blog, Category } from '@/payload-types'
 
 export const dynamic = 'force-dynamic'
 

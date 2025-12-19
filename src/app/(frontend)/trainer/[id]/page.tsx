@@ -3,8 +3,8 @@ import React from "react";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import config from "~/payload.config";
-import { EditButton } from "~/app/(frontend)/components/EditButton";
+import config from "@/payload.config";
+import { EditButton } from "@/app/(frontend)/components/EditButton";
 import { TrainersEvents } from "./TrainersEvents";
 
 interface TrainerPageProps {

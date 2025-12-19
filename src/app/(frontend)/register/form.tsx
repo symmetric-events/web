@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import { sendGTMEvent } from "@next/third-parties/google";
-import { trackHubSpotFormSubmission, identifyHubSpotUser } from "~/lib/hubspot";
+import { trackHubSpotFormSubmission, identifyHubSpotUser } from "@/lib/hubspot";
 import {
   Building,
   CreditCard,
@@ -14,29 +14,29 @@ import {
   Phone,
   User,
 } from "lucide-react";
-import { Input } from "~/components/ui/input";
-import { Textarea } from "~/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "~/components/ui/select";
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "~/components/ui/dialog";
+} from "@/components/ui/dialog";
 import { CountryDropdown } from "react-country-region-selector";
 import ReactSelect from "react-select";
 import {
   getPriceForQuantity,
   getPriceFromDates,
   type Currency,
-} from "~/lib/pricing";
+} from "@/lib/pricing";
 import Link from "next/link";
 
 type ReactSelectOption = {

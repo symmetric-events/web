@@ -10,10 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog";
-import { Button } from "~/app/(frontend)/components/Button";
-import type { Event } from "~/payload-types";
-import { trackHubSpotFormSubmission, identifyHubSpotUser } from "~/lib/hubspot";
+} from "@/components/ui/dialog";
+import { Button } from "@/app/(frontend)/components/Button";
+import type { Event } from "@/payload-types";
+import { trackHubSpotFormSubmission, identifyHubSpotUser } from "@/lib/hubspot";
 
 interface RequestAgendaModalProps {
   eventSlug: string;

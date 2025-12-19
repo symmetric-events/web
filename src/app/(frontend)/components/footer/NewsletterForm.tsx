@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { sendGTMEvent } from "@next/third-parties/google";
-import { trackHubSpotFormSubmission, identifyHubSpotUser } from "~/lib/hubspot";
+import { trackHubSpotFormSubmission, identifyHubSpotUser } from "@/lib/hubspot";
 
 export const NewsletterForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);

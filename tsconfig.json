@@ -32,7 +32,7 @@
     /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "~/*": [
+      "@/*": [
         "./src/*"
       ],
       "@payload-config": [

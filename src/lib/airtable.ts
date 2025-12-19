@@ -1,4 +1,4 @@
-import type { Order } from '~/payload-types'
+import type { Order } from '@/payload-types'
 
 type LineItemInput = {
   name: string

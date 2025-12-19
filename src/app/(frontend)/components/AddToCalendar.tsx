@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarPlus } from "lucide-react";
-import { generateICS, downloadICS, type CalendarEvent } from "~/lib/calendar";
+import { generateICS, downloadICS, type CalendarEvent } from "@/lib/calendar";
 
 interface AddToCalendarProps {
   event: CalendarEvent;

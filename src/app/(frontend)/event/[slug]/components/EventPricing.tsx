@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { sendGTMEvent } from "@next/third-parties/google";
-import { getPriceForQuantity, getPriceFromDates } from "~/lib/pricing";
-import { useCurrency } from "~/app/(frontend)/context/CurrencyContext";
+import { getPriceForQuantity, getPriceFromDates } from "@/lib/pricing";
+import { useCurrency } from "@/app/(frontend)/context/CurrencyContext";
 import { BuyTicketButton } from "./BuyTicketButton";
 
 interface EventPricingProps {

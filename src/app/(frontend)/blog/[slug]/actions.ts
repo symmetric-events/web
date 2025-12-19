@@ -1,8 +1,8 @@
 'use server'
 
 import { getPayload } from 'payload'
-import config from '~/payload.config'
-import type { Event } from '~/payload-types'
+import config from '@/payload.config'
+import type { Event } from '@/payload-types'
 
 export async function getRelatedEvents(eventIds: (number | string | Event)[]): Promise<Event[]> {
   if (!eventIds || eventIds.length === 0) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
-import config from '~/payload.config'
-import { getPriceForQuantity } from '~/lib/pricing'
+import config from '@/payload.config'
+import { getPriceForQuantity } from '@/lib/pricing'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

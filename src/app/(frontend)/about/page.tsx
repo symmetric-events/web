@@ -4,7 +4,7 @@ import Link from "next/link";
 import { TeamMemberCard } from "./TeamMemberCard";
 import { PageHeader } from "../components/PageHeader";
 import { getPayload } from "payload";
-import config from "~/payload.config";
+import config from "@/payload.config";
 
 export const metadata = {
   title: "About Us - Symmetric",

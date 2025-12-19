@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getPayload } from "payload";
-import config from "~/payload.config";
-import { getVideoEmbedUrl } from "~/lib/utils";
+import config from "@/payload.config";
+import { getVideoEmbedUrl } from "@/lib/utils";
 import { EventDetails } from "./components/EventDetails";
 import { EventPricing } from "./components/EventPricing";
 import { EventWhyAttend } from "./components/EventWhyAttend";
@@ -13,7 +13,7 @@ import { EventTrainer } from "./components/EventTrainer";
 import { EventTestimonials } from "./components/EventTestimonials";
 import { EventHeader } from "./components/EventHeader";
 import { EventViewTracker } from "./components/EventViewTracker";
-import { EditButton } from "~/app/(frontend)/components/EditButton";
+import { EditButton } from "@/app/(frontend)/components/EditButton";
 
 type Props = {
   params: Promise<{ slug: string }>;

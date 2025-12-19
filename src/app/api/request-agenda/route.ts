@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
-import config from '~/payload.config'
-import { env } from '~/env'
+import config from '@/payload.config'
+import { env } from '@/env'
 
 // Webhook URL from the PHP code
 const WEBHOOK_URL = 'https://hkdk.events/w8j54crxpw7kgb'

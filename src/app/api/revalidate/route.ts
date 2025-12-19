@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
-import { env } from "~/env";
+import { env } from "@/env";
 
 type RevalidateBody = {
   secret?: string;

@@ -1,13 +1,13 @@
 import React from "react";
 import { getPayload } from "payload";
-import config from "~/payload.config";
+import config from "@/payload.config";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
-import type { Blog, Category } from "~/payload-types";
+import type { Blog, Category } from "@/payload-types";
 import type { Metadata } from "next";
-import { EditButton } from "~/app/(frontend)/components/EditButton";
+import { EditButton } from "@/app/(frontend)/components/EditButton";
 import { RelatedEvents } from "./RelatedEvents";
 
 // Simple Lexical content renderer

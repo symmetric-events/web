@@ -7,7 +7,7 @@ import {
   CarouselItem,
   CarouselDots,
   type CarouselApi,
-} from "~/components/ui/carousel";
+} from "@/components/ui/carousel";
 
 const allServices = [
   {

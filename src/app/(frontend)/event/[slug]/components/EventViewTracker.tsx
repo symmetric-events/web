@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { sendGTMEvent } from "@next/third-parties/google";
-import type { Event } from "~/payload-types";
+import type { Event } from "@/payload-types";
 
 interface EventViewTrackerProps {
   event: Event;

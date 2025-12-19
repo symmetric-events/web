@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
-import config from '~/payload.config'
+import config from '@/payload.config'
 
 export async function GET() {
   try {

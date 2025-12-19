@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CourseList } from './CourseList'
 import { PageHeader } from '../components/PageHeader'
-import type { Event, Category } from '~/payload-types'
+import type { Event, Category } from '@/payload-types'
 
 // Module-level cache to persist across navigations
 let cachedData: {

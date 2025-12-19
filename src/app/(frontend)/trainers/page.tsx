@@ -1,8 +1,8 @@
 import { getPayload } from "payload";
 import React from "react";
-import config from "~/payload.config";
+import config from "@payload-config";
 import { TrainerCard } from "./TrainerCard";
-import type { Trainer } from "~/payload-types";
+import type { Trainer } from "@payload-config";
 import { PageHeader } from "../components/PageHeader";
 
 export default async function TrainersPage() {
