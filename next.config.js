@@ -7,10 +7,6 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
-  eslint: {
-    // Skip linting during builds
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     // Skip type checking errors during builds
     ignoreBuildErrors: true,
@@ -26,5 +22,4 @@ const config = {
   productionBrowserSourceMaps: true,
 };
 // @ts-ignore
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 export default withPayload(config);
